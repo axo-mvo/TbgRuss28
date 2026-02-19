@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 Phase: 5 of 5 (Export) -- COMPLETE
 Plan: 1 of 1 in current phase (1 complete)
 Status: ALL PHASES COMPLETE
-Last activity: 2026-02-19 - Completed quick task 3: Dashboard realtime station state updates
+Last activity: 2026-02-19 - Completed quick task 4: Simplify MD export format (remove author/timestamp)
 
 Progress: [##########] 100%
 
@@ -82,6 +82,7 @@ Recent decisions affecting current work:
 - [05-01]: Used <a> tag with download attribute instead of Link component for file download
 - [05-01]: Admin auth in Route Handler mirrors verifyAdmin() but returns HTTP responses
 - [05-01]: Markdown builder as pure function for testability and separation of concerns
+- [quick-4]: Removed profiles join from export query since author data no longer needed by simplified format
 
 ### Pending Todos
 
@@ -94,6 +95,7 @@ None yet.
 | 1 | Realtime dashboard station status and explicit start button | 2026-02-19 | 7482864 | [1-realtime-dashboard-station-status-and-ex](./quick/1-realtime-dashboard-station-status-and-ex/) |
 | 2 | Fix chat messages not appearing - add optimistic message before broadcast | 2026-02-19 | 0a2abbd | [2-fix-chat-messages-not-appearing-add-opti](./quick/2-fix-chat-messages-not-appearing-add-opti/) |
 | 3 | Dashboard realtime station state updates (setAuth fix) | 2026-02-19 | ec24245 | [3-dashboard-realtime-station-state-updates](./quick/3-dashboard-realtime-station-state-updates/) |
+| 4 | Simplify MD export format (remove author/timestamp) | 2026-02-19 | 3120cc4 | [4-simplify-md-export-format-remove-author-](./quick/4-simplify-md-export-format-remove-author-/) |
 
 ### Blockers/Concerns
 
@@ -103,5 +105,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed quick task 3: Dashboard realtime station state updates
-Resume file: .planning/quick/3-dashboard-realtime-station-state-updates/3-SUMMARY.md
+Stopped at: Completed quick task 4: Simplify MD export format (remove author/timestamp)
+Resume file: .planning/quick/4-simplify-md-export-format-remove-author-/4-SUMMARY.md
