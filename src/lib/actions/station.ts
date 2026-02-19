@@ -155,6 +155,59 @@ export async function endStation(
   return {}
 }
 
+// ---------- reopenStation ----------
+// Reopens a completed station session with additional time.
+// Calls the reopen_station Postgres function for atomic, race-safe reopening.
+
+export async function reopenStation(
+  sessionId: string,
+  extraMinutes: number
+): Promise<{ endTimestamp?: string; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Ikke autentisert' }
+
+  // Validate extraMinutes on server side
+  if (![2, 5, 10, 15].includes(extraMinutes)) {
+    return { error: 'Ugyldig tid' }
+  }
+
+  // Get the session's group_id to verify membership
+  const { data: session } = await supabase
+    .from('station_sessions')
+    .select('group_id')
+    .eq('id', sessionId)
+    .maybeSingle()
+
+  if (!session) return { error: 'Okt ikke funnet' }
+
+  // Verify user is in the group
+  const { data: membership } = await supabase
+    .from('group_members')
+    .select('id')
+    .eq('group_id', session.group_id)
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (!membership) return { error: 'Du er ikke medlem av denne gruppen' }
+
+  // Call the atomic reopen_station Postgres function
+  const { data, error } = await supabase.rpc('reopen_station', {
+    p_session_id: sessionId,
+    p_extra_minutes: extraMinutes,
+  })
+
+  if (error) {
+    console.error('reopen_station RPC error:', error.message, error.code)
+    return { error: 'Kunne ikke gjenapne stasjonen' }
+  }
+
+  const result = data as { id?: string; end_timestamp?: string; status?: string; error?: string }
+  if (result.error) return { error: result.error }
+
+  return { endTimestamp: result.end_timestamp }
+}
+
 // ---------- loadMessages ----------
 // Loads message history for a station session.
 // Joins with profiles for full_name and role.
