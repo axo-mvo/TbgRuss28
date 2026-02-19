@@ -50,8 +50,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Export
 
-- [ ] **EXPT-01**: Admin can export all conversations as a Markdown file
-- [ ] **EXPT-02**: Export is grouped by station, then by group, with timestamps and author info
+- [x] **EXPT-01**: Admin can export all conversations as a Markdown file
+- [x] **EXPT-02**: Export is grouped by station, then by group, with timestamps and author info
 
 ### Design
 
@@ -130,8 +130,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FLOW-02 | Phase 4 | Complete |
 | FLOW-03 | Phase 4 | Complete |
 | FLOW-04 | Phase 4 | Complete |
-| EXPT-01 | Phase 5 | Pending |
-| EXPT-02 | Phase 5 | Pending |
+| EXPT-01 | Phase 5 | Complete |
+| EXPT-02 | Phase 5 | Complete |
 | DSGN-01 | Phase 1 | Complete |
 | DSGN-02 | Phase 1 | Complete |
 | DSGN-03 | Phase 1 | Complete |

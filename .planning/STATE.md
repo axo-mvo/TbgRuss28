@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Groups can have real-time discussions at stations with a visible timer and see each other's messages instantly
-**Current focus:** Phase 4 complete, ready for Phase 5 - Polish and Testing
+**Current focus:** Phase 5 complete -- ALL PHASES DONE
 
 ## Current Position
 
-Phase: 4 of 5 (Station Flow and Resilience) -- COMPLETE
-Plan: 2 of 2 in current phase (2 complete)
-Status: Phase 04 complete, ready for Phase 05
-Last activity: 2026-02-19 -- Plan 04-02 executed
+Phase: 5 of 5 (Export) -- COMPLETE
+Plan: 1 of 1 in current phase (1 complete)
+Status: ALL PHASES COMPLETE
+Last activity: 2026-02-19 -- Plan 05-01 executed
 
-Progress: [#########.] 90%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 4.6min
-- Total execution time: 0.62 hours
+- Total plans completed: 10
+- Average duration: 4.3min
+- Total execution time: 0.65 hours
 
 **By Phase:**
 
@@ -31,9 +31,10 @@ Progress: [#########.] 90%
 | 02 | 3 | 14min | 4.7min |
 | 03 | 2 | 7min | 3.5min |
 | 04 | 2 | 5min | 2.5min |
+| 05 | 1 | 2min | 2.0min |
 
 **Recent Trend:**
-- Last 5 plans: 02-03 (7min), 03-01 (3min), 03-02 (4min), 04-01 (3min), 04-02 (2min)
+- Last 5 plans: 03-01 (3min), 03-02 (4min), 04-01 (3min), 04-02 (2min), 05-01 (2min)
 - Trend: stable/improving
 
 *Updated after each plan completion*
@@ -78,6 +79,9 @@ Recent decisions affecting current work:
 - [04-01]: channelRef exposed from useRealtimeChat so ChatRoom can broadcast station-ended directly after endStation action
 - [04-02]: ConnectionStatus hidden when connected -- clean UI default, only shows on degradation
 - [04-02]: Online event sets reconnecting (not connected) -- waits for heartbeat confirmation before showing healthy
+- [05-01]: Used <a> tag with download attribute instead of Link component for file download
+- [05-01]: Admin auth in Route Handler mirrors verifyAdmin() but returns HTTP responses
+- [05-01]: Markdown builder as pure function for testability and separation of concerns
 
 ### Pending Todos
 
@@ -91,5 +95,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 04-02-PLAN.md (Phase 04 complete)
-Resume file: .planning/phases/04-station-flow-and-resilience/04-02-SUMMARY.md
+Stopped at: Completed 05-01-PLAN.md (ALL PHASES COMPLETE)
+Resume file: .planning/phases/05-export/05-01-SUMMARY.md

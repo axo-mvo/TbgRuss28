@@ -14,9 +14,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation and Authentication** - Project setup, Supabase schema, invite-code registration, login, role-based routing, and base UI with design system (completed 2026-02-19)
 - [x] **Phase 2: Admin Panel** - User management, parent-child linking view, group creation/assignment, and meeting-day group locking (completed 2026-02-19)
-- [ ] **Phase 3: Station Chat and Timer** - Station selector dashboard, real-time group chat via Supabase Broadcast, synchronized 15-minute countdown timer, and message display
-- [ ] **Phase 4: Station Flow and Resilience** - End-station confirmation, group-wide redirect, completed station read-only mode, and connection status indicator
-- [ ] **Phase 5: Export** - Admin Markdown export of all conversations grouped by station and group
+- [x] **Phase 3: Station Chat and Timer** - Station selector dashboard, real-time group chat via Supabase Broadcast, synchronized 15-minute countdown timer, and message display (completed 2026-02-19)
+- [x] **Phase 4: Station Flow and Resilience** - End-station confirmation, group-wide redirect, completed station read-only mode, and connection status indicator (completed 2026-02-19)
+- [x] **Phase 5: Export** - Admin Markdown export of all conversations grouped by station and group (completed 2026-02-19)
 
 ## Phase Details
 
@@ -66,7 +66,7 @@ Plans:
 
 Plans:
 - [x] 03-01-PLAN.md -- Station backend: DB migration (Realtime RLS, open_station function), server actions, React hooks (chat, timer, auto-scroll)
-- [ ] 03-02-PLAN.md -- Station UI: station selector on dashboard, chat page with messages, input, timer display, and full wiring
+- [x] 03-02-PLAN.md -- Station UI: station selector on dashboard, chat page with messages, input, timer display, and full wiring
 
 ### Phase 4: Station Flow and Resilience
 **Goal**: Groups can complete stations and move through the rotation, with completed stations viewable in read-only mode and connection issues visible to users
@@ -79,8 +79,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md -- End station flow: complete_station Postgres function, endStation server action, broadcast redirect, readOnly ChatRoom mode
-- [ ] 04-02-PLAN.md -- Read-only navigation: tappable completed stations, page readOnly detection, connection status hook and indicator
+- [x] 04-01-PLAN.md -- End station flow: complete_station Postgres function, endStation server action, broadcast redirect, readOnly ChatRoom mode
+- [x] 04-02-PLAN.md -- Read-only navigation: tappable completed stations, page readOnly detection, connection status hook and indicator
 
 ### Phase 5: Export
 **Goal**: Admin can export all meeting discussions as a structured Markdown file for downstream processing
@@ -92,7 +92,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 05-01-PLAN.md -- Markdown export: Route Handler, builder function, admin page export button
+- [x] 05-01-PLAN.md -- Markdown export: Route Handler, builder function, admin page export button
 
 ## Progress
 
@@ -104,8 +104,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 1. Foundation and Authentication | 2/2 | Complete    | 2026-02-19 |
 | 2. Admin Panel | 3/3 | Complete    | 2026-02-19 |
 | 3. Station Chat and Timer | 2/2 | Complete | 2026-02-19 |
-| 4. Station Flow and Resilience | 0/2 | Not started | - |
-| 5. Export | 0/1 | Not started | - |
+| 4. Station Flow and Resilience | 2/2 | Complete | 2026-02-19 |
+| 5. Export | 1/1 | Complete | 2026-02-19 |
 
 ---
 *Roadmap created: 2026-02-19*
