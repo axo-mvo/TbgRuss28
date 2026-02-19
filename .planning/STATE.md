@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 Phase: 5 of 5 (Export) -- COMPLETE
 Plan: 1 of 1 in current phase (1 complete)
 Status: ALL PHASES COMPLETE
-Last activity: 2026-02-19 - Completed quick task 7: Reopen closed station with added time selection
+Last activity: 2026-02-19 - Completed quick task 8: Fix missing Norwegian special characters
 
 Progress: [##########] 100%
 
@@ -90,6 +90,7 @@ Recent decisions affecting current work:
 - [quick-7]: localReadOnly state (not prop) so ChatRoom transitions from completed to active without page reload
 - [quick-7]: Pass localReadOnly to useRealtimeChat so subscription activates automatically on reopen
 - [quick-7]: Inline button (not Button component) for Reopen in footer to avoid full-width min-height styling
+- [quick-8]: Fixed 3 additional files (layout.tsx, MessageList.tsx, build-markdown.ts) not in plan that had same ASCII approximation issue
 
 ### Pending Todos
 
@@ -106,6 +107,7 @@ None yet.
 | 5 | Replace youth waiting page with registered users overview | 2026-02-19 | 4a0f915 | [5-replace-youth-waiting-page-with-register](./quick/5-replace-youth-waiting-page-with-register/) |
 | 6 | Youth parent invite code with auto-match | 2026-02-19 | 5649a24 | [6-youth-parent-invite-code-with-auto-match](./quick/6-youth-parent-invite-code-with-auto-match/) |
 | 7 | Reopen closed station with added time selection | 2026-02-19 | 030c2d5 | [7-reopen-closed-station-with-added-time-se](./quick/7-reopen-closed-station-with-added-time-se/) |
+| 8 | Fix missing Norwegian special characters | 2026-02-19 | 5351364 | [8-fix-missing-norwegian-special-characters](./quick/8-fix-missing-norwegian-special-characters/) |
 
 ### Blockers/Concerns
 
@@ -115,5 +117,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed quick task 7: Reopen closed station with added time selection
-Resume file: .planning/quick/7-reopen-closed-station-with-added-time-se/7-SUMMARY.md
+Stopped at: Completed quick task 8: Fix missing Norwegian special characters
+Resume file: .planning/quick/8-fix-missing-norwegian-special-characters/8-SUMMARY.md
