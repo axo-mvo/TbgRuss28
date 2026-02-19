@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import CountdownTimer from './CountdownTimer'
+import ConnectionStatus from './ConnectionStatus'
 
 interface StationHeaderProps {
   stationTitle: string
@@ -48,6 +49,8 @@ export default function StationHeader({
         </p>
         <p className="text-sm font-semibold truncate">{stationTitle}</p>
       </div>
+
+      {!readOnly && <ConnectionStatus />}
 
       <div className="ml-3 flex items-center gap-2">
         {!readOnly && onEndStation && (
