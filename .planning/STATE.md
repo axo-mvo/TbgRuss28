@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Groups can have real-time discussions at stations with a visible timer and see each other's messages instantly
-**Current focus:** Phase 2 - Admin Panel
+**Current focus:** Phase 3 - Station Chat and Timer
 
 ## Current Position
 
-Phase: 2 of 5 (Admin Panel) -- Complete
-Plan: 3 of 3 in current phase (all complete)
-Status: Phase 02 complete, ready for Phase 03
-Last activity: 2026-02-19 -- Plan 02-03 executed
+Phase: 3 of 5 (Station Chat and Timer)
+Plan: 1 of 2 in current phase (1 complete)
+Status: Plan 03-01 complete, ready for Plan 03-02
+Last activity: 2026-02-19 -- Plan 03-01 executed
 
-Progress: [#####.....] 50%
+Progress: [######....] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
+- Total plans completed: 6
 - Average duration: 5min
-- Total execution time: 0.42 hours
+- Total execution time: 0.47 hours
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [#####.....] 50%
 |-------|-------|-------|----------|
 | 01 | 2 | 11min | 5.5min |
 | 02 | 3 | 14min | 4.7min |
+| 03 | 1 | 3min | 3min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (8min), 01-02 (3min), 02-01 (3min), 02-02 (4min), 02-03 (7min)
+- Last 5 plans: 01-02 (3min), 02-01 (3min), 02-02 (4min), 02-03 (7min), 03-01 (3min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -64,6 +65,10 @@ Recent decisions affecting current work:
 - [02-03]: Used useDroppable for containers and useSortable for items (dnd-kit/react multi-container pattern)
 - [02-03]: Mobile uses BottomSheet tap-to-assign instead of drag-and-drop for cleaner phone UX
 - [02-03]: Conflict check on drag-end reverts user to unassigned pool if parent-child violation detected
+- [03-01]: open_station uses SECURITY DEFINER Postgres function with FOR UPDATE row lock for atomicity
+- [03-01]: COALESCE on started_at/end_timestamp preserves first opener's timestamp in concurrent upserts
+- [03-01]: useRealtimeChat exposes setMessages for merging initial history from loadMessages
+- [03-01]: ChatMessage includes status field (sent/pending/error) for optimistic UI tracking
 
 ### Pending Todos
 
@@ -72,10 +77,10 @@ None yet.
 ### Blockers/Concerns
 
 - Supabase free tier Realtime limit is 200 concurrent connections; ~80 users with 2-3 subscriptions each could hit ~240. Consider Pro tier ($25/mo) as insurance before the event.
-- Broadcast authorization is channel-level, not row-level. Group isolation must be enforced via channel naming convention in Phase 3.
+- Broadcast authorization is channel-level, not row-level. Group isolation enforced via `station:{sessionId}` naming + RLS on realtime.messages (resolved in 03-01).
 
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 02-03-PLAN.md (Phase 02 complete)
-Resume file: .planning/phases/02-admin-panel/02-03-SUMMARY.md
+Stopped at: Completed 03-01-PLAN.md
+Resume file: .planning/phases/03-station-chat-and-timer/03-01-SUMMARY.md

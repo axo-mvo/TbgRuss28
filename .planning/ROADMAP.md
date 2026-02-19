@@ -65,7 +65,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md -- Station backend: DB migration (Realtime RLS, open_station function), server actions, React hooks (chat, timer, auto-scroll)
+- [x] 03-01-PLAN.md -- Station backend: DB migration (Realtime RLS, open_station function), server actions, React hooks (chat, timer, auto-scroll)
 - [ ] 03-02-PLAN.md -- Station UI: station selector on dashboard, chat page with messages, input, timer display, and full wiring
 
 ### Phase 4: Station Flow and Resilience
@@ -102,7 +102,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Foundation and Authentication | 0/2 | Complete    | 2026-02-19 |
 | 2. Admin Panel | 0/2 | Complete    | 2026-02-19 |
-| 3. Station Chat and Timer | 0/2 | Not started | - |
+| 3. Station Chat and Timer | 1/2 | In Progress | - |
 | 4. Station Flow and Resilience | 0/1 | Not started | - |
 | 5. Export | 0/1 | Not started | - |
 

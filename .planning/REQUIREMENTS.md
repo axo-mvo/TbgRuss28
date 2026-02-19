@@ -27,17 +27,17 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Station Chat
 
 - [ ] **CHAT-01**: Participant sees 6 station cards with per-group status (available/active/completed)
-- [ ] **CHAT-02**: Participant can open an available station to enter real-time group chat
-- [ ] **CHAT-03**: Messages appear instantly for all group members via Supabase Broadcast
+- [x] **CHAT-02**: Participant can open an available station to enter real-time group chat
+- [x] **CHAT-03**: Messages appear instantly for all group members via Supabase Broadcast
 - [ ] **CHAT-04**: Each message shows sender name, role badge (youth/parent), timestamp, and content
 - [ ] **CHAT-05**: Own messages are visually differentiated from others
-- [ ] **CHAT-06**: Chat auto-scrolls to newest message unless user has scrolled up
-- [ ] **CHAT-07**: Only one station can be active per group at a time
+- [x] **CHAT-06**: Chat auto-scrolls to newest message unless user has scrolled up
+- [x] **CHAT-07**: Only one station can be active per group at a time
 
 ### Timer
 
-- [ ] **TIMR-01**: 15-minute countdown starts when first group member opens a station
-- [ ] **TIMR-02**: All group members see the same synchronized countdown (server-timestamp based)
+- [x] **TIMR-01**: 15-minute countdown starts when first group member opens a station
+- [x] **TIMR-02**: All group members see the same synchronized countdown (server-timestamp based)
 - [ ] **TIMR-03**: Timer changes color: white >5min, yellow 1-5min, red <1min
 - [ ] **TIMR-04**: At 0:00 timer shows "Tiden er ute!" — chat remains open (soft deadline)
 
@@ -116,14 +116,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ADMN-05 | Phase 2 | Complete |
 | ADMN-06 | Phase 2 | Complete |
 | CHAT-01 | Phase 3 | Pending |
-| CHAT-02 | Phase 3 | Pending |
-| CHAT-03 | Phase 3 | Pending |
+| CHAT-02 | Phase 3 | Complete |
+| CHAT-03 | Phase 3 | Complete |
 | CHAT-04 | Phase 3 | Pending |
 | CHAT-05 | Phase 3 | Pending |
-| CHAT-06 | Phase 3 | Pending |
-| CHAT-07 | Phase 3 | Pending |
-| TIMR-01 | Phase 3 | Pending |
-| TIMR-02 | Phase 3 | Pending |
+| CHAT-06 | Phase 3 | Complete |
+| CHAT-07 | Phase 3 | Complete |
+| TIMR-01 | Phase 3 | Complete |
+| TIMR-02 | Phase 3 | Complete |
 | TIMR-03 | Phase 3 | Pending |
 | TIMR-04 | Phase 3 | Pending |
 | FLOW-01 | Phase 4 | Pending |
