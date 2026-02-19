@@ -240,12 +240,12 @@ export default function GroupBuilder({
           disabled={locking}
           className="w-auto"
         >
-          {locked ? 'Las opp grupper' : 'Las grupper'}
+          {locked ? 'Lås opp grupper' : 'Lås grupper'}
         </Button>
 
         {locked && (
           <Badge variant="admin" className="bg-success/10 text-success">
-            Grupper er last
+            Grupper er låst
           </Badge>
         )}
       </div>
@@ -366,13 +366,13 @@ export default function GroupBuilder({
         open={showLockDialog}
         onClose={() => setShowLockDialog(false)}
         onConfirm={handleToggleLock}
-        title={locked ? 'Las opp grupper?' : 'Las grupper?'}
+        title={locked ? 'Lås opp grupper?' : 'Lås grupper?'}
         description={
           locked
-            ? 'Gruppene vil bli last opp og deltakerne vil ikke lenger se gruppeinndelingen sin.'
-            : 'Er du sikker? Deltakerne vil se gruppeinndelingen sin pa dashbordet.'
+            ? 'Gruppene vil bli låst opp og deltakerne vil ikke lenger se gruppeinndelingen sin.'
+            : 'Er du sikker? Deltakerne vil se gruppeinndelingen sin på dashbordet.'
         }
-        confirmLabel={locked ? 'Las opp' : 'Las grupper'}
+        confirmLabel={locked ? 'Lås opp' : 'Lås grupper'}
         loading={locking}
       />
 
@@ -384,7 +384,7 @@ export default function GroupBuilder({
           if (showDeleteGroupDialog) handleDeleteGroup(showDeleteGroupDialog)
         }}
         title="Slett gruppe?"
-        description={`Er du sikker pa at du vil slette gruppen "${showDeleteGroupDialog ? groupNames[showDeleteGroupDialog] || '' : ''}"?`}
+        description={`Er du sikker på at du vil slette gruppen "${showDeleteGroupDialog ? groupNames[showDeleteGroupDialog] || '' : ''}"?`}
         confirmLabel="Slett"
         confirmVariant="danger"
       />

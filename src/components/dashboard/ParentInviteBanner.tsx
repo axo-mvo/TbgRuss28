@@ -9,7 +9,7 @@ interface ParentInviteBannerProps {
 export default function ParentInviteBanner({ inviteCode }: ParentInviteBannerProps) {
   const [copied, setCopied] = useState(false)
 
-  const message = `Registrer deg som deltager pa fellsmotet pa onsdag pa www.russ28.no bruk koden ${inviteCode}`
+  const message = `Registrer deg som deltager på fellesmøtet på onsdag på www.russ28.no bruk koden ${inviteCode}`
   const smsHref = `sms:?body=${encodeURIComponent(message)}`
 
   async function handleCopy() {

@@ -116,7 +116,7 @@ export default async function DashboardPage() {
             <p className="text-sm text-text-muted mb-1">Din gruppe</p>
             <p className="text-xl font-bold text-text-primary">{group.name}</p>
             <p className="text-sm text-text-muted mt-2">
-              Du er tildelt denne gruppen for fellesmote-diskusjonene
+              Du er tildelt denne gruppen for fellesmøte-diskusjonene
             </p>
           </div>
         )}
@@ -136,7 +136,7 @@ export default async function DashboardPage() {
             )}
             {!membership && (
               <p className="text-text-muted mb-4">
-                Du er ikke tildelt en gruppe enna. Kontakt admin.
+                Du er ikke tildelt en gruppe ennå. Kontakt admin.
               </p>
             )}
             <RegisteredUsersOverview youth={youthWithParents} />

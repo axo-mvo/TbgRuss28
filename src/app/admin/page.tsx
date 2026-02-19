@@ -43,7 +43,7 @@ export default function AdminPage() {
               <h2 className="text-lg font-semibold text-text-primary">Grupper</h2>
             </div>
             <p className="text-sm text-text-muted">
-              Opprett grupper, tildel medlemmer og las gruppene
+              Opprett grupper, tildel medlemmer og lås gruppene
             </p>
           </Link>
 

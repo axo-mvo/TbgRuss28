@@ -55,7 +55,7 @@ export default function ParentLinkSheet({
     >
       {allYouth.length === 0 ? (
         <EmptyState
-          title="Ingen ungdommer registrert enna"
+          title="Ingen ungdommer registrert ennå"
         />
       ) : (
         <div>

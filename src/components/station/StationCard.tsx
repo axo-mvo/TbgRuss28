@@ -22,7 +22,7 @@ const statusStyles: Record<StationStatus, string> = {
 const statusLabels: Record<StationStatus, { text: string; className: string }> = {
   available: { text: 'Tilgjengelig', className: 'text-teal-primary bg-teal-primary/10' },
   active: { text: 'Aktiv', className: 'text-coral bg-coral/10' },
-  completed: { text: 'Fullfort', className: 'text-text-muted bg-text-muted/10' },
+  completed: { text: 'Fullført', className: 'text-text-muted bg-text-muted/10' },
 }
 
 export default function StationCard({
@@ -61,7 +61,7 @@ export default function StationCard({
         <span
           className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${label.className}`}
         >
-          {loading ? 'Apner...' : label.text}
+          {loading ? 'Åpner...' : label.text}
         </span>
       </div>
     </button>

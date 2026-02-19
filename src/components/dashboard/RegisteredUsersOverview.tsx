@@ -21,7 +21,7 @@ export default function RegisteredUsersOverview({
           Registrerte deltakere
         </h2>
         <EmptyState
-          title="Ingen ungdommer registrert enna"
+          title="Ingen ungdommer registrert ennå"
           description="Deltakere vises her etter registrering."
         />
       </section>

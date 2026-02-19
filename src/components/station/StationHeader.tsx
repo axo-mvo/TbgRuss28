@@ -64,7 +64,7 @@ export default function StationHeader({
         )}
         {readOnly ? (
           <span className="text-xs px-2 py-1 rounded-md bg-white/15 opacity-70">
-            Fullfort
+            Fullført
           </span>
         ) : (
           <CountdownTimer endTimestamp={endTimestamp} />

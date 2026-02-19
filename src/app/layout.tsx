@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Buss 2028 Fellesmote",
-  description: "Diskusjonsapp for fellesmote",
+  title: "Buss 2028 Fellesmøte",
+  description: "Diskusjonsapp for fellesmøte",
 };
 
 export default function RootLayout({

@@ -160,7 +160,7 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
         <SearchInput
           value={searchQuery}
           onChange={setSearchQuery}
-          placeholder="Sok etter bruker..."
+          placeholder="Søk etter bruker..."
         />
         <EmptyState
           title="Ingen brukere registrert"
@@ -177,14 +177,14 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
         <SearchInput
           value={searchQuery}
           onChange={setSearchQuery}
-          placeholder="Sok etter bruker..."
+          placeholder="Søk etter bruker..."
         />
       </div>
 
       {filteredUsers.length === 0 ? (
         <EmptyState
           title="Ingen brukere funnet"
-          description="Prov et annet sokeord"
+          description="Prøv et annet søkeord"
         />
       ) : (
         <>
@@ -362,7 +362,7 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
             Endre rolle for {editRoleUser?.name}
           </h2>
           <p className="text-text-muted text-sm mb-4">
-            Navarende rolle: {editRoleUser ? roleLabels[editRoleUser.currentRole] : ''}
+            Nåværende rolle: {editRoleUser ? roleLabels[editRoleUser.currentRole] : ''}
           </p>
 
           {/* Role selection */}
@@ -424,7 +424,7 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
         }}
         onConfirm={handleDelete}
         title="Slett bruker"
-        description={`Er du sikker pa at du vil slette ${deleteUserTarget?.name}? Dette vil fjerne brukeren fra alle grupper.`}
+        description={`Er du sikker på at du vil slette ${deleteUserTarget?.name}? Dette vil fjerne brukeren fra alle grupper.`}
         confirmLabel="Slett"
         confirmVariant="danger"
         loading={loading}

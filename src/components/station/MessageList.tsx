@@ -10,7 +10,7 @@ export default function MessageList({ messages, currentUserId }: MessageListProp
   if (messages.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-text-muted">Ingen meldinger enna</p>
+        <p className="text-sm text-text-muted">Ingen meldinger ennå</p>
       </div>
     )
   }

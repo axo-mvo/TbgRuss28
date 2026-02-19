@@ -37,10 +37,10 @@ export default function ReopenDialog({
     >
       <div className="p-5">
         <h2 className="text-lg font-bold text-text-primary mb-1">
-          Gjenapne stasjon?
+          Gjenåpne stasjon?
         </h2>
         <p className="text-text-muted text-sm mb-4">
-          Velg hvor mye ekstra tid gruppen far.
+          Velg hvor mye ekstra tid gruppen får.
         </p>
 
         {/* Time selection pills */}
@@ -72,7 +72,7 @@ export default function ReopenDialog({
             disabled={loading}
             className="flex-1"
           >
-            {loading ? 'Apner...' : 'Gjenapne'}
+            {loading ? 'Åpner...' : 'Gjenåpne'}
           </Button>
         </div>
       </div>

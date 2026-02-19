@@ -183,7 +183,7 @@ export default function ChatRoom({
             </h2>
             {stationQuestions && stationQuestions.length > 0 && (
               <div className="mb-4 p-4 rounded-xl bg-teal-primary/5 border border-teal-primary/10">
-                <p className="text-sm font-semibold text-teal-primary mb-2">Diskusjonssporsmal:</p>
+                <p className="text-sm font-semibold text-teal-primary mb-2">Diskusjonsspørsmål:</p>
                 <ul className="space-y-2">
                   {stationQuestions.map((q, i) => (
                     <li key={i} className="text-sm text-text-primary pl-3 border-l-2 border-teal-primary/30">
@@ -203,7 +203,7 @@ export default function ChatRoom({
           </div>
 
           <p className="text-sm text-text-muted text-center mb-4">
-            Nar dere er klare, trykk start for a begynne diskusjonen. Nedtellingen starter da.
+            Når dere er klare, trykk start for å begynne diskusjonen. Nedtellingen starter da.
           </p>
         </div>
 
@@ -268,7 +268,7 @@ export default function ChatRoom({
             onClick={() => setShowReopenDialog(true)}
             className="text-xs px-3 py-1.5 rounded-lg font-medium bg-teal-primary text-white hover:bg-teal-secondary transition-colors"
           >
-            Gjenapne
+            Gjenåpne
           </button>
         </div>
       ) : (
@@ -280,7 +280,7 @@ export default function ChatRoom({
         onClose={() => setShowEndDialog(false)}
         onConfirm={handleEndStation}
         title="Avslutt stasjon?"
-        description="Er du sikker pa at du vil avslutte? Alle gruppemedlemmer sendes tilbake til stasjonsoversikten."
+        description="Er du sikker på at du vil avslutte? Alle gruppemedlemmer sendes tilbake til stasjonsoversikten."
         confirmLabel="Avslutt"
         confirmVariant="danger"
         loading={ending}

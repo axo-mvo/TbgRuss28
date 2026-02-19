@@ -16,7 +16,7 @@ function groupBy<T>(items: T[], keyFn: (item: T) => string | number): Record<str
 }
 
 export function buildExportMarkdown(messages: ExportMessage[]): string {
-  let md = '# Fellesmote - Eksport\n\n'
+  let md = '# Fellesmøte - Eksport\n\n'
   md += `Eksportert: ${new Date().toLocaleString('nb-NO')}\n\n`
   md += '---\n\n'
 
