@@ -1,8 +1,5 @@
 export interface ExportMessage {
   content: string
-  createdAt: string
-  authorName: string
-  authorRole: string
   stationNumber: number
   stationTitle: string
   groupName: string
@@ -16,12 +13,6 @@ function groupBy<T>(items: T[], keyFn: (item: T) => string | number): Record<str
     result[key].push(item)
   }
   return result
-}
-
-const ROLE_LABELS: Record<string, string> = {
-  parent: 'forelder',
-  youth: 'ungdom',
-  admin: 'admin',
 }
 
 export function buildExportMarkdown(messages: ExportMessage[]): string {
@@ -51,15 +42,9 @@ export function buildExportMarkdown(messages: ExportMessage[]): string {
 
     for (const groupKey of groupKeys) {
       const groupMsgs = byGroup[groupKey]
-      md += `## ${groupKey}\n\n`
+      md += `## Gruppe: ${groupKey}\n\n`
 
       for (const msg of groupMsgs) {
-        const time = new Date(msg.createdAt).toLocaleTimeString('nb-NO', {
-          hour: '2-digit',
-          minute: '2-digit',
-        })
-        const role = ROLE_LABELS[msg.authorRole] ?? msg.authorRole
-        md += `**${msg.authorName}** (${role}) - ${time}\n`
         md += `${msg.content}\n\n`
       }
     }

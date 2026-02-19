@@ -28,8 +28,7 @@ export async function GET() {
   const { data, error } = await admin
     .from('messages')
     .select(`
-      id, content, created_at,
-      profiles:user_id ( full_name, role ),
+      id, content,
       station_sessions:session_id (
         stations:station_id ( number, title ),
         groups:group_id ( name )
@@ -44,7 +43,6 @@ export async function GET() {
   // ---------- Transform data ----------
   const messages: ExportMessage[] = (data ?? []).map((msg) => {
     // PostgREST joins may return object or array -- handle both defensively
-    const profileData = Array.isArray(msg.profiles) ? msg.profiles[0] : msg.profiles
     const sessionData = Array.isArray(msg.station_sessions)
       ? msg.station_sessions[0]
       : msg.station_sessions
@@ -58,9 +56,6 @@ export async function GET() {
 
     return {
       content: msg.content,
-      createdAt: msg.created_at,
-      authorName: profileData?.full_name ?? 'Ukjent',
-      authorRole: profileData?.role ?? 'youth',
       stationNumber: stationData?.number ?? 0,
       stationTitle: stationData?.title ?? 'Ukjent stasjon',
       groupName: groupData?.name ?? 'Ukjent gruppe',
