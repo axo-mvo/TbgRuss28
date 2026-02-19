@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useRealtimeChat, type ChatMessage } from '@/lib/hooks/useRealtimeChat'
 import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
-import { sendMessage, endStation, openStation } from '@/lib/actions/station'
+import { sendMessage, endStation, openStation, reopenStation } from '@/lib/actions/station'
 import Dialog from '@/components/ui/Dialog'
 import Button from '@/components/ui/Button'
 import StationHeader from './StationHeader'
 import MessageList from './MessageList'
 import ChatInput from './ChatInput'
+import ReopenDialog from './ReopenDialog'
 
 interface ChatRoomProps {
   sessionId: string
@@ -48,12 +49,15 @@ export default function ChatRoom({
   const [localEndTimestamp, setLocalEndTimestamp] = useState(endTimestamp)
   const [showEndDialog, setShowEndDialog] = useState(false)
   const [ending, setEnding] = useState(false)
+  const [localReadOnly, setLocalReadOnly] = useState(readOnly)
+  const [showReopenDialog, setShowReopenDialog] = useState(false)
+  const [reopening, setReopening] = useState(false)
 
-  const { messages, setMessages, sendBroadcast, channelRef } = useRealtimeChat(
+  const { messages, setMessages, sendBroadcast, channelRef, connected } = useRealtimeChat(
     sessionId,
     userId,
     {
-      readOnly,
+      readOnly: localReadOnly,
       onStationEnded: () => {
         // Unsubscribe channel before navigating to prevent state updates
         // on unmounted components during the navigation transition
@@ -143,6 +147,23 @@ export default function ChatRoom({
     router.push('/dashboard')
   }
 
+  async function handleReopen(minutes: number) {
+    setReopening(true)
+    const result = await reopenStation(sessionId, minutes)
+    if (result.error) {
+      console.error('Failed to reopen station:', result.error)
+      setReopening(false)
+      return
+    }
+    if (result.endTimestamp) {
+      setLocalEndTimestamp(result.endTimestamp)
+    }
+    setLocalReadOnly(false)
+    setStarted(true)
+    setShowReopenDialog(false)
+    setReopening(false)
+  }
+
   // Pre-start view: show station context and "Start diskusjon" button
   if (!started) {
     return (
@@ -205,9 +226,9 @@ export default function ChatRoom({
       <StationHeader
         stationTitle={stationTitle}
         stationNumber={stationNumber}
-        endTimestamp={localEndTimestamp}
-        onEndStation={readOnly ? undefined : () => setShowEndDialog(true)}
-        readOnly={readOnly}
+        endTimestamp={localReadOnly ? null : localEndTimestamp}
+        onEndStation={localReadOnly ? undefined : () => setShowEndDialog(true)}
+        readOnly={localReadOnly}
       />
 
       {/* Scrollable message area */}
@@ -239,12 +260,19 @@ export default function ChatRoom({
         <div ref={sentinelRef} />
       </div>
 
-      {readOnly ? (
-        <div className="px-4 py-3 bg-text-muted/10 text-center text-sm text-text-muted border-t border-text-muted/10">
-          Diskusjonen er avsluttet
+      {localReadOnly ? (
+        <div className="px-4 py-3 bg-text-muted/10 border-t border-text-muted/10 flex items-center justify-between">
+          <span className="text-sm text-text-muted">Diskusjonen er avsluttet</span>
+          <button
+            type="button"
+            onClick={() => setShowReopenDialog(true)}
+            className="text-xs px-3 py-1.5 rounded-lg font-medium bg-teal-primary text-white hover:bg-teal-secondary transition-colors"
+          >
+            Gjenapne
+          </button>
         </div>
       ) : (
-        <ChatInput onSend={handleSend} />
+        <ChatInput onSend={handleSend} disabled={!connected} />
       )}
 
       <Dialog
@@ -256,6 +284,13 @@ export default function ChatRoom({
         confirmLabel="Avslutt"
         confirmVariant="danger"
         loading={ending}
+      />
+
+      <ReopenDialog
+        open={showReopenDialog}
+        onClose={() => setShowReopenDialog(false)}
+        onConfirm={handleReopen}
+        loading={reopening}
       />
     </div>
   )
