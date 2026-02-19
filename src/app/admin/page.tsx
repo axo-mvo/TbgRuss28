@@ -46,6 +46,24 @@ export default function AdminPage() {
               Opprett grupper, tildel medlemmer og las gruppene
             </p>
           </Link>
+
+          <a
+            href="/api/export"
+            download
+            className="block rounded-xl border border-gray-200 bg-white p-5 shadow-sm
+              hover:border-teal-primary hover:shadow-md transition-all"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <svg className="h-6 w-6 text-teal-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h2 className="text-lg font-semibold text-text-primary">Eksporter samtaler</h2>
+            </div>
+            <p className="text-sm text-text-muted">
+              Last ned alle diskusjoner som Markdown-fil
+            </p>
+          </a>
         </div>
 
         <form action={logout}>
