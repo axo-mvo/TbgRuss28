@@ -13,7 +13,7 @@ This roadmap delivers a real-time group discussion webapp for ~80 users (youth, 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation and Authentication** - Project setup, Supabase schema, invite-code registration, login, role-based routing, and base UI with design system (completed 2026-02-19)
-- [ ] **Phase 2: Admin Panel** - User management, parent-child linking view, group creation/assignment, and meeting-day group locking
+- [x] **Phase 2: Admin Panel** - User management, parent-child linking view, group creation/assignment, and meeting-day group locking (completed 2026-02-19)
 - [ ] **Phase 3: Station Chat and Timer** - Station selector dashboard, real-time group chat via Supabase Broadcast, synchronized 15-minute countdown timer, and message display
 - [ ] **Phase 4: Station Flow and Resilience** - End-station confirmation, group-wide redirect, completed station read-only mode, and connection status indicator
 - [ ] **Phase 5: Export** - Admin Markdown export of all conversations grouped by station and group
@@ -102,7 +102,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation and Authentication | 0/2 | Complete    | 2026-02-19 |
-| 2. Admin Panel | 0/2 | Not started | - |
+| 2. Admin Panel | 0/2 | Complete    | 2026-02-19 |
 | 3. Station Chat and Timer | 0/3 | Not started | - |
 | 4. Station Flow and Resilience | 0/1 | Not started | - |
 | 5. Export | 0/1 | Not started | - |
