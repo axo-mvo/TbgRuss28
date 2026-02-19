@@ -89,10 +89,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Admin can trigger an export that generates a Markdown file containing all conversations
   2. The export is organized by station, then by group within each station, with timestamps and author information preserved
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 05-01: TBD
+- [ ] 05-01-PLAN.md -- Markdown export: Route Handler, builder function, admin page export button
 
 ## Progress
 
