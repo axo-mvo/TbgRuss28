@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 Phase: 5 of 5 (Export) -- COMPLETE
 Plan: 1 of 1 in current phase (1 complete)
 Status: ALL PHASES COMPLETE
-Last activity: 2026-02-19 - Completed quick task 1: Realtime dashboard station status and explicit start button
+Last activity: 2026-02-19 - Completed quick task 2: Fix chat messages not appearing
 
 Progress: [##########] 100%
 
@@ -92,6 +92,7 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 1 | Realtime dashboard station status and explicit start button | 2026-02-19 | 7482864 | [1-realtime-dashboard-station-status-and-ex](./quick/1-realtime-dashboard-station-status-and-ex/) |
+| 2 | Fix chat messages not appearing - add optimistic message before broadcast | 2026-02-19 | 0a2abbd | [2-fix-chat-messages-not-appearing-add-opti](./quick/2-fix-chat-messages-not-appearing-add-opti/) |
 
 ### Blockers/Concerns
 
