@@ -53,6 +53,14 @@ export default function StationSelector({
   async function handleOpen(stationId: string) {
     const status = getStatus(stationId)
 
+    if (status === 'completed') {
+      const sessionId = getSessionId(stationId)
+      if (sessionId) {
+        router.push(`/dashboard/station/${sessionId}`)
+      }
+      return
+    }
+
     if (status === 'active') {
       const sessionId = getSessionId(stationId)
       if (sessionId) {

@@ -16,7 +16,7 @@ interface StationCardProps {
 const statusStyles: Record<StationStatus, string> = {
   available: 'border-teal-primary/20 bg-warm-white',
   active: 'border-coral/50 bg-coral/5',
-  completed: 'border-text-muted/20 bg-text-muted/5 opacity-60',
+  completed: 'border-text-muted/20 bg-text-muted/5 opacity-75',
 }
 
 const statusLabels: Record<StationStatus, { text: string; className: string }> = {
@@ -32,7 +32,7 @@ export default function StationCard({
   disabled,
   loading = false,
 }: StationCardProps) {
-  const isTappable = status !== 'completed' && !disabled
+  const isTappable = status === 'completed' || !disabled
   const label = statusLabels[status]
 
   return (
@@ -51,9 +51,12 @@ export default function StationCard({
           <p className="text-xs font-medium text-text-muted mb-0.5">
             Stasjon {station.number}
           </p>
-          <p className="text-sm font-semibold text-text-primary truncate">
+          <p className="text-sm font-semibold text-text-primary">
             {station.title}
           </p>
+          {status === 'completed' && (
+            <p className="text-[10px] text-text-muted mt-0.5">Se samtale</p>
+          )}
         </div>
         <span
           className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${label.className}`}

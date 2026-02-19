@@ -68,6 +68,9 @@ export default async function StationPage({ params }: StationPageProps) {
   // Load initial messages
   const { messages: initialMessages } = await loadMessages(sessionId)
 
+  // Determine read-only mode for completed stations
+  const isReadOnly = session.status === 'completed'
+
   // Map to ChatMessage format with status field
   const formattedMessages: ChatMessage[] = (initialMessages ?? []).map((m) => ({
     ...m,
@@ -80,12 +83,13 @@ export default async function StationPage({ params }: StationPageProps) {
       userId={user.id}
       userFullName={profile?.full_name ?? 'Bruker'}
       userRole={(profile?.role === 'parent' ? 'parent' : 'youth') as 'youth' | 'parent'}
-      endTimestamp={session.end_timestamp}
+      endTimestamp={isReadOnly ? null : session.end_timestamp}
       stationTitle={station.title}
       stationNumber={station.number}
       stationQuestions={station.questions}
       stationTip={station.tip}
       initialMessages={formattedMessages}
+      readOnly={isReadOnly}
     />
   )
 }
