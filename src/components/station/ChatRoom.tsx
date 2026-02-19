@@ -104,7 +104,10 @@ export default function ChatRoom({
       status: 'pending',
     }
 
-    // Broadcast to all channel subscribers (including self)
+    // Add to local state immediately for instant sender feedback
+    setMessages((prev) => [...prev, optimisticMessage])
+
+    // Broadcast to other group members (self-receive will deduplicate by ID)
     sendBroadcast(optimisticMessage)
 
     // Persist via server action (fire-and-forget)
