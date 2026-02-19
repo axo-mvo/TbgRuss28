@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { logout } from '@/lib/actions/auth'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import StationSelector from '@/components/station/StationSelector'
+import RegisteredUsersOverview from '@/components/dashboard/RegisteredUsersOverview'
 
 const roleLabels: Record<string, string> = {
   youth: 'Ungdom',
@@ -53,6 +55,31 @@ export default async function DashboardPage() {
     sessions = data || []
   }
 
+  // Fetch all youth with their linked parents (admin client bypasses RLS)
+  const adminClient = createAdminClient()
+
+  const { data: allYouth } = await adminClient
+    .from('profiles')
+    .select('id, full_name')
+    .eq('role', 'youth')
+    .order('full_name')
+
+  const { data: allLinks } = await adminClient
+    .from('parent_youth_links')
+    .select(`
+      youth_id,
+      parent:profiles!parent_youth_links_parent_id_fkey(id, full_name)
+    `)
+
+  const youthWithParents = (allYouth ?? []).map((y) => ({
+    id: y.id,
+    full_name: y.full_name,
+    parents: (allLinks ?? [])
+      .filter((l) => l.youth_id === y.id)
+      .map((l) => l.parent as unknown as { id: string; full_name: string })
+      .filter(Boolean),
+  }))
+
   const fullName = profile?.full_name || 'Bruker'
   const role = profile?.role || 'youth'
   const badgeVariant = (role === 'youth' || role === 'parent' || role === 'admin')
@@ -95,11 +122,14 @@ export default async function DashboardPage() {
             />
           </div>
         ) : (
-          <p className="text-text-muted mb-8">
-            {!membership
-              ? 'Du er ikke tildelt en gruppe enna. Kontakt admin.'
-              : 'Dashbordet er under utvikling. Stasjoner og gruppechat kommer snart.'}
-          </p>
+          <div className="mb-8">
+            {!membership && (
+              <p className="text-text-muted mb-4">
+                Du er ikke tildelt en gruppe enna. Kontakt admin.
+              </p>
+            )}
+            <RegisteredUsersOverview youth={youthWithParents} />
+          </div>
         )}
 
         <form action={logout}>
