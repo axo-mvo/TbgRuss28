@@ -26,11 +26,24 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
+  // Query group membership with group details
+  const { data: membership } = await supabase
+    .from('group_members')
+    .select(`
+      group:groups!inner(id, name, locked)
+    `)
+    .eq('user_id', user.id)
+    .maybeSingle()
+
   const fullName = profile?.full_name || 'Bruker'
   const role = profile?.role || 'youth'
   const badgeVariant = (role === 'youth' || role === 'parent' || role === 'admin')
     ? role as 'youth' | 'parent' | 'admin'
     : 'youth'
+
+  // Type-safe access to group data (Supabase returns object for !inner join with maybeSingle)
+  const group = membership?.group as unknown as { id: string; name: string; locked: boolean } | null
+  const isGroupLocked = group?.locked === true
 
   return (
     <div className="min-h-dvh p-4">
@@ -46,8 +59,23 @@ export default async function DashboardPage() {
           Du er logget inn som {roleLabels[role]?.toLowerCase() || role}.
         </p>
 
+        {/* Group assignment card -- shown when groups are locked */}
+        {isGroupLocked && group && (
+          <div className="mb-6 p-5 rounded-xl border-2 border-teal-primary/30 bg-teal-primary/5">
+            <p className="text-sm text-text-muted mb-1">Din gruppe</p>
+            <p className="text-xl font-bold text-text-primary">{group.name}</p>
+            <p className="text-sm text-text-muted mt-2">
+              Du er tildelt denne gruppen for fellesmote-diskusjonene
+            </p>
+          </div>
+        )}
+
         <p className="text-text-muted mb-8">
-          Dashbordet er under utvikling. Stasjoner og gruppechat kommer snart.
+          {isGroupLocked
+            ? 'Stasjoner og gruppechat blir tilgjengelig nar fellesmotet starter.'
+            : !membership
+              ? 'Du er ikke tildelt en gruppe enna. Kontakt admin.'
+              : 'Dashbordet er under utvikling. Stasjoner og gruppechat kommer snart.'}
         </p>
 
         <form action={logout}>
