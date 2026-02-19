@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 ## Current Position
 
 Phase: 1 of 5 (Foundation and Authentication)
-Plan: 0 of 2 in current phase
-Status: Ready to plan
-Last activity: 2026-02-19 -- Roadmap created (5 phases, 31 requirements mapped)
+Plan: 1 of 2 in current phase
+Status: Executing
+Last activity: 2026-02-19 -- Completed 01-01-PLAN.md (foundation scaffold)
 
-Progress: [..........] 0%
+Progress: [#.........] 10%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: 8min
+- Total execution time: 0.13 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01 | 1 | 8min | 8min |
 
 **Recent Trend:**
-- Last 5 plans: none yet
+- Last 5 plans: 01-01 (8min)
 - Trend: -
 
 *Updated after each plan completion*
@@ -46,6 +46,9 @@ Recent decisions affecting current work:
 - [Roadmap]: Supabase Broadcast for real-time chat delivery, direct DB inserts for persistence (two-path approach)
 - [Roadmap]: Server-timestamp timer sync (store end_timestamp, clients compute remaining)
 - [Roadmap]: Auth middleware must use getUser() not getSession()
+- [01-01]: Pinned Next.js to v15.5 (create-next-app defaults to v16)
+- [01-01]: getClaims() with getUser() fallback in middleware (runtime version check)
+- [01-01]: Rewrote ESLint config for Next.js 15 compatibility
 
 ### Pending Todos
 
@@ -59,5 +62,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Roadmap created, ready to plan Phase 1
-Resume file: None
+Stopped at: Completed 01-01-PLAN.md
+Resume file: .planning/phases/01-foundation-and-authentication/01-01-SUMMARY.md

@@ -13,7 +13,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **AUTH-02**: Invite code determines user role (youth or parent)
 - [ ] **AUTH-03**: Parent can select their child(ren) from registered youth during registration
 - [ ] **AUTH-04**: User can log in with email/password
-- [ ] **AUTH-05**: User is routed to admin dashboard or participant dashboard based on role
+- [x] **AUTH-05**: User is routed to admin dashboard or participant dashboard based on role
 
 ### Admin
 
@@ -55,9 +55,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Design
 
-- [ ] **DSGN-01**: Mobile-first responsive layout (primary device is phone)
-- [ ] **DSGN-02**: Norwegian (bokmal) UI text throughout
-- [ ] **DSGN-03**: Color palette: dark teal primary (#1B4D5C), coral accent (#E8734A), warm white bg (#FBF8F4)
+- [x] **DSGN-01**: Mobile-first responsive layout (primary device is phone)
+- [x] **DSGN-02**: Norwegian (bokmal) UI text throughout
+- [x] **DSGN-03**: Color palette: dark teal primary (#1B4D5C), coral accent (#E8734A), warm white bg (#FBF8F4)
 
 ## v2 Requirements
 
@@ -108,7 +108,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-02 | Phase 1 | Pending |
 | AUTH-03 | Phase 1 | Pending |
 | AUTH-04 | Phase 1 | Pending |
-| AUTH-05 | Phase 1 | Pending |
+| AUTH-05 | Phase 1 | Complete |
 | ADMN-01 | Phase 2 | Pending |
 | ADMN-02 | Phase 2 | Pending |
 | ADMN-03 | Phase 2 | Pending |
@@ -132,9 +132,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FLOW-04 | Phase 4 | Pending |
 | EXPT-01 | Phase 5 | Pending |
 | EXPT-02 | Phase 5 | Pending |
-| DSGN-01 | Phase 1 | Pending |
-| DSGN-02 | Phase 1 | Pending |
-| DSGN-03 | Phase 1 | Pending |
+| DSGN-01 | Phase 1 | Complete |
+| DSGN-02 | Phase 1 | Complete |
+| DSGN-03 | Phase 1 | Complete |
 
 **Coverage:**
 - v1 requirements: 31 total
