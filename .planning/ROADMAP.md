@@ -62,12 +62,11 @@ Plans:
   3. Chat auto-scrolls to newest message unless the user has scrolled up to read history
   4. A 15-minute countdown starts when the first group member opens a station, all group members see the same synchronized time, and the timer changes color (white above 5 min, yellow 1-5 min, red below 1 min)
   5. At 0:00 the timer displays "Tiden er ute!" and chat remains open (soft deadline)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
-- [ ] 03-03: TBD
+- [ ] 03-01-PLAN.md -- Station backend: DB migration (Realtime RLS, open_station function), server actions, React hooks (chat, timer, auto-scroll)
+- [ ] 03-02-PLAN.md -- Station UI: station selector on dashboard, chat page with messages, input, timer display, and full wiring
 
 ### Phase 4: Station Flow and Resilience
 **Goal**: Groups can complete stations and move through the rotation, with completed stations viewable in read-only mode and connection issues visible to users
@@ -103,7 +102,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Foundation and Authentication | 0/2 | Complete    | 2026-02-19 |
 | 2. Admin Panel | 0/2 | Complete    | 2026-02-19 |
-| 3. Station Chat and Timer | 0/3 | Not started | - |
+| 3. Station Chat and Timer | 0/2 | Not started | - |
 | 4. Station Flow and Resilience | 0/1 | Not started | - |
 | 5. Export | 0/1 | Not started | - |
 
