@@ -30,11 +30,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can log in with email/password and is automatically routed to admin dashboard (if admin) or participant dashboard (if youth/parent)
   4. All UI text is in Norwegian (bokmal), the color palette matches the spec (dark teal, coral, warm white), and the layout works on mobile phones
   5. Supabase project is configured with database schema, RLS policies, three-client pattern (browser/server/admin), and auth middleware using getUser()
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Project setup, Supabase infrastructure, Tailwind v4 design system, and database migrations
+- [ ] 01-02-PLAN.md — Registration flow, login flow, and role-based routing with layout guards
 
 ### Phase 2: Admin Panel
 **Goal**: Admin can manage users, view parent-child links, create groups with parent-follows-child logic, and lock groups so participants see their assignment
