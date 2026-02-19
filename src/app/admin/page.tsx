@@ -12,6 +12,13 @@ export default function AdminPage() {
           <Badge variant="admin">Admin</Badge>
         </div>
 
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1 text-sm text-text-muted hover:text-teal-primary transition-colors mb-4"
+        >
+          &larr; Tilbake til dashbord
+        </Link>
+
         <div className="flex flex-col gap-4 mb-8">
           <Link
             href="/admin/users"
