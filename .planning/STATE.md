@@ -9,29 +9,29 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 ## Current Position
 
-Phase: 1 of 5 (Foundation and Authentication)
-Plan: 1 of 2 in current phase
-Status: Executing
-Last activity: 2026-02-19 -- Completed 01-01-PLAN.md (foundation scaffold)
+Phase: 1 of 5 (Foundation and Authentication) -- COMPLETE
+Plan: 2 of 2 in current phase (all done)
+Status: Phase Complete
+Last activity: 2026-02-19 -- Completed 01-02-PLAN.md (auth flows)
 
-Progress: [#.........] 10%
+Progress: [##........] 20%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 8min
-- Total execution time: 0.13 hours
+- Total plans completed: 2
+- Average duration: 5.5min
+- Total execution time: 0.18 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01 | 1 | 8min | 8min |
+| 01 | 2 | 11min | 5.5min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (8min)
-- Trend: -
+- Last 5 plans: 01-01 (8min), 01-02 (3min)
+- Trend: improving
 
 *Updated after each plan completion*
 
@@ -49,6 +49,10 @@ Recent decisions affecting current work:
 - [01-01]: Pinned Next.js to v15.5 (create-next-app defaults to v16)
 - [01-01]: getClaims() with getUser() fallback in middleware (runtime version check)
 - [01-01]: Rewrote ESLint config for Next.js 15 compatibility
+- [01-02]: validateInviteCode is read-only; atomic increment happens during register() only
+- [01-02]: redirect() outside try/catch per Next.js pattern (throws internally)
+- [01-02]: Parent-youth linking is non-fatal during registration
+- [01-02]: Admin guard in layout queries profiles table (defense-in-depth)
 
 ### Pending Todos
 
@@ -62,5 +66,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 01-01-PLAN.md
-Resume file: .planning/phases/01-foundation-and-authentication/01-01-SUMMARY.md
+Stopped at: Completed 01-02-PLAN.md (Phase 01 complete)
+Resume file: .planning/phases/01-foundation-and-authentication/01-02-SUMMARY.md

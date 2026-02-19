@@ -9,10 +9,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can register with a shared invite code, providing name, email, and password
-- [ ] **AUTH-02**: Invite code determines user role (youth or parent)
-- [ ] **AUTH-03**: Parent can select their child(ren) from registered youth during registration
-- [ ] **AUTH-04**: User can log in with email/password
+- [x] **AUTH-01**: User can register with a shared invite code, providing name, email, and password
+- [x] **AUTH-02**: Invite code determines user role (youth or parent)
+- [x] **AUTH-03**: Parent can select their child(ren) from registered youth during registration
+- [x] **AUTH-04**: User can log in with email/password
 - [x] **AUTH-05**: User is routed to admin dashboard or participant dashboard based on role
 
 ### Admin
@@ -104,10 +104,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
-| AUTH-04 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
+| AUTH-03 | Phase 1 | Complete |
+| AUTH-04 | Phase 1 | Complete |
 | AUTH-05 | Phase 1 | Complete |
 | ADMN-01 | Phase 2 | Pending |
 | ADMN-02 | Phase 2 | Pending |
