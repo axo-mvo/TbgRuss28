@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { logout } from '@/lib/actions/auth'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
+import StationSelector from '@/components/station/StationSelector'
 
 const roleLabels: Record<string, string> = {
   youth: 'Ungdom',
@@ -35,14 +36,29 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .maybeSingle()
 
+  // Fetch all 6 stations
+  const { data: stations } = await supabase
+    .from('stations')
+    .select('id, number, title, description')
+    .order('number')
+
+  // Fetch station sessions for user's group (if they have a group)
+  const group = membership?.group as unknown as { id: string; name: string; locked: boolean } | null
+  let sessions: Array<{ station_id: string; id: string; status: string; end_timestamp: string | null }> = []
+  if (group?.id) {
+    const { data } = await supabase
+      .from('station_sessions')
+      .select('station_id, id, status, end_timestamp')
+      .eq('group_id', group.id)
+    sessions = data || []
+  }
+
   const fullName = profile?.full_name || 'Bruker'
   const role = profile?.role || 'youth'
   const badgeVariant = (role === 'youth' || role === 'parent' || role === 'admin')
     ? role as 'youth' | 'parent' | 'admin'
     : 'youth'
 
-  // Type-safe access to group data (Supabase returns object for !inner join with maybeSingle)
-  const group = membership?.group as unknown as { id: string; name: string; locked: boolean } | null
   const isGroupLocked = group?.locked === true
 
   return (
@@ -70,13 +86,21 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        <p className="text-text-muted mb-8">
-          {isGroupLocked
-            ? 'Stasjoner og gruppechat blir tilgjengelig nar fellesmotet starter.'
-            : !membership
+        {isGroupLocked && group && stations ? (
+          <div className="mb-8">
+            <StationSelector
+              stations={stations}
+              sessions={sessions}
+              groupId={group.id}
+            />
+          </div>
+        ) : (
+          <p className="text-text-muted mb-8">
+            {!membership
               ? 'Du er ikke tildelt en gruppe enna. Kontakt admin.'
               : 'Dashbordet er under utvikling. Stasjoner og gruppechat kommer snart.'}
-        </p>
+          </p>
+        )}
 
         <form action={logout}>
           <Button variant="secondary" type="submit">
