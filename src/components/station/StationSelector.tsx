@@ -40,51 +40,64 @@ export default function StationSelector({
   // Subscribe to real-time station_sessions changes for this group
   useEffect(() => {
     const supabase = createClient()
-    const channel = supabase
-      .channel(`dashboard:${groupId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'station_sessions',
-          filter: `group_id=eq.${groupId}`,
-        },
-        (payload) => {
-          const row = payload.new as {
-            station_id: string
-            id: string
-            status: string
-            end_timestamp: string | null
-          }
-          setLiveSessions((prev) => {
-            const idx = prev.findIndex((s) => s.station_id === row.station_id)
-            if (idx >= 0) {
-              const updated = [...prev]
-              updated[idx] = {
-                station_id: row.station_id,
-                id: row.id,
-                status: row.status,
-                end_timestamp: row.end_timestamp,
-              }
-              return updated
+    let cancelled = false
+    let channel: ReturnType<typeof supabase.channel> | null = null
+
+    // setAuth() is REQUIRED so Realtime server has the user's JWT to evaluate RLS policies
+    supabase.realtime.setAuth().then(() => {
+      if (cancelled) return
+
+      channel = supabase
+        .channel(`dashboard:${groupId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'station_sessions',
+            filter: `group_id=eq.${groupId}`,
+          },
+          (payload) => {
+            const row = payload.new as {
+              station_id: string
+              id: string
+              status: string
+              end_timestamp: string | null
             }
-            return [
-              ...prev,
-              {
-                station_id: row.station_id,
-                id: row.id,
-                status: row.status,
-                end_timestamp: row.end_timestamp,
-              },
-            ]
-          })
-        }
-      )
-      .subscribe()
+            setLiveSessions((prev) => {
+              const idx = prev.findIndex(
+                (s) => s.station_id === row.station_id
+              )
+              if (idx >= 0) {
+                const updated = [...prev]
+                updated[idx] = {
+                  station_id: row.station_id,
+                  id: row.id,
+                  status: row.status,
+                  end_timestamp: row.end_timestamp,
+                }
+                return updated
+              }
+              return [
+                ...prev,
+                {
+                  station_id: row.station_id,
+                  id: row.id,
+                  status: row.status,
+                  end_timestamp: row.end_timestamp,
+                },
+              ]
+            })
+          }
+        )
+        .subscribe()
+    })
 
     return () => {
-      supabase.removeChannel(channel)
+      cancelled = true
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
     }
   }, [groupId])
 
