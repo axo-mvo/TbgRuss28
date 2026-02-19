@@ -2,6 +2,45 @@
 
 import { createClient } from '@/lib/supabase/server'
 
+// ---------- viewStation ----------
+// Creates or fetches a station session WITHOUT starting the timer.
+// Used when navigating to a station to preview questions before starting.
+
+export async function viewStation(
+  stationId: string
+): Promise<{ sessionId?: string; status?: string; endTimestamp?: string | null; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Ikke autentisert' }
+
+  // Get user's group_id via group_members
+  const { data: membership } = await supabase
+    .from('group_members')
+    .select('group_id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (!membership) return { error: 'Du er ikke i en gruppe' }
+
+  // Call the view_station Postgres function
+  const { data, error } = await supabase.rpc('view_station', {
+    p_station_id: stationId,
+    p_group_id: membership.group_id,
+  })
+
+  if (error) return { error: 'Kunne ikke vise stasjonen' }
+
+  const result = data as { id?: string; status?: string; end_timestamp?: string | null; error?: string }
+
+  if (result.error) return { error: result.error }
+
+  return {
+    sessionId: result.id,
+    status: result.status,
+    endTimestamp: result.end_timestamp,
+  }
+}
+
 // ---------- openStation ----------
 // Opens a station for the current user's group.
 // Calls the open_station Postgres function for atomic station opening.
@@ -105,7 +144,10 @@ export async function endStation(
     p_session_id: sessionId,
   })
 
-  if (error) return { error: 'Kunne ikke avslutte stasjonen' }
+  if (error) {
+    console.error('complete_station RPC error:', error.message, error.code)
+    return { error: 'Kunne ikke avslutte stasjonen' }
+  }
 
   const result = data as { success?: boolean; error?: string }
   if (result.error) return { error: result.error }
