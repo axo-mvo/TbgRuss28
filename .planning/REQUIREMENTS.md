@@ -45,8 +45,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **FLOW-01**: Any group member can end the station via confirmation dialog
 - [x] **FLOW-02**: Ending a station redirects all group members to station selector
-- [ ] **FLOW-03**: Completed stations are viewable in read-only mode
-- [ ] **FLOW-04**: Connection status indicator shows reconnecting/offline state
+- [x] **FLOW-03**: Completed stations are viewable in read-only mode
+- [x] **FLOW-04**: Connection status indicator shows reconnecting/offline state
 
 ### Export
 
@@ -128,8 +128,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TIMR-04 | Phase 3 | Complete |
 | FLOW-01 | Phase 4 | Complete |
 | FLOW-02 | Phase 4 | Complete |
-| FLOW-03 | Phase 4 | Pending |
-| FLOW-04 | Phase 4 | Pending |
+| FLOW-03 | Phase 4 | Complete |
+| FLOW-04 | Phase 4 | Complete |
 | EXPT-01 | Phase 5 | Pending |
 | EXPT-02 | Phase 5 | Pending |
 | DSGN-01 | Phase 1 | Complete |

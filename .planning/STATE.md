@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Groups can have real-time discussions at stations with a visible timer and see each other's messages instantly
-**Current focus:** Phase 4 - Station Flow and Resilience (plan 1 of 2 complete)
+**Current focus:** Phase 4 complete, ready for Phase 5 - Polish and Testing
 
 ## Current Position
 
-Phase: 4 of 5 (Station Flow and Resilience)
-Plan: 1 of 2 in current phase (1 complete)
-Status: Plan 04-01 complete, ready for Plan 04-02
-Last activity: 2026-02-19 -- Plan 04-01 executed
+Phase: 4 of 5 (Station Flow and Resilience) -- COMPLETE
+Plan: 2 of 2 in current phase (2 complete)
+Status: Phase 04 complete, ready for Phase 05
+Last activity: 2026-02-19 -- Plan 04-02 executed
 
-Progress: [########..] 80%
+Progress: [#########.] 90%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 5min
-- Total execution time: 0.59 hours
+- Total plans completed: 9
+- Average duration: 4.6min
+- Total execution time: 0.62 hours
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: [########..] 80%
 | 01 | 2 | 11min | 5.5min |
 | 02 | 3 | 14min | 4.7min |
 | 03 | 2 | 7min | 3.5min |
-| 04 | 1 | 3min | 3min |
+| 04 | 2 | 5min | 2.5min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (4min), 02-03 (7min), 03-01 (3min), 03-02 (4min), 04-01 (3min)
-- Trend: stable
+- Last 5 plans: 02-03 (7min), 03-01 (3min), 03-02 (4min), 04-01 (3min), 04-02 (2min)
+- Trend: stable/improving
 
 *Updated after each plan completion*
 
@@ -76,6 +76,8 @@ Recent decisions affecting current work:
 - [04-01]: Idempotent completion: already-completed sessions return success, not error (prevents second-clicker seeing error toast)
 - [04-01]: onStationEnded stored in ref to avoid re-triggering useEffect on callback identity changes
 - [04-01]: channelRef exposed from useRealtimeChat so ChatRoom can broadcast station-ended directly after endStation action
+- [04-02]: ConnectionStatus hidden when connected -- clean UI default, only shows on degradation
+- [04-02]: Online event sets reconnecting (not connected) -- waits for heartbeat confirmation before showing healthy
 
 ### Pending Todos
 
@@ -89,5 +91,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 04-01-PLAN.md
-Resume file: .planning/phases/04-station-flow-and-resilience/04-01-SUMMARY.md
+Stopped at: Completed 04-02-PLAN.md (Phase 04 complete)
+Resume file: .planning/phases/04-station-flow-and-resilience/04-02-SUMMARY.md
