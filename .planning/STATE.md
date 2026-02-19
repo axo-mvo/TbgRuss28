@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Groups can have real-time discussions at stations with a visible timer and see each other's messages instantly
-**Current focus:** Phase 1 - Foundation and Authentication
+**Current focus:** Phase 2 - Admin Panel
 
 ## Current Position
 
-Phase: 1 of 5 (Foundation and Authentication) -- COMPLETE
-Plan: 2 of 2 in current phase (all done)
-Status: Phase Complete
-Last activity: 2026-02-19 -- Completed 01-02-PLAN.md (auth flows)
+Phase: 2 of 5 (Admin Panel) -- Context gathered
+Plan: 0 of 2 in current phase
+Status: Context gathered, ready for planning
+Last activity: 2026-02-19 -- Phase 2 context gathered
 
 Progress: [##........] 20%
 
@@ -53,6 +53,8 @@ Recent decisions affecting current work:
 - [01-02]: redirect() outside try/catch per Next.js pattern (throws internally)
 - [01-02]: Parent-youth linking is non-fatal during registration
 - [01-02]: Admin guard in layout queries profiles table (defense-in-depth)
+- [02-ctx]: Parents and their linked youth must NEVER be in same group (overrides roadmap "parent-follows-child" wording)
+- [02-ctx]: Group names from predefined list of famous russ group names, randomly assigned
 
 ### Pending Todos
 
@@ -66,5 +68,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 01-02-PLAN.md (Phase 01 complete)
-Resume file: .planning/phases/01-foundation-and-authentication/01-02-SUMMARY.md
+Stopped at: Phase 2 context gathered
+Resume file: .planning/phases/02-admin-panel/02-CONTEXT.md
