@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 Phase: 5 of 5 (Export) -- COMPLETE
 Plan: 1 of 1 in current phase (1 complete)
 Status: ALL PHASES COMPLETE
-Last activity: 2026-02-19 - Completed quick task 6: Youth parent invite code with auto-match
+Last activity: 2026-02-19 - Completed quick task 7: Reopen closed station with added time selection
 
 Progress: [##########] 100%
 
@@ -87,6 +87,9 @@ Recent decisions affecting current work:
 - [quick-5]: Admin client (createAdminClient) to bypass RLS for cross-user profile visibility on dashboard
 - [quick-6]: VOKSEN### is a virtual code -- maps to FORELDER2028 for atomic invite code validation
 - [quick-6]: validateInviteCode also updated for VOKSEN### (frontend calls it before register)
+- [quick-7]: localReadOnly state (not prop) so ChatRoom transitions from completed to active without page reload
+- [quick-7]: Pass localReadOnly to useRealtimeChat so subscription activates automatically on reopen
+- [quick-7]: Inline button (not Button component) for Reopen in footer to avoid full-width min-height styling
 
 ### Pending Todos
 
@@ -102,6 +105,7 @@ None yet.
 | 4 | Simplify MD export format (remove author/timestamp) | 2026-02-19 | 3120cc4 | [4-simplify-md-export-format-remove-author-](./quick/4-simplify-md-export-format-remove-author-/) |
 | 5 | Replace youth waiting page with registered users overview | 2026-02-19 | 4a0f915 | [5-replace-youth-waiting-page-with-register](./quick/5-replace-youth-waiting-page-with-register/) |
 | 6 | Youth parent invite code with auto-match | 2026-02-19 | 5649a24 | [6-youth-parent-invite-code-with-auto-match](./quick/6-youth-parent-invite-code-with-auto-match/) |
+| 7 | Reopen closed station with added time selection | 2026-02-19 | 030c2d5 | [7-reopen-closed-station-with-added-time-se](./quick/7-reopen-closed-station-with-added-time-se/) |
 
 ### Blockers/Concerns
 
@@ -111,5 +115,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed quick task 6: Youth parent invite code with auto-match
-Resume file: .planning/quick/6-youth-parent-invite-code-with-auto-match/6-SUMMARY.md
+Stopped at: Completed quick task 7: Reopen closed station with added time selection
+Resume file: .planning/quick/7-reopen-closed-station-with-added-time-se/7-SUMMARY.md
