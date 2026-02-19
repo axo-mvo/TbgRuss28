@@ -17,12 +17,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Admin
 
-- [ ] **ADMN-01**: Admin can view all registered users with name, email, role, and registration date
-- [ ] **ADMN-02**: Admin can see which youth each parent is linked to
-- [ ] **ADMN-03**: Admin can change a user's role or delete a user
-- [ ] **ADMN-04**: Admin can create discussion groups and assign members
-- [ ] **ADMN-05**: Parents are auto-assigned to same group as their child (admin can override)
-- [ ] **ADMN-06**: Admin can lock groups so participants see their assignment
+- [x] **ADMN-01**: Admin can view all registered users with name, email, role, and registration date
+- [x] **ADMN-02**: Admin can see which youth each parent is linked to
+- [x] **ADMN-03**: Admin can change a user's role or delete a user
+- [x] **ADMN-04**: Admin can create discussion groups and assign members
+- [x] **ADMN-05**: Parents are auto-assigned to same group as their child (admin can override)
+- [x] **ADMN-06**: Admin can lock groups so participants see their assignment
 
 ### Station Chat
 
@@ -109,12 +109,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-03 | Phase 1 | Complete |
 | AUTH-04 | Phase 1 | Complete |
 | AUTH-05 | Phase 1 | Complete |
-| ADMN-01 | Phase 2 | Pending |
-| ADMN-02 | Phase 2 | Pending |
-| ADMN-03 | Phase 2 | Pending |
-| ADMN-04 | Phase 2 | Pending |
-| ADMN-05 | Phase 2 | Pending |
-| ADMN-06 | Phase 2 | Pending |
+| ADMN-01 | Phase 2 | Complete |
+| ADMN-02 | Phase 2 | Complete |
+| ADMN-03 | Phase 2 | Complete |
+| ADMN-04 | Phase 2 | Complete |
+| ADMN-05 | Phase 2 | Complete |
+| ADMN-06 | Phase 2 | Complete |
 | CHAT-01 | Phase 3 | Pending |
 | CHAT-02 | Phase 3 | Pending |
 | CHAT-03 | Phase 3 | Pending |
