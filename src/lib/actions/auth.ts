@@ -8,6 +8,7 @@ import { redirect } from 'next/navigation'
 // ---------- validateInviteCode ----------
 // Read-only check: does NOT increment the invite code usage counter.
 // The actual increment happens atomically during register().
+// Also handles VOKSEN### virtual codes (maps to parent role).
 
 export async function validateInviteCode(code: string): Promise<{
   valid: boolean
@@ -15,6 +16,24 @@ export async function validateInviteCode(code: string): Promise<{
   error?: string
 }> {
   try {
+    const trimmed = code.trim().toUpperCase()
+
+    // Handle VOKSEN### virtual codes — these map to parent role
+    if (trimmed.startsWith('VOKSEN')) {
+      const admin = createAdminClient()
+      const { data: youth } = await admin
+        .from('profiles')
+        .select('id')
+        .eq('parent_invite_code', trimmed)
+        .single()
+
+      if (!youth) {
+        return { valid: false, error: 'Ugyldig foreldrekode. Sjekk koden og prøv igjen.' }
+      }
+
+      return { valid: true, role: 'parent' }
+    }
+
     const admin = createAdminClient()
 
     const { data, error } = await admin
@@ -75,7 +94,7 @@ export async function register(formData: FormData): Promise<{ error?: string }> 
   const password = formData.get('password') as string
   const fullName = formData.get('fullName') as string
   const inviteCode = formData.get('inviteCode') as string
-  const role = formData.get('role') as string
+  let role = formData.get('role') as string
   const youthIdsRaw = formData.get('youthIds') as string | null
   const youthIds: string[] = youthIdsRaw ? JSON.parse(youthIdsRaw) : []
 
@@ -94,10 +113,32 @@ export async function register(formData: FormData): Promise<{ error?: string }> 
     const admin = createAdminClient()
     const supabase = await createClient()
 
+    // Step 0: Detect VOKSEN### virtual code
+    const trimmedCode = inviteCode.trim().toUpperCase()
+    let voksenYouthId: string | null = null
+    let actualInviteCode = inviteCode
+
+    if (trimmedCode.startsWith('VOKSEN')) {
+      // Look up the youth who owns this parent_invite_code
+      const { data: youth } = await admin
+        .from('profiles')
+        .select('id')
+        .eq('parent_invite_code', trimmedCode)
+        .single()
+
+      if (!youth) {
+        return { error: 'Ugyldig foreldrekode. Sjekk koden og prøv igjen.' }
+      }
+
+      voksenYouthId = youth.id
+      role = 'parent' // VOKSEN### implicitly defines role as parent
+      actualInviteCode = 'FORELDER2028' // Use the standard parent code for atomic validation
+    }
+
     // Step 1: Atomic validate + increment invite code via RPC
     const { data: codeResult, error: codeError } = await admin.rpc(
       'validate_invite_code',
-      { p_code: inviteCode }
+      { p_code: actualInviteCode }
     )
 
     if (codeError || !codeResult?.valid) {
@@ -137,8 +178,14 @@ export async function register(formData: FormData): Promise<{ error?: string }> 
     }
 
     // Step 4: If parent, insert parent-youth links
-    if (role === 'parent' && youthIds.length > 0) {
-      const links = youthIds.map((youthId) => ({
+    // Combine manually selected youthIds with auto-matched VOKSEN youth
+    const allYouthIds = [...youthIds]
+    if (voksenYouthId && !allYouthIds.includes(voksenYouthId)) {
+      allYouthIds.push(voksenYouthId)
+    }
+
+    if (role === 'parent' && allYouthIds.length > 0) {
+      const links = allYouthIds.map((youthId) => ({
         parent_id: authData.user!.id,
         youth_id: youthId,
       }))

@@ -6,6 +6,7 @@ import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import StationSelector from '@/components/station/StationSelector'
 import RegisteredUsersOverview from '@/components/dashboard/RegisteredUsersOverview'
+import ParentInviteBanner from '@/components/dashboard/ParentInviteBanner'
 
 const roleLabels: Record<string, string> = {
   youth: 'Ungdom',
@@ -25,7 +26,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, role')
+    .select('full_name, role, parent_invite_code')
     .eq('id', user.id)
     .single()
 
@@ -80,6 +81,13 @@ export default async function DashboardPage() {
       .filter(Boolean),
   }))
 
+  // Check if current user is a youth with no linked parent
+  const hasParent = (allLinks ?? []).some((l) => l.youth_id === user.id)
+  const showParentInvite =
+    profile?.role === 'youth' &&
+    !hasParent &&
+    !!profile?.parent_invite_code
+
   const fullName = profile?.full_name || 'Bruker'
   const role = profile?.role || 'youth'
   const badgeVariant = (role === 'youth' || role === 'parent' || role === 'admin')
@@ -123,6 +131,9 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <div className="mb-8">
+            {showParentInvite && (
+              <ParentInviteBanner inviteCode={profile!.parent_invite_code!} />
+            )}
             {!membership && (
               <p className="text-text-muted mb-4">
                 Du er ikke tildelt en gruppe enna. Kontakt admin.
