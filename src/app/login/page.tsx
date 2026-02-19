@@ -1,12 +1,15 @@
+import LoginForm from '@/components/auth/LoginForm'
+
 export default function LoginPage() {
   return (
-    <div className="flex items-center justify-center min-h-dvh p-4">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-teal-primary mb-2">
+    <div className="flex flex-col items-center justify-center min-h-dvh p-4">
+      <div className="w-full max-w-[400px] mb-6 text-center">
+        <h1 className="text-2xl font-bold text-teal-primary mb-1">
           Buss 2028 Fellesmote
         </h1>
-        <p className="text-text-muted">Innlogging kommer snart</p>
+        <h2 className="text-lg text-text-muted">Logg inn</h2>
       </div>
+      <LoginForm />
     </div>
-  );
+  )
 }
