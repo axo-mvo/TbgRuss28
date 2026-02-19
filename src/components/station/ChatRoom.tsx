@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useRealtimeChat, type ChatMessage } from '@/lib/hooks/useRealtimeChat'
 import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
-import { sendMessage } from '@/lib/actions/station'
+import { sendMessage, endStation } from '@/lib/actions/station'
+import Dialog from '@/components/ui/Dialog'
 import StationHeader from './StationHeader'
 import MessageList from './MessageList'
 import ChatInput from './ChatInput'
@@ -19,6 +21,7 @@ interface ChatRoomProps {
   stationQuestions: string[] | null
   stationTip: string | null
   initialMessages: ChatMessage[]
+  readOnly?: boolean
 }
 
 export default function ChatRoom({
@@ -32,8 +35,22 @@ export default function ChatRoom({
   stationQuestions,
   stationTip,
   initialMessages,
+  readOnly = false,
 }: ChatRoomProps) {
-  const { messages, setMessages, sendBroadcast } = useRealtimeChat(sessionId, userId)
+  const router = useRouter()
+  const [showEndDialog, setShowEndDialog] = useState(false)
+  const [ending, setEnding] = useState(false)
+
+  const { messages, setMessages, sendBroadcast, channelRef } = useRealtimeChat(
+    sessionId,
+    userId,
+    {
+      readOnly,
+      onStationEnded: () => {
+        router.push('/dashboard')
+      },
+    }
+  )
   const { containerRef, sentinelRef } = useAutoScroll([messages])
 
   // Merge initial messages on mount
@@ -64,12 +81,33 @@ export default function ChatRoom({
     })
   }
 
+  async function handleEndStation() {
+    setEnding(true)
+    const result = await endStation(sessionId)
+    if (result.error) {
+      console.error('Failed to end station:', result.error)
+      setEnding(false)
+      return
+    }
+
+    // Broadcast station-ended event to all group members
+    await channelRef.current?.send({
+      type: 'broadcast',
+      event: 'station-ended',
+      payload: { sessionId },
+    })
+
+    router.push('/dashboard')
+  }
+
   return (
     <div className="flex flex-col h-dvh bg-warm-white/50">
       <StationHeader
         stationTitle={stationTitle}
         stationNumber={stationNumber}
         endTimestamp={endTimestamp}
+        onEndStation={readOnly ? undefined : () => setShowEndDialog(true)}
+        readOnly={readOnly}
       />
 
       {/* Scrollable message area */}
@@ -101,7 +139,24 @@ export default function ChatRoom({
         <div ref={sentinelRef} />
       </div>
 
-      <ChatInput onSend={handleSend} />
+      {readOnly ? (
+        <div className="px-4 py-3 bg-text-muted/10 text-center text-sm text-text-muted border-t border-text-muted/10">
+          Diskusjonen er avsluttet
+        </div>
+      ) : (
+        <ChatInput onSend={handleSend} />
+      )}
+
+      <Dialog
+        open={showEndDialog}
+        onClose={() => setShowEndDialog(false)}
+        onConfirm={handleEndStation}
+        title="Avslutt stasjon?"
+        description="Er du sikker pa at du vil avslutte? Alle gruppemedlemmer sendes tilbake til stasjonsoversikten."
+        confirmLabel="Avslutt"
+        confirmVariant="danger"
+        loading={ending}
+      />
     </div>
   )
 }

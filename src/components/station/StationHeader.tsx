@@ -7,12 +7,16 @@ interface StationHeaderProps {
   stationTitle: string
   stationNumber: number
   endTimestamp: string | null
+  onEndStation?: () => void
+  readOnly?: boolean
 }
 
 export default function StationHeader({
   stationTitle,
   stationNumber,
   endTimestamp,
+  onEndStation,
+  readOnly = false,
 }: StationHeaderProps) {
   const router = useRouter()
 
@@ -45,8 +49,23 @@ export default function StationHeader({
         <p className="text-sm font-semibold truncate">{stationTitle}</p>
       </div>
 
-      <div className="ml-3">
-        <CountdownTimer endTimestamp={endTimestamp} />
+      <div className="ml-3 flex items-center gap-2">
+        {!readOnly && onEndStation && (
+          <button
+            type="button"
+            onClick={onEndStation}
+            className="text-xs px-2 py-1 rounded-md bg-white/15 hover:bg-white/25 transition-colors"
+          >
+            Avslutt
+          </button>
+        )}
+        {readOnly ? (
+          <span className="text-xs px-2 py-1 rounded-md bg-white/15 opacity-70">
+            Fullfort
+          </span>
+        ) : (
+          <CountdownTimer endTimestamp={endTimestamp} />
+        )}
       </div>
     </header>
   )

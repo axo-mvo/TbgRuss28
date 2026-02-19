@@ -14,11 +14,30 @@ export type ChatMessage = {
   status: 'sent' | 'pending' | 'error'
 }
 
-export function useRealtimeChat(sessionId: string, currentUserId: string) {
+interface UseRealtimeChatOptions {
+  readOnly?: boolean
+  onStationEnded?: () => void
+}
+
+export function useRealtimeChat(
+  sessionId: string,
+  currentUserId: string,
+  options?: UseRealtimeChatOptions
+) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const channelRef = useRef<RealtimeChannel | null>(null)
+  const readOnly = options?.readOnly ?? false
+  const onStationEndedRef = useRef(options?.onStationEnded)
+
+  // Keep callback ref current without causing effect re-runs
+  useEffect(() => {
+    onStationEndedRef.current = options?.onStationEnded
+  }, [options?.onStationEnded])
 
   useEffect(() => {
+    // In readOnly mode, skip subscription entirely
+    if (readOnly) return
+
     const supabase = createClient()
     let cancelled = false
 
@@ -47,6 +66,9 @@ export function useRealtimeChat(sessionId: string, currentUserId: string) {
             return [...prev, { ...msg, status: 'sent' as const }]
           })
         })
+        .on('broadcast', { event: 'station-ended' }, () => {
+          onStationEndedRef.current?.()
+        })
         .subscribe()
 
       channelRef.current = channel
@@ -57,7 +79,7 @@ export function useRealtimeChat(sessionId: string, currentUserId: string) {
       channelRef.current?.unsubscribe()
       channelRef.current = null
     }
-  }, [sessionId, currentUserId])
+  }, [sessionId, currentUserId, readOnly])
 
   const sendBroadcast = useCallback(
     async (message: ChatMessage) => {
@@ -75,5 +97,5 @@ export function useRealtimeChat(sessionId: string, currentUserId: string) {
     setMessages((prev) => [...prev, msg])
   }, [])
 
-  return { messages, setMessages, sendBroadcast, addOptimistic }
+  return { messages, setMessages, sendBroadcast, addOptimistic, channelRef }
 }
