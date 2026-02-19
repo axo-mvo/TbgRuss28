@@ -47,7 +47,15 @@ export default function ChatRoom({
     {
       readOnly,
       onStationEnded: () => {
-        router.push('/dashboard')
+        // Unsubscribe channel before navigating to prevent state updates
+        // on unmounted components during the navigation transition
+        channelRef.current?.unsubscribe()
+        channelRef.current = null
+
+        // Use full page navigation instead of router.push to avoid a React 19
+        // dev-mode crash in RSC debug info processing (frame.join is not a function)
+        // when the navigation originates from a WebSocket callback context
+        window.location.href = '/dashboard'
       },
     }
   )
@@ -91,11 +99,19 @@ export default function ChatRoom({
     }
 
     // Broadcast station-ended event to all group members
-    await channelRef.current?.send({
-      type: 'broadcast',
-      event: 'station-ended',
-      payload: { sessionId },
-    })
+    const channel = channelRef.current
+    if (channel) {
+      await channel.send({
+        type: 'broadcast',
+        event: 'station-ended',
+        payload: { sessionId },
+      })
+
+      // Unsubscribe after broadcasting to prevent the self-received
+      // station-ended event from racing with the navigation below
+      channel.unsubscribe()
+      channelRef.current = null
+    }
 
     router.push('/dashboard')
   }
