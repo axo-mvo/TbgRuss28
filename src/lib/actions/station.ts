@@ -70,6 +70,49 @@ export async function sendMessage(
   return {}
 }
 
+// ---------- endStation ----------
+// Ends an active station session.
+// Calls the complete_station Postgres function for atomic, idempotent completion.
+
+export async function endStation(
+  sessionId: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Ikke autentisert' }
+
+  // Get the session's group_id to verify membership
+  const { data: session } = await supabase
+    .from('station_sessions')
+    .select('group_id')
+    .eq('id', sessionId)
+    .maybeSingle()
+
+  if (!session) return { error: 'Okt ikke funnet' }
+
+  // Verify user is in the group
+  const { data: membership } = await supabase
+    .from('group_members')
+    .select('id')
+    .eq('group_id', session.group_id)
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (!membership) return { error: 'Du er ikke medlem av denne gruppen' }
+
+  // Call the atomic complete_station Postgres function
+  const { data, error } = await supabase.rpc('complete_station', {
+    p_session_id: sessionId,
+  })
+
+  if (error) return { error: 'Kunne ikke avslutte stasjonen' }
+
+  const result = data as { success?: boolean; error?: string }
+  if (result.error) return { error: result.error }
+
+  return {}
+}
+
 // ---------- loadMessages ----------
 // Loads message history for a station session.
 // Joins with profiles for full_name and role.
