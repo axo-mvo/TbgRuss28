@@ -28,12 +28,13 @@ interface StationSelectorProps {
 export default function StationSelector({
   stations,
   sessions,
-  groupId,
+  groupId: _groupId,
 }: StationSelectorProps) {
+  void _groupId // reserved for future client-side use
   const router = useRouter()
   const [loadingStationId, setLoadingStationId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [isPending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
 
   const hasActiveStation = sessions.some((s) => s.status === 'active')
 
