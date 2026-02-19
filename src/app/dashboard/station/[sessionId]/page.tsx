@@ -77,6 +77,9 @@ export default async function StationPage({ params }: StationPageProps) {
     status: 'sent' as const,
   }))
 
+  // Determine if the station discussion has been started
+  const isStarted = session.status === 'active'
+
   return (
     <ChatRoom
       sessionId={session.id}
@@ -90,6 +93,8 @@ export default async function StationPage({ params }: StationPageProps) {
       stationTip={station.tip}
       initialMessages={formattedMessages}
       readOnly={isReadOnly}
+      isStarted={isStarted || isReadOnly}
+      stationId={station.id}
     />
   )
 }

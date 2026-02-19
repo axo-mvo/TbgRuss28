@@ -3,24 +3,20 @@
 import { useState, useEffect } from 'react'
 
 type TimerState = {
-  remaining: number // seconds
+  remaining: number // seconds (-1 = no timer set)
   color: 'white' | 'yellow' | 'red'
   expired: boolean
-  display: string // "MM:SS" or "Tiden er ute!"
+  display: string // "MM:SS", "--:--", or "Tiden er ute!"
 }
 
 export function useCountdownTimer(endTimestamp: string | null): TimerState {
-  const [remaining, setRemaining] = useState<number>(() => {
-    if (!endTimestamp) return 900 // 15 min default
-    const diff = Math.max(
-      0,
-      Math.floor((new Date(endTimestamp).getTime() - Date.now()) / 1000)
-    )
-    return diff
-  })
+  const [remaining, setRemaining] = useState<number>(-1) // -1 = sentinel for "no timer"
 
   useEffect(() => {
-    if (!endTimestamp) return
+    if (!endTimestamp) {
+      setRemaining(-1)
+      return
+    }
 
     // Immediately sync on mount / endTimestamp change
     const diff = Math.floor(
@@ -37,6 +33,11 @@ export function useCountdownTimer(endTimestamp: string | null): TimerState {
 
     return () => clearInterval(interval)
   }, [endTimestamp])
+
+  // No timer set (pre-start state or null endTimestamp)
+  if (remaining < 0) {
+    return { remaining: -1, color: 'white', expired: false, display: '--:--' }
+  }
 
   const minutes = Math.floor(remaining / 60)
   const seconds = remaining % 60

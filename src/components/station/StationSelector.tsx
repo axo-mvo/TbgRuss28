@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import StationCard from './StationCard'
-import { openStation } from '@/lib/actions/station'
+import { viewStation } from '@/lib/actions/station'
 
 interface Station {
   id: string
@@ -28,18 +29,69 @@ interface StationSelectorProps {
 export default function StationSelector({
   stations,
   sessions,
-  groupId: _groupId,
+  groupId,
 }: StationSelectorProps) {
-  void _groupId // reserved for future client-side use
   const router = useRouter()
+  const [liveSessions, setLiveSessions] = useState<Session[]>(sessions)
   const [loadingStationId, setLoadingStationId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [, startTransition] = useTransition()
 
-  const hasActiveStation = sessions.some((s) => s.status === 'active')
+  // Subscribe to real-time station_sessions changes for this group
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`dashboard:${groupId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'station_sessions',
+          filter: `group_id=eq.${groupId}`,
+        },
+        (payload) => {
+          const row = payload.new as {
+            station_id: string
+            id: string
+            status: string
+            end_timestamp: string | null
+          }
+          setLiveSessions((prev) => {
+            const idx = prev.findIndex((s) => s.station_id === row.station_id)
+            if (idx >= 0) {
+              const updated = [...prev]
+              updated[idx] = {
+                station_id: row.station_id,
+                id: row.id,
+                status: row.status,
+                end_timestamp: row.end_timestamp,
+              }
+              return updated
+            }
+            return [
+              ...prev,
+              {
+                station_id: row.station_id,
+                id: row.id,
+                status: row.status,
+                end_timestamp: row.end_timestamp,
+              },
+            ]
+          })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [groupId])
+
+  const hasActiveStation = liveSessions.some((s) => s.status === 'active')
 
   function getStatus(stationId: string): 'available' | 'active' | 'completed' {
-    const session = sessions.find((s) => s.station_id === stationId)
+    const session = liveSessions.find((s) => s.station_id === stationId)
     if (!session) return 'available'
     if (session.status === 'active') return 'active'
     if (session.status === 'completed') return 'completed'
@@ -47,7 +99,7 @@ export default function StationSelector({
   }
 
   function getSessionId(stationId: string): string | undefined {
-    return sessions.find((s) => s.station_id === stationId)?.id
+    return liveSessions.find((s) => s.station_id === stationId)?.id
   }
 
   async function handleOpen(stationId: string) {
@@ -69,12 +121,12 @@ export default function StationSelector({
       return
     }
 
-    // Available station: call openStation server action
+    // Available station: call viewStation to create/fetch session without starting timer
     setError(null)
     setLoadingStationId(stationId)
 
     startTransition(async () => {
-      const result = await openStation(stationId)
+      const result = await viewStation(stationId)
       setLoadingStationId(null)
 
       if (result.error) {

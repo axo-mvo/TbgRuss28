@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useRealtimeChat, type ChatMessage } from '@/lib/hooks/useRealtimeChat'
 import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
-import { sendMessage, endStation } from '@/lib/actions/station'
+import { sendMessage, endStation, openStation } from '@/lib/actions/station'
 import Dialog from '@/components/ui/Dialog'
+import Button from '@/components/ui/Button'
 import StationHeader from './StationHeader'
 import MessageList from './MessageList'
 import ChatInput from './ChatInput'
@@ -22,6 +23,8 @@ interface ChatRoomProps {
   stationTip: string | null
   initialMessages: ChatMessage[]
   readOnly?: boolean
+  isStarted?: boolean
+  stationId?: string
 }
 
 export default function ChatRoom({
@@ -36,8 +39,13 @@ export default function ChatRoom({
   stationTip,
   initialMessages,
   readOnly = false,
+  isStarted = true,
+  stationId,
 }: ChatRoomProps) {
   const router = useRouter()
+  const [started, setStarted] = useState(isStarted)
+  const [starting, setStarting] = useState(false)
+  const [localEndTimestamp, setLocalEndTimestamp] = useState(endTimestamp)
   const [showEndDialog, setShowEndDialog] = useState(false)
   const [ending, setEnding] = useState(false)
 
@@ -68,6 +76,22 @@ export default function ChatRoom({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  async function handleStart() {
+    if (!stationId) return
+    setStarting(true)
+    const result = await openStation(stationId)
+    if (result.error) {
+      console.error('Failed to start station:', result.error)
+      setStarting(false)
+      return
+    }
+    if (result.endTimestamp) {
+      setLocalEndTimestamp(result.endTimestamp)
+    }
+    setStarted(true)
+    setStarting(false)
+  }
 
   async function handleSend(content: string) {
     const optimisticMessage: ChatMessage = {
@@ -116,12 +140,69 @@ export default function ChatRoom({
     router.push('/dashboard')
   }
 
+  // Pre-start view: show station context and "Start diskusjon" button
+  if (!started) {
+    return (
+      <div className="flex flex-col h-dvh bg-warm-white/50">
+        <StationHeader
+          stationTitle={stationTitle}
+          stationNumber={stationNumber}
+          endTimestamp={null}
+          readOnly={false}
+        />
+
+        <div className="flex-1 overflow-y-auto px-4 py-6">
+          {/* Station context -- questions and tip */}
+          <div className="mb-6">
+            <h2 className="text-lg font-bold text-text-primary mb-2">
+              Stasjon {stationNumber}: {stationTitle}
+            </h2>
+            {stationQuestions && stationQuestions.length > 0 && (
+              <div className="mb-4 p-4 rounded-xl bg-teal-primary/5 border border-teal-primary/10">
+                <p className="text-sm font-semibold text-teal-primary mb-2">Diskusjonssporsmal:</p>
+                <ul className="space-y-2">
+                  {stationQuestions.map((q, i) => (
+                    <li key={i} className="text-sm text-text-primary pl-3 border-l-2 border-teal-primary/30">
+                      {q}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {stationTip && (
+              <div className="p-4 rounded-xl bg-coral/5 border border-coral/10">
+                <p className="text-sm text-text-muted italic">
+                  Tips: {stationTip}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <p className="text-sm text-text-muted text-center mb-4">
+            Nar dere er klare, trykk start for a begynne diskusjonen. Nedtellingen starter da.
+          </p>
+        </div>
+
+        <div className="px-4 py-4 border-t border-text-muted/10 bg-warm-white">
+          <Button
+            variant="primary"
+            className="w-full"
+            onClick={handleStart}
+            disabled={starting}
+          >
+            {starting ? 'Starter...' : 'Start diskusjon'}
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col h-dvh bg-warm-white/50">
       <StationHeader
         stationTitle={stationTitle}
         stationNumber={stationNumber}
-        endTimestamp={endTimestamp}
+        endTimestamp={localEndTimestamp}
         onEndStation={readOnly ? undefined : () => setShowEndDialog(true)}
         readOnly={readOnly}
       />
