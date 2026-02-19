@@ -76,10 +76,11 @@ Plans:
   1. Any group member can end the current station via a confirmation dialog, which redirects all group members back to the station selector
   2. Completed stations appear as completed on the station selector and can be opened in read-only mode to review the discussion
   3. A connection status indicator shows reconnecting/offline state so users know when real-time updates may be delayed
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: TBD
+- [ ] 04-01-PLAN.md -- End station flow: complete_station Postgres function, endStation server action, broadcast redirect, readOnly ChatRoom mode
+- [ ] 04-02-PLAN.md -- Read-only navigation: tappable completed stations, page readOnly detection, connection status hook and indicator
 
 ### Phase 5: Export
 **Goal**: Admin can export all meeting discussions as a structured Markdown file for downstream processing
@@ -100,10 +101,10 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation and Authentication | 0/2 | Complete    | 2026-02-19 |
-| 2. Admin Panel | 0/2 | Complete    | 2026-02-19 |
-| 3. Station Chat and Timer | 1/2 | In Progress | - |
-| 4. Station Flow and Resilience | 0/1 | Not started | - |
+| 1. Foundation and Authentication | 2/2 | Complete    | 2026-02-19 |
+| 2. Admin Panel | 3/3 | Complete    | 2026-02-19 |
+| 3. Station Chat and Timer | 2/2 | Complete | 2026-02-19 |
+| 4. Station Flow and Resilience | 0/2 | Not started | - |
 | 5. Export | 0/1 | Not started | - |
 
 ---
