@@ -37,19 +37,20 @@ Plans:
 - [ ] 01-02-PLAN.md — Registration flow, login flow, and role-based routing with layout guards
 
 ### Phase 2: Admin Panel
-**Goal**: Admin can manage users, view parent-child links, create groups with parent-follows-child logic, and lock groups so participants see their assignment
+**Goal**: Admin can manage users, view parent-child links, create groups with parent-child separation logic, and lock groups so participants see their assignment
 **Depends on**: Phase 1
 **Requirements**: ADMN-01, ADMN-02, ADMN-03, ADMN-04, ADMN-05, ADMN-06
 **Success Criteria** (what must be TRUE):
   1. Admin can view a list of all registered users showing name, email, role, and registration date
   2. Admin can see which youth each parent is linked to, and can change a user's role or delete a user
-  3. Admin can create discussion groups, assign members, and parents are auto-assigned to the same group as their child (with manual override available)
+  3. Admin can create discussion groups, assign members, and parents are NEVER placed in the same group as their linked child (admin gets a warning on conflict)
   4. Admin can lock groups, after which participants see their group assignment on their dashboard
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md -- Backend foundation: DB migrations, server actions, UI primitives, admin hub
+- [ ] 02-02-PLAN.md -- User management page: user table, search, role editing, deletion, parent-link editing
+- [ ] 02-03-PLAN.md -- Group builder: drag-and-drop/tap-to-assign, parent-child separation, lock/publish, dashboard update
 
 ### Phase 3: Station Chat and Timer
 **Goal**: Participants can open a station, see real-time messages from their group, and track a synchronized 15-minute countdown timer
