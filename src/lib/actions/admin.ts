@@ -244,7 +244,7 @@ export async function toggleGroupsLock(
     .update({ locked })
     .neq('id', '00000000-0000-0000-0000-000000000000') // Match all rows (Supabase requires a filter)
 
-  if (error) return { error: locked ? 'Kunne ikke lase gruppene' : 'Kunne ikke lase opp gruppene' }
+  if (error) return { error: locked ? 'Kunne ikke låse gruppene' : 'Kunne ikke låse opp gruppene' }
 
   revalidatePath('/admin/groups')
   revalidatePath('/dashboard')

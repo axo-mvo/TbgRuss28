@@ -67,7 +67,7 @@ export async function openStation(
     p_group_id: membership.group_id,
   })
 
-  if (error) return { error: 'Kunne ikke apne stasjonen' }
+  if (error) return { error: 'Kunne ikke åpne stasjonen' }
 
   // The function returns JSON with either {id, end_timestamp, status} or {error}
   const result = data as { id?: string; end_timestamp?: string; status?: string; error?: string }
@@ -93,7 +93,7 @@ export async function sendMessage(
 
   // Trim and validate
   const content = data.content.trim()
-  if (!content) return { error: 'Meldingen kan ikke vaere tom' }
+  if (!content) return { error: 'Meldingen kan ikke være tom' }
 
   // Persist to messages table (RLS enforces group membership)
   const { error } = await supabase
@@ -127,7 +127,7 @@ export async function endStation(
     .eq('id', sessionId)
     .maybeSingle()
 
-  if (!session) return { error: 'Okt ikke funnet' }
+  if (!session) return { error: 'Økt ikke funnet' }
 
   // Verify user is in the group
   const { data: membership } = await supabase
@@ -179,7 +179,7 @@ export async function reopenStation(
     .eq('id', sessionId)
     .maybeSingle()
 
-  if (!session) return { error: 'Okt ikke funnet' }
+  if (!session) return { error: 'Økt ikke funnet' }
 
   // Verify user is in the group
   const { data: membership } = await supabase
@@ -199,7 +199,7 @@ export async function reopenStation(
 
   if (error) {
     console.error('reopen_station RPC error:', error.message, error.code)
-    return { error: 'Kunne ikke gjenapne stasjonen' }
+    return { error: 'Kunne ikke gjenåpne stasjonen' }
   }
 
   const result = data as { id?: string; end_timestamp?: string; status?: string; error?: string }
