@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 Phase: 5 of 5 (Export) -- COMPLETE
 Plan: 1 of 1 in current phase (1 complete)
 Status: ALL PHASES COMPLETE
-Last activity: 2026-02-19 - Completed quick task 2: Fix chat messages not appearing
+Last activity: 2026-02-19 - Completed quick task 3: Dashboard realtime station state updates
 
 Progress: [##########] 100%
 
@@ -93,6 +93,7 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 1 | Realtime dashboard station status and explicit start button | 2026-02-19 | 7482864 | [1-realtime-dashboard-station-status-and-ex](./quick/1-realtime-dashboard-station-status-and-ex/) |
 | 2 | Fix chat messages not appearing - add optimistic message before broadcast | 2026-02-19 | 0a2abbd | [2-fix-chat-messages-not-appearing-add-opti](./quick/2-fix-chat-messages-not-appearing-add-opti/) |
+| 3 | Dashboard realtime station state updates (setAuth fix) | 2026-02-19 | ec24245 | [3-dashboard-realtime-station-state-updates](./quick/3-dashboard-realtime-station-state-updates/) |
 
 ### Blockers/Concerns
 
@@ -102,5 +103,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 05-01-PLAN.md (ALL PHASES COMPLETE)
-Resume file: .planning/phases/05-export/05-01-SUMMARY.md
+Stopped at: Completed quick task 3: Dashboard realtime station state updates
+Resume file: .planning/quick/3-dashboard-realtime-station-state-updates/3-SUMMARY.md
