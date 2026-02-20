@@ -28,6 +28,8 @@ export default function RegisterForm() {
   const [selectedYouthIds, setSelectedYouthIds] = useState<string[]>([])
   const [youthList, setYouthList] = useState<YouthOption[]>([])
   const [youthLoading, setYouthLoading] = useState(false)
+  const [matchedYouth, setMatchedYouth] = useState<YouthOption | null>(null)
+  const [showYouthPicker, setShowYouthPicker] = useState(false)
 
   // Fetch youth list when parent reaches Step 2
   useEffect(() => {
@@ -50,6 +52,10 @@ export default function RegisterForm() {
 
     if (result.valid && result.role) {
       setRole(result.role)
+      if (result.matchedYouth) {
+        setMatchedYouth(result.matchedYouth)
+        setSelectedYouthIds([result.matchedYouth.id])
+      }
       setStep(2)
     } else {
       setError(result.error || 'Ugyldig invitasjonskode')
@@ -175,8 +181,30 @@ export default function RegisterForm() {
 
           {role === 'parent' && (
             <div>
-              <Label>Velg ditt/dine barn</Label>
-              {youthLoading ? (
+              <Label>Ditt barn</Label>
+              {matchedYouth && !showYouthPicker ? (
+                <div className="mt-1">
+                  <div className="flex items-center justify-between p-3 rounded-lg border-2 border-teal-primary/30 bg-teal-primary/5">
+                    <span className="text-sm font-medium">{matchedYouth.full_name}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowYouthPicker(true)
+                        if (youthList.length === 0) {
+                          setYouthLoading(true)
+                          getRegisteredYouth().then((result) => {
+                            if (result.youth) setYouthList(result.youth)
+                            setYouthLoading(false)
+                          })
+                        }
+                      }}
+                      className="text-xs text-teal-primary font-medium underline underline-offset-2"
+                    >
+                      Endre
+                    </button>
+                  </div>
+                </div>
+              ) : youthLoading ? (
                 <p className="text-sm text-text-muted">Laster ungdomsliste...</p>
               ) : youthList.length > 0 ? (
                 <div className="space-y-2 mt-1">

@@ -71,7 +71,7 @@ Each task was committed atomically:
 1. **Task 1: Create Markdown builder and export Route Handler** - `b53a2de` (feat)
 2. **Task 2: Add export button to admin page** - `81188ef` (feat)
 
-**Plan metadata:** [pending] (docs: complete plan)
+**Plan metadata:** `c983c17` (docs: complete plan)
 
 ## Files Created/Modified
 - `src/lib/export/build-markdown.ts` - Pure function converting ExportMessage[] to structured Markdown string

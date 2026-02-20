@@ -8,22 +8,23 @@ import { redirect } from 'next/navigation'
 // ---------- validateInviteCode ----------
 // Read-only check: does NOT increment the invite code usage counter.
 // The actual increment happens atomically during register().
-// Also handles VOKSEN### virtual codes (maps to parent role).
+// Also handles TBG#### virtual codes (maps to parent role).
 
 export async function validateInviteCode(code: string): Promise<{
   valid: boolean
   role?: 'youth' | 'parent'
+  matchedYouth?: { id: string; full_name: string }
   error?: string
 }> {
   try {
     const trimmed = code.trim().toUpperCase()
 
-    // Handle VOKSEN### virtual codes — these map to parent role
-    if (trimmed.startsWith('VOKSEN')) {
+    // Handle TBG#### virtual codes — these map to parent role
+    if (trimmed.startsWith('TBG')) {
       const admin = createAdminClient()
       const { data: youth } = await admin
         .from('profiles')
-        .select('id')
+        .select('id, full_name')
         .eq('parent_invite_code', trimmed)
         .single()
 
@@ -31,7 +32,7 @@ export async function validateInviteCode(code: string): Promise<{
         return { valid: false, error: 'Ugyldig foreldrekode. Sjekk koden og prøv igjen.' }
       }
 
-      return { valid: true, role: 'parent' }
+      return { valid: true, role: 'parent', matchedYouth: { id: youth.id, full_name: youth.full_name } }
     }
 
     const admin = createAdminClient()
@@ -113,12 +114,12 @@ export async function register(formData: FormData): Promise<{ error?: string }> 
     const admin = createAdminClient()
     const supabase = await createClient()
 
-    // Step 0: Detect VOKSEN### virtual code
+    // Step 0: Detect TBG#### virtual code
     const trimmedCode = inviteCode.trim().toUpperCase()
-    let voksenYouthId: string | null = null
+    let tbgYouthId: string | null = null
     let actualInviteCode = inviteCode
 
-    if (trimmedCode.startsWith('VOKSEN')) {
+    if (trimmedCode.startsWith('TBG')) {
       // Look up the youth who owns this parent_invite_code
       const { data: youth } = await admin
         .from('profiles')
@@ -130,8 +131,8 @@ export async function register(formData: FormData): Promise<{ error?: string }> 
         return { error: 'Ugyldig foreldrekode. Sjekk koden og prøv igjen.' }
       }
 
-      voksenYouthId = youth.id
-      role = 'parent' // VOKSEN### implicitly defines role as parent
+      tbgYouthId = youth.id
+      role = 'parent' // TBG#### implicitly defines role as parent
       actualInviteCode = 'FORELDER2028' // Use the standard parent code for atomic validation
     }
 
@@ -178,10 +179,10 @@ export async function register(formData: FormData): Promise<{ error?: string }> 
     }
 
     // Step 4: If parent, insert parent-youth links
-    // Combine manually selected youthIds with auto-matched VOKSEN youth
+    // Combine manually selected youthIds with auto-matched TBG youth
     const allYouthIds = [...youthIds]
-    if (voksenYouthId && !allYouthIds.includes(voksenYouthId)) {
-      allYouthIds.push(voksenYouthId)
+    if (tbgYouthId && !allYouthIds.includes(tbgYouthId)) {
+      allYouthIds.push(tbgYouthId)
     }
 
     if (role === 'parent' && allYouthIds.length > 0) {

@@ -45,10 +45,10 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(route)
   );
 
-  // Redirect unauthenticated users to login
+  // Redirect unauthenticated users to register
   if (!isAuthenticated && !isPublicRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/register";
     return NextResponse.redirect(url);
   }
 

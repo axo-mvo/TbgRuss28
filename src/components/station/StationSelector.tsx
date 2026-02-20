@@ -44,11 +44,15 @@ export default function StationSelector({
     let channel: ReturnType<typeof supabase.channel> | null = null
 
     // setAuth() is REQUIRED so Realtime server has the user's JWT to evaluate RLS policies
-    supabase.realtime.setAuth().then(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      const token = data.session?.access_token
+      console.log('[StationSelector] Session token exists:', !!token)
+      return supabase.realtime.setAuth(token ?? null)
+    }).then(() => {
       if (cancelled) return
 
       channel = supabase
-        .channel(`dashboard:${groupId}`)
+        .channel(`dashboard:${groupId}`, { config: { private: true } })
         .on(
           'postgres_changes',
           {
@@ -58,6 +62,7 @@ export default function StationSelector({
             filter: `group_id=eq.${groupId}`,
           },
           (payload) => {
+            console.log('[StationSelector] Realtime event:', payload.eventType, payload.new)
             const row = payload.new as {
               station_id: string
               id: string
@@ -90,14 +95,19 @@ export default function StationSelector({
             })
           }
         )
-        .subscribe()
+        .subscribe((status) => {
+          console.log('[StationSelector] Subscription status:', status)
+        })
+    }).catch((err) => {
+      console.error('[StationSelector] setAuth failed:', err)
     })
 
     return () => {
       cancelled = true
-      if (channel) {
-        supabase.removeChannel(channel)
-      }
+      // Use unsubscribe() instead of removeChannel() to keep the WebSocket
+      // connection alive during navigation to the station page. This prevents
+      // useRealtimeChat from timing out while reconnecting.
+      channel?.unsubscribe()
     }
   }, [groupId])
 
