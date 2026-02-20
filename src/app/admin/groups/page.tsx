@@ -5,11 +5,11 @@ import GroupBuilder from '@/components/admin/GroupBuilder'
 export default async function GroupsPage() {
   const supabase = await createClient()
 
-  // Fetch all non-admin users
+  // Fetch all assignable users (youth, parents, and admins)
   const { data: users } = await supabase
     .from('profiles')
     .select('id, full_name, role')
-    .neq('role', 'admin')
+    .in('role', ['youth', 'parent', 'admin'])
     .order('full_name')
 
   // Fetch all groups with their members

@@ -6,6 +6,7 @@ import Badge from '@/components/ui/Badge'
 const roleLabels: Record<string, string> = {
   youth: 'Ungdom',
   parent: 'Forelder',
+  admin: 'Forelder (Admin)',
 }
 
 interface UserCardProps {
