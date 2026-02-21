@@ -49,6 +49,14 @@ function isParentLike(role: string): boolean {
   return role === 'parent' || role === 'admin'
 }
 
+// Normalize Norwegian phone numbers: prepend +47 if 8 digits without prefix
+function normalizePhone(phone: string): string {
+  const trimmed = phone.trim()
+  if (/^\d{8}$/.test(trimmed)) return `+47${trimmed}`
+  if (!trimmed.startsWith('+')) return `+${trimmed}`
+  return trimmed
+}
+
 export default function UserTable({ users, allYouth }: UserTableProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [editRoleUser, setEditRoleUser] = useState<{
@@ -81,6 +89,8 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
 
   // Ref for role change dialog (custom dialog with role selection)
   const roleDialogRef = useRef<HTMLDialogElement>(null)
+  // Ref for SMS result dialog (custom dialog with sms: URI link)
+  const smsResultDialogRef = useRef<HTMLDialogElement>(null)
 
   // Manage role dialog open/close
   useEffect(() => {
@@ -92,6 +102,15 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
       roleDialogRef.current?.close()
     }
   }, [editRoleUser])
+
+  // Manage SMS result dialog open/close
+  useEffect(() => {
+    if (smsResult) {
+      smsResultDialogRef.current?.showModal()
+    } else {
+      smsResultDialogRef.current?.close()
+    }
+  }, [smsResult])
 
   // Filter users by name
   const filteredUsers = users.filter((user) =>
@@ -177,7 +196,7 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
     setSmsResult({
       code: result.code,
       error: result.error,
-      phone: smsTarget.phone || undefined,
+      phone: result.phone || smsTarget.phone || undefined,
     })
     setSmsTarget(null)
   }
@@ -537,25 +556,54 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
         open={!!smsTarget}
         onClose={() => setSmsTarget(null)}
         onConfirm={handleSendSmsCode}
-        title={`Send tilgangskode til ${smsTarget?.name}?`}
-        description={`En 6-sifret kode sendes via SMS til ${smsTarget?.phone}. Koden er gyldig i 24 timer.`}
-        confirmLabel="Send kode"
+        title={`Opprett tilgangskode for ${smsTarget?.name}?`}
+        description={`En 6-sifret kode opprettes for ${smsTarget?.name}. Du kan deretter sende den via SMS.`}
+        confirmLabel="Opprett kode"
         loading={loading}
       />
 
-      {/* SMS result dialog */}
-      <Dialog
-        open={!!smsResult}
+      {/* SMS result dialog (custom with sms: URI link) */}
+      <dialog
+        ref={smsResultDialogRef}
         onClose={() => setSmsResult(null)}
-        onConfirm={() => setSmsResult(null)}
-        title={smsResult?.error ? 'Feil' : 'Kode sendt!'}
-        description={
-          smsResult?.error
-            ? smsResult.error
-            : `Koden er: ${smsResult?.code}. Den er sendt til ${smsResult?.phone} via SMS.`
-        }
-        confirmLabel="Lukk"
-      />
+        className="rounded-xl p-0 backdrop:bg-black/50 max-w-sm w-[calc(100%-2rem)]"
+      >
+        <div className="p-5">
+          {smsResult?.error ? (
+            <>
+              <h2 className="text-lg font-bold text-text-primary mb-2">Feil</h2>
+              <p className="text-text-muted text-sm mb-4">{smsResult.error}</p>
+              <Button variant="secondary" onClick={() => setSmsResult(null)} className="w-full">
+                Lukk
+              </Button>
+            </>
+          ) : (
+            <>
+              <h2 className="text-lg font-bold text-text-primary mb-2">Kode opprettet</h2>
+              <p className="text-text-muted text-sm mb-4">
+                Koden er: <span className="font-mono font-bold text-lg text-text-primary">{smsResult?.code}</span>
+              </p>
+              <p className="text-text-muted text-sm mb-4">
+                Trykk knappen under for &aring; &aring;pne SMS-appen med ferdigutfylt melding.
+              </p>
+              {smsResult?.phone && (
+                <a
+                  href={`sms:${normalizePhone(smsResult.phone)}?&body=${encodeURIComponent(`Din midlertidige tilgangskode for Buss 2028 Fellesmøte er: ${smsResult.code}. Koden er gyldig i 24 timer.`)}`}
+                  className="block w-full text-center min-h-[44px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-white font-medium bg-teal-primary hover:bg-teal-dark transition-colors mb-3"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  &Aring;pne SMS
+                </a>
+              )}
+              <Button variant="secondary" onClick={() => setSmsResult(null)} className="w-full">
+                Lukk
+              </Button>
+            </>
+          )}
+        </div>
+      </dialog>
 
       {/* Parent link sheet */}
       {parentLinkUser && (
