@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 Phase: 5 of 5 (Export) -- COMPLETE
 Plan: 1 of 1 in current phase (1 complete)
 Status: ALL PHASES COMPLETE
-Last activity: 2026-02-21 - Completed quick task 17: Replace Twilio SMS with native sms: URI
+Last activity: 2026-02-21 - Completed quick task 18: Add participant summary counts and attendance indicators
 
 Progress: [##########] 100%
 
@@ -113,6 +113,8 @@ Recent decisions affecting current work:
 - [quick-17]: Native sms: URI replaces server-side Twilio SMS -- zero cost, works on all mobile devices
 - [quick-17]: Custom <dialog> for SMS result because Dialog component lacks JSX children support for <a> tag
 - [quick-17]: Phone normalization (+47 prefix) moved client-side since twilio.ts deleted
+- [quick-18]: Fetch all profiles in single query for summary counts (simpler, accounts for parentless admins)
+- [quick-18]: AttendanceIndicator as local helper function since only used in RegisteredUsersOverview
 
 ### Pending Todos
 
@@ -139,6 +141,7 @@ None yet.
 | 15 | Fix admin youth assignment in user panel | 2026-02-21 | 2974b41 | [15-it-s-not-possible-to-assign-youth-to-the](./quick/15-it-s-not-possible-to-assign-youth-to-the/) |
 | 16 | Admin SMS temporary access code for members | 2026-02-21 | f242db4 | [16-admin-sms-temporary-access-code-for-memb](./quick/16-admin-sms-temporary-access-code-for-memb/) |
 | 17 | Replace Twilio SMS with native sms: URI | 2026-02-21 | 2facbb6 | [17-replace-twilio-sms-with-native-sms-uri-f](./quick/17-replace-twilio-sms-with-native-sms-uri-f/) |
+| 18 | Add participant summary counts and attendance indicators | 2026-02-21 | a3b42a5 | [18-add-participant-summary-counts-and-respo](./quick/18-add-participant-summary-counts-and-respo/) |
 
 ### Blockers/Concerns
 
@@ -148,5 +151,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed quick task 17: Replace Twilio SMS with native sms: URI
-Resume file: .planning/quick/17-replace-twilio-sms-with-native-sms-uri-f/17-SUMMARY.md
+Stopped at: Completed quick task 18: Add participant summary counts and attendance indicators
+Resume file: .planning/quick/18-add-participant-summary-counts-and-respo/18-SUMMARY.md
