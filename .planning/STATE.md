@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 Phase: 5 of 5 (Export) -- COMPLETE
 Plan: 1 of 1 in current phase (1 complete)
 Status: ALL PHASES COMPLETE
-Last activity: 2026-02-21 - Completed quick task 16: Admin SMS temporary access code for members
+Last activity: 2026-02-21 - Completed quick task 17: Replace Twilio SMS with native sms: URI
 
 Progress: [##########] 100%
 
@@ -109,6 +109,9 @@ Recent decisions affecting current work:
 - [quick-16]: Console fallback when Twilio env vars missing -- dev flow works without SMS credentials
 - [quick-16]: Magic link OTP verification (generateLink + verifyOtp) for code-based login
 - [quick-16]: Admin sees generated code in UI as backup in case SMS does not arrive
+- [quick-17]: Native sms: URI replaces server-side Twilio SMS -- zero cost, works on all mobile devices
+- [quick-17]: Custom <dialog> for SMS result because Dialog component lacks JSX children support for <a> tag
+- [quick-17]: Phone normalization (+47 prefix) moved client-side since twilio.ts deleted
 
 ### Pending Todos
 
@@ -134,6 +137,7 @@ None yet.
 | 14 | Add participation toggle for Wednesday meeting | 2026-02-21 | 235f02e | [14-add-participation-toggle-for-wednesday-m](./quick/14-add-participation-toggle-for-wednesday-m/) |
 | 15 | Fix admin youth assignment in user panel | 2026-02-21 | 2974b41 | [15-it-s-not-possible-to-assign-youth-to-the](./quick/15-it-s-not-possible-to-assign-youth-to-the/) |
 | 16 | Admin SMS temporary access code for members | 2026-02-21 | f242db4 | [16-admin-sms-temporary-access-code-for-memb](./quick/16-admin-sms-temporary-access-code-for-memb/) |
+| 17 | Replace Twilio SMS with native sms: URI | 2026-02-21 | 2facbb6 | [17-replace-twilio-sms-with-native-sms-uri-f](./quick/17-replace-twilio-sms-with-native-sms-uri-f/) |
 
 ### Blockers/Concerns
 
@@ -143,5 +147,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed quick task 16: Admin SMS temporary access code for members
-Resume file: .planning/quick/16-admin-sms-temporary-access-code-for-memb/16-SUMMARY.md
+Stopped at: Completed quick task 17: Replace Twilio SMS with native sms: URI
+Resume file: .planning/quick/17-replace-twilio-sms-with-native-sms-uri-f/17-SUMMARY.md
