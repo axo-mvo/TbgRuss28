@@ -63,7 +63,7 @@ export default async function DashboardPage() {
 
   const { data: allYouth } = await adminClient
     .from('profiles')
-    .select('id, full_name')
+    .select('id, full_name, attending')
     .eq('role', 'youth')
     .order('full_name')
 
@@ -71,15 +71,27 @@ export default async function DashboardPage() {
     .from('parent_youth_links')
     .select(`
       youth_id,
-      parent:profiles!parent_youth_links_parent_id_fkey(id, full_name)
+      parent:profiles!parent_youth_links_parent_id_fkey(id, full_name, attending)
     `)
+
+  // Fetch all profiles for summary counts
+  const { data: allProfiles } = await adminClient
+    .from('profiles')
+    .select('id, role, attending')
+    .in('role', ['youth', 'parent', 'admin'])
+
+  const youthCount = (allProfiles ?? []).filter((p) => p.role === 'youth').length
+  const parentCount = (allProfiles ?? []).filter((p) => p.role === 'parent' || p.role === 'admin').length
+  const attendingCount = (allProfiles ?? []).filter((p) => p.attending === true).length
+  const notRespondedCount = (allProfiles ?? []).filter((p) => p.attending === null).length
 
   const youthWithParents = (allYouth ?? []).map((y) => ({
     id: y.id,
     full_name: y.full_name,
+    attending: y.attending as boolean | null,
     parents: (allLinks ?? [])
       .filter((l) => l.youth_id === y.id)
-      .map((l) => l.parent as unknown as { id: string; full_name: string })
+      .map((l) => l.parent as unknown as { id: string; full_name: string; attending: boolean | null })
       .filter(Boolean),
   }))
 
@@ -164,7 +176,10 @@ export default async function DashboardPage() {
                 Du er ikke tildelt gruppe ennå. Tildelingen skjer før møtet.
               </p>
             )}
-            <RegisteredUsersOverview youth={youthWithParents} />
+            <RegisteredUsersOverview
+              youth={youthWithParents}
+              summary={{ youthCount, parentCount, attendingCount, notRespondedCount }}
+            />
           </div>
         )}
 
