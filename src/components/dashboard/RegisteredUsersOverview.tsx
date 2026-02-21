@@ -4,15 +4,31 @@ import EmptyState from '@/components/ui/EmptyState'
 interface YouthWithParents {
   id: string
   full_name: string
-  parents: Array<{ id: string; full_name: string }>
+  attending: boolean | null
+  parents: Array<{ id: string; full_name: string; attending: boolean | null }>
+}
+
+interface SummaryCounts {
+  youthCount: number
+  parentCount: number
+  attendingCount: number
+  notRespondedCount: number
 }
 
 interface RegisteredUsersOverviewProps {
   youth: YouthWithParents[]
+  summary: SummaryCounts
+}
+
+function AttendanceIndicator({ attending }: { attending: boolean | null }) {
+  if (attending === true) return <span className="w-2 h-2 rounded-full bg-success shrink-0" title="Kommer" />
+  if (attending === false) return <span className="w-2 h-2 rounded-full bg-coral shrink-0" title="Kommer ikke" />
+  return <span className="w-2 h-2 rounded-full bg-gray-300 shrink-0" title="Har ikke svart" />
 }
 
 export default function RegisteredUsersOverview({
   youth,
+  summary,
 }: RegisteredUsersOverviewProps) {
   if (youth.length === 0) {
     return (
@@ -33,11 +49,30 @@ export default function RegisteredUsersOverview({
       <h2 className="text-lg font-semibold text-text-primary mb-4">
         Registrerte deltakere
       </h2>
+      <div className="flex flex-wrap gap-2 mb-4">
+        <span className="inline-flex items-center gap-1.5 text-sm text-text-muted bg-white border border-gray-200 rounded-full px-3 py-1">
+          <span className="font-semibold text-text-primary">{summary.youthCount}</span> Ungdommer
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-sm text-text-muted bg-white border border-gray-200 rounded-full px-3 py-1">
+          <span className="font-semibold text-text-primary">{summary.parentCount}</span> Foreldre
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-sm text-text-muted bg-white border border-gray-200 rounded-full px-3 py-1">
+          <span className="w-2 h-2 rounded-full bg-success inline-block" />
+          <span className="font-semibold text-text-primary">{summary.attendingCount}</span> Kommer
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-sm text-text-muted bg-white border border-gray-200 rounded-full px-3 py-1">
+          <span className="w-2 h-2 rounded-full bg-gray-300 inline-block" />
+          <span className="font-semibold text-text-primary">{summary.notRespondedCount}</span> Har ikke svart
+        </span>
+      </div>
       <div className="space-y-2">
         {youth.map((y) => (
           <details key={y.id} className="group">
             <summary className="flex items-center justify-between min-h-[44px] p-3 rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50 transition-colors list-none [&::-webkit-details-marker]:hidden">
-              <span className="font-medium text-text-primary">{y.full_name}</span>
+              <span className="font-medium text-text-primary flex items-center gap-2">
+                {y.full_name}
+                <AttendanceIndicator attending={y.attending} />
+              </span>
               <span className="flex items-center gap-2">
                 <Badge variant="parent">
                   {y.parents.length} {y.parents.length === 1 ? 'forelder' : 'foreldre'}
@@ -64,7 +99,7 @@ export default function RegisteredUsersOverview({
                     key={parent.id}
                     className="text-sm text-text-muted flex items-center gap-2"
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-coral/40 shrink-0" />
+                    <AttendanceIndicator attending={parent.attending} />
                     {parent.full_name}
                   </div>
                 ))
