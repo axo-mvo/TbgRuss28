@@ -276,6 +276,36 @@ export async function login(formData: FormData): Promise<{ error?: string }> {
   return {}
 }
 
+// ---------- updateAttending ----------
+// Updates the current user's attending status (any authenticated user).
+
+export async function updateAttending(attending: boolean): Promise<{ error?: string }> {
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { error: 'Ikke autentisert' }
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ attending })
+      .eq('id', user.id)
+
+    if (error) {
+      return { error: 'Kunne ikke oppdatere oppmøtestatus' }
+    }
+
+    revalidatePath('/dashboard')
+    return {}
+  } catch {
+    return { error: 'Noe gikk galt. Prøv igjen.' }
+  }
+}
+
 // ---------- logout ----------
 // Signs out and redirects to login page.
 
