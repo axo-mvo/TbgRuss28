@@ -171,11 +171,16 @@ export default async function DashboardPage() {
             {showParentInvite && (
               <ParentInviteBanner inviteCode={profile!.parent_invite_code!} />
             )}
-            {!membership && (
+            {!membership ? (
               <p className="text-text-muted mb-4">
                 Du er ikke tildelt gruppe ennå. Tildelingen skjer før møtet.
               </p>
-            )}
+            ) : group && !isGroupLocked ? (
+              <div className="mb-4 p-4 rounded-xl border border-teal-primary/20 bg-teal-primary/5">
+                <p className="text-sm text-text-muted mb-1">Din gruppe</p>
+                <p className="text-lg font-semibold text-text-primary">{group.name}</p>
+              </div>
+            ) : null}
             <RegisteredUsersOverview
               youth={youthWithParents}
               summary={{ youthCount, parentCount, attendingCount, notRespondedCount }}
