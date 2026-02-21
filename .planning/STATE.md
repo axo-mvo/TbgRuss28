@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 Phase: 5 of 5 (Export) -- COMPLETE
 Plan: 1 of 1 in current phase (1 complete)
 Status: ALL PHASES COMPLETE
-Last activity: 2026-02-20 - Completed quick task 10: Include admin users in group assignment
+Last activity: 2026-02-21 - Completed quick task 11: Fix mobile chat input zoom/scroll issue
 
 Progress: [##########] 100%
 
@@ -93,6 +93,7 @@ Recent decisions affecting current work:
 - [quick-8]: Fixed 3 additional files (layout.tsx, MessageList.tsx, build-markdown.ts) not in plan that had same ASCII approximation issue
 - [quick-9]: Admin card placed between role text and group card; gear icon for admin panel card
 - [quick-10]: Used .in('role', ['youth', 'parent', 'admin']) instead of removing filter entirely -- defensive against accidentally including future roles
+- [quick-11]: text-base (16px) on chat input to prevent iOS Safari auto-zoom; maximumScale=1 viewport meta as belt-and-suspenders
 
 ### Pending Todos
 
@@ -112,6 +113,7 @@ None yet.
 | 8 | Fix missing Norwegian special characters | 2026-02-19 | 5351364 | [8-fix-missing-norwegian-special-characters](./quick/8-fix-missing-norwegian-special-characters/) |
 | 9 | Admin panel navigation (dashboard <-> admin) | 2026-02-19 | 73df4ed | [9-the-admin-role-is-also-a-parent-role-the](./quick/9-the-admin-role-is-also-a-parent-role-the/) |
 | 10 | Include admin users in group assignment | 2026-02-20 | b025897 | [10-it-s-not-possible-to-assign-admins-that-](./quick/10-it-s-not-possible-to-assign-admins-that-/) |
+| 11 | Fix mobile chat input zoom/scroll issue | 2026-02-21 | 8bf948b | [11-fix-mobile-chat-input-zoom-scroll-issue-](./quick/11-fix-mobile-chat-input-zoom-scroll-issue-/) |
 
 ### Blockers/Concerns
 
@@ -120,6 +122,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-20
-Stopped at: Completed quick task 10: Include admin users in group assignment
-Resume file: .planning/quick/10-it-s-not-possible-to-assign-admins-that-/10-SUMMARY.md
+Last session: 2026-02-21
+Stopped at: Completed quick task 11: Fix mobile chat input zoom/scroll issue
+Resume file: .planning/quick/11-fix-mobile-chat-input-zoom-scroll-issue-/11-SUMMARY.md
