@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button'
 import StationSelector from '@/components/station/StationSelector'
 import RegisteredUsersOverview from '@/components/dashboard/RegisteredUsersOverview'
 import ParentInviteBanner from '@/components/dashboard/ParentInviteBanner'
+import AttendingToggle from '@/components/dashboard/AttendingToggle'
 
 const roleLabels: Record<string, string> = {
   youth: 'Ungdom',
@@ -27,7 +28,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, role, parent_invite_code')
+    .select('full_name, role, parent_invite_code, attending')
     .eq('id', user.id)
     .single()
 
@@ -107,9 +108,11 @@ export default async function DashboardPage() {
           <Badge variant={badgeVariant}>{roleLabels[role] || role}</Badge>
         </div>
 
-        <p className="text-text-muted mb-2">
+        <p className="text-text-muted mb-4">
           Du er logget inn som {roleLabels[role]?.toLowerCase() || role}.
         </p>
+
+        <AttendingToggle initialAttending={profile?.attending ?? null} />
 
         {role === 'admin' && (
           <Link

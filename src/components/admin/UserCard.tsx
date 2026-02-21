@@ -15,6 +15,7 @@ interface UserCardProps {
   column: string
   userName: string
   userRole: string
+  attending?: boolean | null
   hasConflict: boolean
   locked: boolean
   isMobile?: boolean
@@ -27,6 +28,7 @@ export default function UserCard({
   column,
   userName,
   userRole,
+  attending,
   hasConflict,
   locked,
   isMobile,
@@ -46,6 +48,9 @@ export default function UserCard({
   const badgeVariant =
     userRole === 'parent' ? 'parent' : userRole === 'admin' ? 'admin' : 'youth'
 
+  // Non-attending or unanswered users get faded appearance
+  const isFaded = attending === false || attending === null
+
   return (
     <div
       ref={ref}
@@ -57,9 +62,16 @@ export default function UserCard({
             : locked
               ? 'border-gray-100 bg-gray-50'
               : 'border-gray-200 bg-white'
-      }`}
+      } ${isFaded && !isDragging ? 'opacity-50' : ''}`}
     >
       <div className="flex items-center gap-2 min-w-0">
+        {/* Attendance dot indicator */}
+        {attending === false && (
+          <span className="w-2 h-2 rounded-full bg-coral shrink-0" aria-label="Kommer ikke" />
+        )}
+        {attending === null && (
+          <span className="w-2 h-2 rounded-full bg-gray-300 shrink-0" aria-label="Ikke svart" />
+        )}
         <span className="font-medium text-text-primary text-sm truncate">
           {userName}
         </span>

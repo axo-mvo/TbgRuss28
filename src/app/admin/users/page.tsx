@@ -9,7 +9,7 @@ export default async function UsersPage() {
   const { data: users } = await supabase
     .from('profiles')
     .select(`
-      id, full_name, email, phone, role, created_at,
+      id, full_name, email, phone, role, attending, created_at,
       parent_youth_links!parent_youth_links_parent_id_fkey(
         id,
         youth:profiles!parent_youth_links_youth_id_fkey(id, full_name)

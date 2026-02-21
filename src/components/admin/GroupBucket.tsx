@@ -8,6 +8,7 @@ interface UserData {
   id: string
   full_name: string
   role: string
+  attending?: boolean | null
 }
 
 interface GroupBucketProps {
@@ -88,6 +89,7 @@ export default function GroupBucket({
                 column={groupId}
                 userName={user.full_name}
                 userRole={user.role}
+                attending={user.attending}
                 hasConflict={conflict}
                 locked={locked}
                 isMobile={isMobile}

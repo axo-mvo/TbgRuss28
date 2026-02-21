@@ -26,6 +26,7 @@ type UserWithLinks = {
   email: string
   phone: string | null
   role: 'youth' | 'parent' | 'admin'
+  attending: boolean | null
   created_at: string
   parent_youth_links: ParentYouthLink[]
 }
@@ -94,6 +95,35 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
   // Check if a parent is unlinked (has no youth connections)
   function isUnlinkedParent(user: UserWithLinks): boolean {
     return user.role === 'parent' && getLinkedYouth(user).length === 0
+  }
+
+  // Render attendance badge
+  function AttendanceBadge({ attending }: { attending: boolean | null }) {
+    if (attending === true) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">
+          <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          Kommer
+        </span>
+      )
+    }
+    if (attending === false) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-coral/10 text-coral">
+          <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          Kommer ikke
+        </span>
+      )
+    }
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-text-muted">
+        Ikke svart
+      </span>
+    )
   }
 
   // Handle role change
@@ -220,6 +250,11 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
                     <p className="text-sm text-text-muted mb-1">Tlf: {user.phone}</p>
                   )}
 
+                  {/* Attendance */}
+                  <div className="mb-1">
+                    <AttendanceBadge attending={user.attending} />
+                  </div>
+
                   {/* Registration date */}
                   <p className="text-xs text-text-muted mb-2">
                     Registrert {formatDate(user.created_at)}
@@ -279,6 +314,7 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
                   <th className="pb-3 font-medium">Navn</th>
                   <th className="pb-3 font-medium">E-post</th>
                   <th className="pb-3 font-medium">Telefon</th>
+                  <th className="pb-3 font-medium">Oppm&#248;te</th>
                   <th className="pb-3 font-medium">Rolle</th>
                   <th className="pb-3 font-medium">Registrert</th>
                   <th className="pb-3 font-medium text-right">Handlinger</th>
@@ -325,6 +361,9 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
                       </td>
                       <td className="py-3 pr-4 text-sm text-text-muted">
                         {user.phone || '\u2014'}
+                      </td>
+                      <td className="py-3 pr-4">
+                        <AttendanceBadge attending={user.attending} />
                       </td>
                       <td className="py-3 pr-4">
                         <Badge variant={user.role}>

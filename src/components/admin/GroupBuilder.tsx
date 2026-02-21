@@ -21,6 +21,7 @@ interface UserData {
   id: string
   full_name: string
   role: string
+  attending?: boolean | null
 }
 
 interface GroupBuilderProps {

@@ -8,7 +8,7 @@ export default async function GroupsPage() {
   // Fetch all assignable users (youth, parents, and admins)
   const { data: users } = await supabase
     .from('profiles')
-    .select('id, full_name, role')
+    .select('id, full_name, role, attending')
     .in('role', ['youth', 'parent', 'admin'])
     .order('full_name')
 

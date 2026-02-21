@@ -7,6 +7,7 @@ interface UserData {
   id: string
   full_name: string
   role: string
+  attending?: boolean | null
 }
 
 interface UnassignedPoolProps {
@@ -58,6 +59,7 @@ export default function UnassignedPool({
                 column={id}
                 userName={user.full_name}
                 userRole={user.role}
+                attending={user.attending}
                 hasConflict={hasConflict}
                 locked={locked}
                 isMobile={isMobile}
