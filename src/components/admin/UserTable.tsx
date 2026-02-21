@@ -44,6 +44,11 @@ interface UserTableProps {
   allYouth: { id: string; full_name: string }[]
 }
 
+// Admin users are also parents (decision [quick-9]) — treat them identically for youth linking
+function isParentLike(role: string): boolean {
+  return role === 'parent' || role === 'admin'
+}
+
 export default function UserTable({ users, allYouth }: UserTableProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [editRoleUser, setEditRoleUser] = useState<{
@@ -86,7 +91,7 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
   // Get linked youth names for a user
   // Supabase may return youth as object or array depending on FK inference
   function getLinkedYouth(user: UserWithLinks): YouthProfile[] {
-    if (user.role !== 'parent' || !user.parent_youth_links) return []
+    if (!isParentLike(user.role) || !user.parent_youth_links) return []
     return user.parent_youth_links
       .map((link) => (Array.isArray(link.youth) ? link.youth[0] : link.youth))
       .filter(Boolean)
@@ -94,7 +99,7 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
 
   // Check if a parent is unlinked (has no youth connections)
   function isUnlinkedParent(user: UserWithLinks): boolean {
-    return user.role === 'parent' && getLinkedYouth(user).length === 0
+    return isParentLike(user.role) && getLinkedYouth(user).length === 0
   }
 
   // Render attendance badge
@@ -171,7 +176,7 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
 
   // Open parent link sheet
   function openParentLink(user: UserWithLinks) {
-    if (user.role !== 'parent') return
+    if (!isParentLike(user.role)) return
     setParentLinkUser({
       id: user.id,
       name: user.full_name,
@@ -224,7 +229,7 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
             {filteredUsers.map((user) => {
               const linkedYouth = getLinkedYouth(user)
               const unlinked = isUnlinkedParent(user)
-              const isParent = user.role === 'parent'
+              const isParent = isParentLike(user.role)
 
               return (
                 <div
@@ -324,7 +329,7 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
                 {filteredUsers.map((user) => {
                   const linkedYouth = getLinkedYouth(user)
                   const unlinked = isUnlinkedParent(user)
-                  const isParent = user.role === 'parent'
+                  const isParent = isParentLike(user.role)
 
                   return (
                     <tr
