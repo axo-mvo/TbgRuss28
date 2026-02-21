@@ -24,6 +24,7 @@ type UserWithLinks = {
   id: string
   full_name: string
   email: string
+  phone: string | null
   role: 'youth' | 'parent' | 'admin'
   created_at: string
   parent_youth_links: ParentYouthLink[]
@@ -214,6 +215,11 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
                   {/* Email */}
                   <p className="text-sm text-text-muted mb-1">{user.email}</p>
 
+                  {/* Phone */}
+                  {user.phone && (
+                    <p className="text-sm text-text-muted mb-1">Tlf: {user.phone}</p>
+                  )}
+
                   {/* Registration date */}
                   <p className="text-xs text-text-muted mb-2">
                     Registrert {formatDate(user.created_at)}
@@ -272,6 +278,7 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
                 <tr className="border-b border-gray-200 text-left text-sm text-text-muted">
                   <th className="pb-3 font-medium">Navn</th>
                   <th className="pb-3 font-medium">E-post</th>
+                  <th className="pb-3 font-medium">Telefon</th>
                   <th className="pb-3 font-medium">Rolle</th>
                   <th className="pb-3 font-medium">Registrert</th>
                   <th className="pb-3 font-medium text-right">Handlinger</th>
@@ -315,6 +322,9 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
                       </td>
                       <td className="py-3 pr-4 text-sm text-text-muted">
                         {user.email}
+                      </td>
+                      <td className="py-3 pr-4 text-sm text-text-muted">
+                        {user.phone || '\u2014'}
                       </td>
                       <td className="py-3 pr-4">
                         <Badge variant={user.role}>
