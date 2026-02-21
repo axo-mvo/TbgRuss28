@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 Phase: 5 of 5 (Export) -- COMPLETE
 Plan: 1 of 1 in current phase (1 complete)
 Status: ALL PHASES COMPLETE
-Last activity: 2026-02-21 - Completed quick task 14: Add participation toggle for Wednesday meeting
+Last activity: 2026-02-21 - Completed quick task 15: Fix admin youth assignment in user panel
 
 Progress: [##########] 100%
 
@@ -100,6 +100,7 @@ Recent decisions affecting current work:
 - [quick-14]: Nullable boolean (null = not yet answered) rather than default false, so admins can distinguish not responded from declined
 - [quick-14]: Explicit Ja/Nei buttons instead of toggle switch for clearer mobile UX and ternary state visibility
 - [quick-14]: Opacity-50 with colored dot indicators (red for declined, gray for unanswered) in group assignment view
+- [quick-15]: Extracted isParentLike() helper function outside component for DRY role checks instead of inline || at each location
 
 ### Pending Todos
 
@@ -123,6 +124,7 @@ None yet.
 | 12 | Create word cloud feature filterable by group/station | 2026-02-21 | d72fc52 | [12-create-word-cloud-feature-filterable-by-](./quick/12-create-word-cloud-feature-filterable-by-/) |
 | 13 | Add phone number field to registration | 2026-02-21 | 4728c1a | [13-add-phone-number-field-to-registration-8](./quick/13-add-phone-number-field-to-registration-8/) |
 | 14 | Add participation toggle for Wednesday meeting | 2026-02-21 | 235f02e | [14-add-participation-toggle-for-wednesday-m](./quick/14-add-participation-toggle-for-wednesday-m/) |
+| 15 | Fix admin youth assignment in user panel | 2026-02-21 | 2974b41 | [15-it-s-not-possible-to-assign-youth-to-the](./quick/15-it-s-not-possible-to-assign-youth-to-the/) |
 
 ### Blockers/Concerns
 
@@ -132,5 +134,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed quick task 14: Add participation toggle for Wednesday meeting
-Resume file: .planning/quick/14-add-participation-toggle-for-wednesday-m/14-SUMMARY.md
+Stopped at: Completed quick task 15: Fix admin youth assignment in user panel
+Resume file: .planning/quick/15-it-s-not-possible-to-assign-youth-to-the/15-SUMMARY.md
