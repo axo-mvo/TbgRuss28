@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 Phase: 5 of 5 (Export) -- COMPLETE
 Plan: 1 of 1 in current phase (1 complete)
 Status: ALL PHASES COMPLETE
-Last activity: 2026-02-21 - Completed quick task 11: Fix mobile chat input zoom/scroll issue
+Last activity: 2026-02-21 - Completed quick task 12: Create word cloud feature filterable by group/station
 
 Progress: [##########] 100%
 
@@ -94,6 +94,8 @@ Recent decisions affecting current work:
 - [quick-9]: Admin card placed between role text and group card; gear icon for admin panel card
 - [quick-10]: Used .in('role', ['youth', 'parent', 'admin']) instead of removing filter entirely -- defensive against accidentally including future roles
 - [quick-11]: text-base (16px) on chat input to prevent iOS Safari auto-zoom; maximumScale=1 viewport meta as belt-and-suspenders
+- [quick-12]: CSS flexbox word cloud instead of canvas/SVG library -- zero dependencies, mobile-friendly
+- [quick-12]: Record<string, unknown> casts for PostgREST join data -- defensive handling of array-or-object variability
 
 ### Pending Todos
 
@@ -114,6 +116,7 @@ None yet.
 | 9 | Admin panel navigation (dashboard <-> admin) | 2026-02-19 | 73df4ed | [9-the-admin-role-is-also-a-parent-role-the](./quick/9-the-admin-role-is-also-a-parent-role-the/) |
 | 10 | Include admin users in group assignment | 2026-02-20 | b025897 | [10-it-s-not-possible-to-assign-admins-that-](./quick/10-it-s-not-possible-to-assign-admins-that-/) |
 | 11 | Fix mobile chat input zoom/scroll issue | 2026-02-21 | 8bf948b | [11-fix-mobile-chat-input-zoom-scroll-issue-](./quick/11-fix-mobile-chat-input-zoom-scroll-issue-/) |
+| 12 | Create word cloud feature filterable by group/station | 2026-02-21 | d72fc52 | [12-create-word-cloud-feature-filterable-by-](./quick/12-create-word-cloud-feature-filterable-by-/) |
 
 ### Blockers/Concerns
 
@@ -123,5 +126,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed quick task 11: Fix mobile chat input zoom/scroll issue
-Resume file: .planning/quick/11-fix-mobile-chat-input-zoom-scroll-issue-/11-SUMMARY.md
+Stopped at: Completed quick task 12: Create word cloud feature filterable by group/station
+Resume file: .planning/quick/12-create-word-cloud-feature-filterable-by-/12-SUMMARY.md
