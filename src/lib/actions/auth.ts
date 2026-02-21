@@ -94,14 +94,19 @@ export async function register(formData: FormData): Promise<{ error?: string }> 
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const fullName = formData.get('fullName') as string
+  const phone = formData.get('phone') as string
   const inviteCode = formData.get('inviteCode') as string
   let role = formData.get('role') as string
   const youthIdsRaw = formData.get('youthIds') as string | null
   const youthIds: string[] = youthIdsRaw ? JSON.parse(youthIdsRaw) : []
 
   // Validate required fields
-  if (!email || !password || !fullName || !inviteCode || !role) {
+  if (!email || !password || !fullName || !phone || !inviteCode || !role) {
     return { error: 'Alle felt må fylles ut' }
+  }
+
+  if (!/^\d{8}$/.test(phone)) {
+    return { error: 'Telefonnummer må være 8 siffer' }
   }
 
   if (password.length < 6) {
@@ -170,6 +175,7 @@ export async function register(formData: FormData): Promise<{ error?: string }> 
       full_name: fullName,
       email,
       role,
+      phone,
     })
 
     if (profileError) {

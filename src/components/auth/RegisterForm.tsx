@@ -23,6 +23,7 @@ export default function RegisterForm() {
 
   // Step 2 fields
   const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [selectedYouthIds, setSelectedYouthIds] = useState<string[]>([])
@@ -71,6 +72,10 @@ export default function RegisterForm() {
       setError('Fyll inn fullt navn')
       return
     }
+    if (phone.length !== 8) {
+      setError('Telefonnummer må være 8 siffer')
+      return
+    }
     if (!email.trim()) {
       setError('Fyll inn e-postadresse')
       return
@@ -86,6 +91,7 @@ export default function RegisterForm() {
     formData.set('email', email.trim())
     formData.set('password', password)
     formData.set('fullName', fullName.trim())
+    formData.set('phone', phone)
     formData.set('inviteCode', inviteCode.trim())
     formData.set('role', role!)
     formData.set('youthIds', JSON.stringify(selectedYouthIds))
@@ -151,6 +157,20 @@ export default function RegisterForm() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               autoComplete="name"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="phone">Telefonnummer</Label>
+            <Input
+              id="phone"
+              type="tel"
+              inputMode="numeric"
+              placeholder="8 siffer"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 8))}
+              autoComplete="tel"
+              maxLength={8}
             />
           </div>
 
