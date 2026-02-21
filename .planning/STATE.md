@@ -105,6 +105,7 @@ Recent decisions affecting current work:
 - [quick-16]: Console fallback when Twilio env vars missing -- dev/testing works without SMS credentials
 - [quick-16]: Admin sees the generated code in success dialog as backup if SMS doesn't arrive (can read aloud)
 - [quick-16]: generateLink + verifyOtp for code-based login -- establishes real Supabase session without user's password
+- [quick-17]: Native sms: URI instead of Twilio -- admin taps "Åpne SMS" button to open phone's messaging app with pre-filled code message (zero server-side SMS dependency)
 - [quick-16]: Raw fetch to Twilio REST API instead of twilio npm package -- avoids dependency bloat
 - [quick-16]: Console fallback when Twilio env vars missing -- dev flow works without SMS credentials
 - [quick-16]: Magic link OTP verification (generateLink + verifyOtp) for code-based login
