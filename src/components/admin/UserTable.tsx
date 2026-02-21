@@ -6,7 +6,7 @@ import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Dialog from '@/components/ui/Dialog'
 import EmptyState from '@/components/ui/EmptyState'
-import { updateUserRole, deleteUser } from '@/lib/actions/admin'
+import { updateUserRole, deleteUser, sendTempAccessCode } from '@/lib/actions/admin'
 import ParentLinkSheet from '@/components/admin/ParentLinkSheet'
 
 // Types matching the Supabase relational query result
@@ -65,6 +65,16 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
     id: string
     name: string
     currentYouthIds: string[]
+  } | null>(null)
+  const [smsTarget, setSmsTarget] = useState<{
+    id: string
+    name: string
+    phone: string | null
+  } | null>(null)
+  const [smsResult, setSmsResult] = useState<{
+    code?: string
+    error?: string
+    phone?: string
   } | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -156,6 +166,20 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
     } else {
       setDeleteUserTarget(null)
     }
+  }
+
+  // Handle send SMS code
+  async function handleSendSmsCode() {
+    if (!smsTarget) return
+    setLoading(true)
+    const result = await sendTempAccessCode(smsTarget.id)
+    setLoading(false)
+    setSmsResult({
+      code: result.code,
+      error: result.error,
+      phone: smsTarget.phone || undefined,
+    })
+    setSmsTarget(null)
   }
 
   // Open role edit dialog (stop event propagation so parent card tap doesn't fire)
@@ -298,6 +322,18 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
                     >
                       Endre rolle
                     </button>
+                    {user.phone && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSmsTarget({ id: user.id, name: user.full_name, phone: user.phone })
+                        }}
+                        className="flex-1 min-h-[36px] px-3 py-1.5 rounded-lg text-sm font-medium
+                          text-teal-primary border border-teal-primary hover:bg-teal-primary/5 transition-colors"
+                      >
+                        SMS-kode
+                      </button>
+                    )}
                     <button
                       onClick={(e) => openDelete(e, user)}
                       className="flex-1 min-h-[36px] px-3 py-1.5 rounded-lg text-sm font-medium
@@ -387,6 +423,18 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
                           >
                             Endre rolle
                           </button>
+                          {user.phone && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSmsTarget({ id: user.id, name: user.full_name, phone: user.phone })
+                              }}
+                              className="min-h-[36px] px-3 py-1.5 rounded-lg text-sm font-medium
+                                text-teal-primary border border-teal-primary hover:bg-teal-primary/5 transition-colors"
+                            >
+                              SMS-kode
+                            </button>
+                          )}
                           <button
                             onClick={(e) => openDelete(e, user)}
                             className="min-h-[36px] px-3 py-1.5 rounded-lg text-sm font-medium
@@ -482,6 +530,31 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
         confirmLabel="Slett"
         confirmVariant="danger"
         loading={loading}
+      />
+
+      {/* SMS code confirmation dialog */}
+      <Dialog
+        open={!!smsTarget}
+        onClose={() => setSmsTarget(null)}
+        onConfirm={handleSendSmsCode}
+        title={`Send tilgangskode til ${smsTarget?.name}?`}
+        description={`En 6-sifret kode sendes via SMS til ${smsTarget?.phone}. Koden er gyldig i 24 timer.`}
+        confirmLabel="Send kode"
+        loading={loading}
+      />
+
+      {/* SMS result dialog */}
+      <Dialog
+        open={!!smsResult}
+        onClose={() => setSmsResult(null)}
+        onConfirm={() => setSmsResult(null)}
+        title={smsResult?.error ? 'Feil' : 'Kode sendt!'}
+        description={
+          smsResult?.error
+            ? smsResult.error
+            : `Koden er: ${smsResult?.code}. Den er sendt til ${smsResult?.phone} via SMS.`
+        }
+        confirmLabel="Lukk"
       />
 
       {/* Parent link sheet */}
