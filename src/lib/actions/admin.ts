@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { RUSS_GROUP_NAMES } from '@/lib/constants/group-names'
-import { sendSms } from '@/lib/sms/twilio'
 
 // ---------- Admin verification helper ----------
 // Every admin action must verify the caller is an admin (defense-in-depth).
@@ -253,12 +252,12 @@ export async function toggleGroupsLock(
 }
 
 // ---------- sendTempAccessCode ----------
-// Generates a 6-digit code, stores it in temp_access_codes, and sends via SMS.
-// Admin can see the code as backup in case SMS doesn't arrive.
+// Generates a 6-digit code, stores it in temp_access_codes, and returns it.
+// The admin can then send the code via the native SMS app using sms: URI.
 
 export async function sendTempAccessCode(
   userId: string
-): Promise<{ error?: string; code?: string }> {
+): Promise<{ error?: string; code?: string; phone?: string }> {
   const auth = await verifyAdmin()
   if ('error' in auth) return { error: auth.error }
 
@@ -303,15 +302,5 @@ export async function sendTempAccessCode(
     return { error: 'Kunne ikke opprette tilgangskode' }
   }
 
-  // Send SMS
-  const smsResult = await sendSms(
-    profile.phone,
-    `Din midlertidige tilgangskode for Buss 2028 Fellesm\u00f8te er: ${code}. Koden er gyldig i 24 timer.`
-  )
-
-  if (!smsResult.success) {
-    return { error: 'Kunne ikke sende SMS' }
-  }
-
-  return { code }
+  return { code, phone: profile.phone }
 }
