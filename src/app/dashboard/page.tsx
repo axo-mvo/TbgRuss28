@@ -161,7 +161,7 @@ export default async function DashboardPage() {
             )}
             {!membership && (
               <p className="text-text-muted mb-4">
-                Du er ikke tildelt en gruppe ennå. Kontakt admin.
+                Du er ikke tildelt gruppe ennå. Tildelingen skjer før møtet.
               </p>
             )}
             <RegisteredUsersOverview youth={youthWithParents} />
