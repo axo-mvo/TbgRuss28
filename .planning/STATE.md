@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 Phase: 5 of 5 (Export) -- COMPLETE
 Plan: 1 of 1 in current phase (1 complete)
 Status: ALL PHASES COMPLETE
-Last activity: 2026-02-21 - Completed quick task 15: Fix admin youth assignment in user panel
+Last activity: 2026-02-21 - Completed quick task 16: Admin SMS temporary access code for members
 
 Progress: [##########] 100%
 
@@ -101,6 +101,10 @@ Recent decisions affecting current work:
 - [quick-14]: Explicit Ja/Nei buttons instead of toggle switch for clearer mobile UX and ternary state visibility
 - [quick-14]: Opacity-50 with colored dot indicators (red for declined, gray for unanswered) in group assignment view
 - [quick-15]: Extracted isParentLike() helper function outside component for DRY role checks instead of inline || at each location
+- [quick-16]: Raw fetch to Twilio REST API instead of twilio npm package -- avoids dependency bloat
+- [quick-16]: Console fallback when Twilio env vars missing -- dev flow works without SMS credentials
+- [quick-16]: Magic link OTP verification (generateLink + verifyOtp) for code-based login
+- [quick-16]: Admin sees generated code in UI as backup in case SMS does not arrive
 
 ### Pending Todos
 
@@ -125,6 +129,7 @@ None yet.
 | 13 | Add phone number field to registration | 2026-02-21 | 4728c1a | [13-add-phone-number-field-to-registration-8](./quick/13-add-phone-number-field-to-registration-8/) |
 | 14 | Add participation toggle for Wednesday meeting | 2026-02-21 | 235f02e | [14-add-participation-toggle-for-wednesday-m](./quick/14-add-participation-toggle-for-wednesday-m/) |
 | 15 | Fix admin youth assignment in user panel | 2026-02-21 | 2974b41 | [15-it-s-not-possible-to-assign-youth-to-the](./quick/15-it-s-not-possible-to-assign-youth-to-the/) |
+| 16 | Admin SMS temporary access code for members | 2026-02-21 | f242db4 | [16-admin-sms-temporary-access-code-for-memb](./quick/16-admin-sms-temporary-access-code-for-memb/) |
 
 ### Blockers/Concerns
 
@@ -134,5 +139,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed quick task 15: Fix admin youth assignment in user panel
-Resume file: .planning/quick/15-it-s-not-possible-to-assign-youth-to-the/15-SUMMARY.md
+Stopped at: Completed quick task 16: Admin SMS temporary access code for members
+Resume file: .planning/quick/16-admin-sms-temporary-access-code-for-memb/16-SUMMARY.md
