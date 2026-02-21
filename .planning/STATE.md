@@ -101,6 +101,10 @@ Recent decisions affecting current work:
 - [quick-14]: Explicit Ja/Nei buttons instead of toggle switch for clearer mobile UX and ternary state visibility
 - [quick-14]: Opacity-50 with colored dot indicators (red for declined, gray for unanswered) in group assignment view
 - [quick-15]: Extracted isParentLike() helper function outside component for DRY role checks instead of inline || at each location
+- [quick-16]: Raw fetch to Twilio REST API instead of twilio npm package -- avoids dependency bloat for single API call
+- [quick-16]: Console fallback when Twilio env vars missing -- dev/testing works without SMS credentials
+- [quick-16]: Admin sees the generated code in success dialog as backup if SMS doesn't arrive (can read aloud)
+- [quick-16]: generateLink + verifyOtp for code-based login -- establishes real Supabase session without user's password
 - [quick-16]: Raw fetch to Twilio REST API instead of twilio npm package -- avoids dependency bloat
 - [quick-16]: Console fallback when Twilio env vars missing -- dev flow works without SMS credentials
 - [quick-16]: Magic link OTP verification (generateLink + verifyOtp) for code-based login
