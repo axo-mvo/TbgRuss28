@@ -306,6 +306,89 @@ export async function updateAttending(attending: boolean): Promise<{ error?: str
   }
 }
 
+// ---------- loginWithCode ----------
+// Signs in using a temporary 6-digit access code (sent by admin via SMS).
+
+export async function loginWithCode(code: string): Promise<{ error?: string }> {
+  const trimmedCode = code.trim()
+
+  // Validate code is 6 digits
+  if (!/^\d{6}$/.test(trimmedCode)) {
+    return { error: 'Koden m\u00e5 v\u00e6re 6 siffer' }
+  }
+
+  let redirectPath: string | null = null
+
+  try {
+    const admin = createAdminClient()
+
+    // Look up the code: must be unused and not expired
+    const { data: codeRow, error: codeError } = await admin
+      .from('temp_access_codes')
+      .select('id, user_id')
+      .eq('code', trimmedCode)
+      .eq('used', false)
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (codeError || !codeRow) {
+      return { error: 'Ugyldig eller utl\u00f8pt kode' }
+    }
+
+    // Get user email from profiles
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('email')
+      .eq('id', codeRow.user_id)
+      .single()
+
+    if (!profile?.email) {
+      return { error: 'Kunne ikke finne brukeren' }
+    }
+
+    // Mark code as used
+    await admin
+      .from('temp_access_codes')
+      .update({ used: true })
+      .eq('id', codeRow.id)
+
+    // Generate magic link and verify OTP to establish session
+    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+      type: 'magiclink',
+      email: profile.email,
+    })
+
+    if (linkError || !linkData?.properties?.hashed_token) {
+      return { error: 'Kunne ikke logge inn. Pr\u00f8v igjen.' }
+    }
+
+    // Use the server-side Supabase client to verify the OTP and set the session cookie
+    const supabase = await createClient()
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      token_hash: linkData.properties.hashed_token,
+      type: 'magiclink',
+    })
+
+    if (verifyError) {
+      return { error: 'Kunne ikke logge inn. Pr\u00f8v igjen.' }
+    }
+
+    redirectPath = '/dashboard'
+  } catch {
+    return { error: 'Noe gikk galt. Pr\u00f8v igjen.' }
+  }
+
+  // redirect() throws internally -- must be OUTSIDE try/catch
+  if (redirectPath) {
+    revalidatePath('/', 'layout')
+    redirect(redirectPath)
+  }
+
+  return {}
+}
+
 // ---------- logout ----------
 // Signs out and redirects to login page.
 

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { RUSS_GROUP_NAMES } from '@/lib/constants/group-names'
+import { sendSms } from '@/lib/sms/twilio'
 
 // ---------- Admin verification helper ----------
 // Every admin action must verify the caller is an admin (defense-in-depth).
@@ -249,4 +250,68 @@ export async function toggleGroupsLock(
   revalidatePath('/admin/groups')
   revalidatePath('/dashboard')
   return {}
+}
+
+// ---------- sendTempAccessCode ----------
+// Generates a 6-digit code, stores it in temp_access_codes, and sends via SMS.
+// Admin can see the code as backup in case SMS doesn't arrive.
+
+export async function sendTempAccessCode(
+  userId: string
+): Promise<{ error?: string; code?: string }> {
+  const auth = await verifyAdmin()
+  if ('error' in auth) return { error: auth.error }
+
+  const admin = createAdminClient()
+
+  // Look up user profile
+  const { data: profile, error: profileError } = await admin
+    .from('profiles')
+    .select('full_name, phone')
+    .eq('id', userId)
+    .single()
+
+  if (profileError || !profile) {
+    return { error: 'Kunne ikke finne brukeren' }
+  }
+
+  if (!profile.phone) {
+    return { error: 'Brukeren har ikke registrert telefonnummer' }
+  }
+
+  // Generate 6-digit code
+  const code = Math.floor(100000 + Math.random() * 900000).toString()
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+
+  // Invalidate existing unused codes for this user
+  await admin
+    .from('temp_access_codes')
+    .update({ used: true })
+    .eq('user_id', userId)
+    .eq('used', false)
+
+  // Insert new code
+  const { error: insertError } = await admin
+    .from('temp_access_codes')
+    .insert({
+      user_id: userId,
+      code,
+      expires_at: expiresAt,
+    })
+
+  if (insertError) {
+    return { error: 'Kunne ikke opprette tilgangskode' }
+  }
+
+  // Send SMS
+  const smsResult = await sendSms(
+    profile.phone,
+    `Din midlertidige tilgangskode for Buss 2028 Fellesm\u00f8te er: ${code}. Koden er gyldig i 24 timer.`
+  )
+
+  if (!smsResult.success) {
+    return { error: 'Kunne ikke sende SMS' }
+  }
+
+  return { code }
 }
