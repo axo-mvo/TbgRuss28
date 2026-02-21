@@ -30,7 +30,7 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
         placeholder="Skriv en kommentar..."
         maxLength={2000}
         disabled={disabled}
-        className="flex-1 min-h-[44px] px-4 py-2 rounded-full bg-white border border-teal-primary/15 text-sm text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:border-teal-primary/40 transition-colors"
+        className="flex-1 min-h-[44px] px-4 py-2 rounded-full bg-white border border-teal-primary/15 text-base text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:border-teal-primary/40 transition-colors"
       />
       <button
         type="submit"
