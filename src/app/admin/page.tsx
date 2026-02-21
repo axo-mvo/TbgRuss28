@@ -54,6 +54,23 @@ export default function AdminPage() {
             </p>
           </Link>
 
+          <Link
+            href="/admin/wordcloud"
+            className="block rounded-xl border border-gray-200 bg-white p-5 shadow-sm
+              hover:border-teal-primary hover:shadow-md transition-all"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <svg className="h-6 w-6 text-teal-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zm0-10v2h14V7H7z" />
+              </svg>
+              <h2 className="text-lg font-semibold text-text-primary">Ordsky</h2>
+            </div>
+            <p className="text-sm text-text-muted">
+              Visualiser de mest brukte ordene fra diskusjonene
+            </p>
+          </Link>
+
           <a
             href="/api/export"
             download
