@@ -26,7 +26,7 @@ export default function AttendingToggle({ initialAttending }: AttendingTogglePro
   return (
     <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
       <h3 className="text-base font-semibold text-text-primary mb-0.5">
-        Fellesm&#248;te onsdag kl. 18:00
+        Fellesm&#248;te onsdag kl. 18:00 - Greveskogen VGS
       </h3>
       <p className="text-sm text-text-muted mb-3">Kommer du?</p>
 
