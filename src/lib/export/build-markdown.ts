@@ -15,34 +15,39 @@ function groupBy<T>(items: T[], keyFn: (item: T) => string | number): Record<str
   return result
 }
 
-const PRESENTATION_PROMPT = `> **How to create a presentation from this export:**
->
-> Create a PowerPoint presentation from the attached meeting notes.
+const PRESENTATION_PROMPT = `> **Create a PowerPoint presentation from the attached meeting notes.**
 >
 > **Structure:**
 > - Title slide with event name and date
-> - For each topic/station: one slide showing each group's summary side by side (4–5 sentences per group), followed by one slide listing 4 key takeaways across all groups
+> - For each topic/station:
+>   1. **Group overview slide** – all groups on one slide, quick snapshot only (2–3 sentences per group max). This is a supporting slide, not the main event.
+>   2. **Nøkkelpunkter slide** – this is the primary slide. Elaborate synthesis of what the groups collectively said: 6–8 points, written as full, insightful sentences rather than short bullets. Draw out patterns, agreements, tensions, and notable themes across groups. This is what the audience will actually read and discuss.
 > - Closing slide
 >
+> **Layout – group overview slide:**
+> - Fit all groups in a compact grid (2–3 columns depending on group count)
+> - Small cards with group name, thin colored top border, 2–3 sentence summary
+> - Light background (\`F4F6FA\`), full-width navy header bar with station title
+>
+> **Layout – Nøkkelpunkter slide:**
+> - Dark navy background (\`1B2E4B\`)
+> - Full-width coral header bar (\`E85D4A\`) with "Stasjon X: Nøkkelpunkter"
+> - 6–8 points displayed as cards or rows — each point is 1–2 full sentences, not a fragment
+> - Coral dot or left-border accent per point
+> - Cards in 2-column layout with white text on slightly lighter navy (\`2A4A72\`)
+> - Subtitle under header showing the station topic name in muted grey
+>
 > **Design requirements:**
-> - Color palette: dark navy background (\`1B2E4B\`) for title/closing/key-point slides, light sand (\`F4F6FA\`) for group summary slides
-> - Accent color: coral (\`E85D4A\`) for header bars, dividers, and dot markers
-> - Group color coding: blue (\`2D7DD2\`) for Group A, coral for Group B — use a thin top border on each group card
-> - White card layout for group summaries — two columns, subtle drop shadow, no border
-> - Key points displayed as dark navy cards (\`2A4A72\`) with a coral dot accent and white text
-> - Typography: Calibri throughout — 40pt bold titles, 20pt slide headers, 13–14pt body
-> - Left-side coral accent bar on title and closing slides
-> - No decorative lines under titles — use whitespace and background color instead
-> - Every slide has a full-width colored header bar with the slide title in white
+> - Calibri throughout — 40pt bold titles, 18–20pt headers, 13–14pt body
+> - No decorative lines under titles
+> - Left coral accent bar on title and closing slides
+> - Assign each group a distinct accent color for their card border (cycle through: \`2D7DD2\`, \`E85D4A\`, \`2CA58D\`, \`F0A500\`, \`7B5EA7\`, \`C94040\`)
 >
 > **Content tone:**
-> - Rewrite raw group notes into coherent, complete sentences
-> - Stay faithful to the intent — don't add opinions or conclusions not present in the notes
-> - Key takeaways should synthesize both groups, not just list one group's points
+> - Group overview: faithful but condensed — preserve voice, trim filler
+> - Nøkkelpunkter: synthesize across groups — identify what they agreed on, where nuance differs, what the dominant themes are. Write in an observational, summary tone. No new opinions — only what's in the notes.
 >
-> **Output:** A \`.pptx\` file using PptxGenJS.
->
-> *Swap in your own group names, station names, and color preferences as needed.*`
+> **Output:** A \`.pptx\` file using PptxGenJS.`
 
 export function buildExportMarkdown(messages: ExportMessage[]): string {
   let md = '# Fellesmøte - Eksport\n\n'
