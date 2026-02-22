@@ -153,6 +153,9 @@ export async function register(formData: FormData): Promise<{ error?: string }> 
       }
     }
 
+    // Use the server-authoritative role from the invite code, not the client-supplied value
+    role = codeResult.role
+
     // Step 2: Create auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
