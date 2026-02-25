@@ -35,9 +35,10 @@ const PRESENTATION_PROMPT = `> **Create a PowerPoint presentation from the attac
 > - Dark navy background (\`1B2E4B\`), full-width coral header bar (\`E85D4A\`)
 > - Title: "Hva ble vi enige om?"
 > - Subtitle in muted grey: "Konklusjoner fra hver stasjon — basert på alle gruppenes diskusjoner"
-> - 5 station cards in a 2-column grid (3 rows, last row single card centered)
-> - Each card: slightly lighter navy background (\`2A4A72\`), distinct colored left accent bar, bold white station label (12pt), 2–3 sentences in muted grey (10.5pt)
-> - Use a different accent color per card (cycle through: \`2D7DD2\`, \`E85D4A\`, \`2CA58D\`, \`F0A500\`, \`7B5EA7\`)
+> - 6 cards in a 2-column grid (3 rows): 5 station cards + 1 "Veien videre" card
+> - Each card: slightly lighter navy background (\`2A4A72\`), distinct colored left accent bar, bold white label (12pt), 2–3 sentences in muted grey (10.5pt)
+> - Use a different accent color per card (cycle through: \`2D7DD2\`, \`E85D4A\`, \`2CA58D\`, \`F0A500\`, \`7B5EA7\`, \`C94040\`)
+> - The 6th card (bottom-right) has label "Veien videre" and suggests 3–5 concrete next steps based on the discussions (e.g. schedule a follow-up meeting on topic X, draft a new contract, set up shared budget tool). Only actionable items — no generic advice.
 >
 > **Content – closing summary:**
 > - Structure the summary around the 5 stations, not abstract themes
