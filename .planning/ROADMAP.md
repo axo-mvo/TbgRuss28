@@ -1,8 +1,9 @@
 # Roadmap: Buss 2028 Fellesmote-appen
 
-## Overview
+## Milestones
 
-This roadmap delivers a real-time group discussion webapp for ~80 users (youth, parents, admins) rotating through 6 discussion stations during a single in-person meeting. The build progresses from authentication and project foundation, through admin tools for group management, to the core meeting-day experience (real-time chat + timer), station lifecycle flow, and finally post-meeting data export. Every phase delivers a coherent, testable capability. The app is mobile-first, Norwegian-language, and deployed on Vercel + Supabase.
+- v1.0 MVP - Phases 1-5 (shipped 2026-02-19)
+- v1.1 Multi-Meeting Platform - Phases 6-9 (in progress)
 
 ## Phases
 
@@ -12,13 +13,14 @@ This roadmap delivers a real-time group discussion webapp for ~80 users (youth, 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
+<details>
+<summary>v1.0 MVP (Phases 1-5) - SHIPPED 2026-02-19</summary>
+
 - [x] **Phase 1: Foundation and Authentication** - Project setup, Supabase schema, invite-code registration, login, role-based routing, and base UI with design system (completed 2026-02-19)
 - [x] **Phase 2: Admin Panel** - User management, parent-child linking view, group creation/assignment, and meeting-day group locking (completed 2026-02-19)
 - [x] **Phase 3: Station Chat and Timer** - Station selector dashboard, real-time group chat via Supabase Broadcast, synchronized 15-minute countdown timer, and message display (completed 2026-02-19)
 - [x] **Phase 4: Station Flow and Resilience** - End-station confirmation, group-wide redirect, completed station read-only mode, and connection status indicator (completed 2026-02-19)
 - [x] **Phase 5: Export** - Admin Markdown export of all conversations grouped by station and group (completed 2026-02-19)
-
-## Phase Details
 
 ### Phase 1: Foundation and Authentication
 **Goal**: Users can register with an invite code, log in, and be routed to the correct dashboard based on their role, all within a mobile-optimized Norwegian UI
@@ -33,8 +35,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Project setup, Supabase infrastructure, Tailwind v4 design system, and database migrations
-- [ ] 01-02-PLAN.md — Registration flow, login flow, and role-based routing with layout guards
+- [x] 01-01-PLAN.md -- Project setup, Supabase infrastructure, Tailwind v4 design system, and database migrations
+- [x] 01-02-PLAN.md -- Registration flow, login flow, and role-based routing with layout guards
 
 ### Phase 2: Admin Panel
 **Goal**: Admin can manage users, view parent-child links, create groups with parent-child separation logic, and lock groups so participants see their assignment
@@ -48,9 +50,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md -- Backend foundation: DB migrations, server actions, UI primitives, admin hub
-- [ ] 02-02-PLAN.md -- User management page: user table, search, role editing, deletion, parent-link editing
-- [ ] 02-03-PLAN.md -- Group builder: drag-and-drop/tap-to-assign, parent-child separation, lock/publish, dashboard update
+- [x] 02-01-PLAN.md -- Backend foundation: DB migrations, server actions, UI primitives, admin hub
+- [x] 02-02-PLAN.md -- User management page: user table, search, role editing, deletion, parent-link editing
+- [x] 02-03-PLAN.md -- Group builder: drag-and-drop/tap-to-assign, parent-child separation, lock/publish, dashboard update
 
 ### Phase 3: Station Chat and Timer
 **Goal**: Participants can open a station, see real-time messages from their group, and track a synchronized 15-minute countdown timer
@@ -94,19 +96,100 @@ Plans:
 Plans:
 - [x] 05-01-PLAN.md -- Markdown export: Route Handler, builder function, admin page export button
 
+</details>
+
+### v1.1 Multi-Meeting Platform (In Progress)
+
+**Milestone Goal:** Evolve from a single-meeting app to a meeting-series platform with admin-configurable meetings, a contact directory, and browsable meeting history.
+
+- [ ] **Phase 6: Schema Migration** - Migrate database to meeting-scoped structure, preserving v1.0 data as the first previous meeting
+- [ ] **Phase 7: Admin Meeting Management** - Admin can create meetings with custom stations, manage per-meeting groups, and control meeting lifecycle
+- [ ] **Phase 8: Contact Directory and Dashboard** - Searchable contact directory as permanent dashboard, meeting-state-aware UI, per-meeting attendance
+- [ ] **Phase 9: Meeting History** - Browse previous meetings with read-only discussions, per-meeting word cloud, consolidated admin detail view
+
+## Phase Details
+
+### Phase 6: Schema Migration
+**Goal**: The database supports multiple meetings with all existing v1.0 data preserved and accessible
+**Depends on**: Phase 5 (v1.0 complete)
+**Requirements**: MEET-03, MEET-05, SCOPE-03
+**Success Criteria** (what must be TRUE):
+  1. A `meetings` table exists with status, date, time, and venue columns, and a partial unique index enforces only one upcoming meeting at a time
+  2. All v1.0 stations, groups, group members, sessions, and messages exist under a backfilled "Fellesmote #1" meeting with their original UUIDs intact
+  3. All four Postgres RPC functions (open_station, view_station, end_station, get_word_frequencies) operate correctly against the new meeting-scoped tables
+  4. Real-time chat continues to work identically to v1.0 (Realtime RLS policy updated for new table names)
+  5. The app boots and functions as before with no user-visible regressions
+**Plans**: 2 plans
+
+Plans:
+- [ ] 06-01-PLAN.md -- Migration SQL file: meetings table, FK columns, backfill, constraints, RLS policies
+- [ ] 06-02-PLAN.md -- Apply migration to Supabase and verify zero regressions
+
+### Phase 7: Admin Meeting Management
+**Goal**: Admin can create and fully configure meetings with custom stations, per-meeting groups, and lifecycle control
+**Depends on**: Phase 6
+**Requirements**: MEET-01, MEET-02, MEET-04, SCOPE-01, SCOPE-04, SCOPE-05
+**Success Criteria** (what must be TRUE):
+  1. Admin can create a new meeting by entering a date, time, and venue, and the meeting appears as the upcoming meeting
+  2. Admin can add, edit, reorder, and remove stations on a meeting, each with a title, questions, and optional tip
+  3. Admin can build groups for a specific meeting using the existing drag-and-drop group builder, and those groups are scoped to that meeting only
+  4. Admin can progress a meeting through its lifecycle (upcoming to active to completed) and the app responds accordingly
+  5. Export downloads a markdown file scoped to a specific meeting, and word cloud displays frequencies from that meeting's discussions only
+**Plans**: TBD
+
+Plans:
+- [ ] 07-01: TBD
+- [ ] 07-02: TBD
+- [ ] 07-03: TBD
+
+### Phase 8: Contact Directory and Dashboard
+**Goal**: Users see a permanent searchable contact directory on the dashboard with meeting-state-aware content and per-meeting attendance
+**Depends on**: Phase 7
+**Requirements**: DIR-01, DIR-02, DIR-03, DIR-04, SCOPE-02, DASH-01, DASH-02
+**Success Criteria** (what must be TRUE):
+  1. Dashboard always shows a searchable contact directory where users can find any member by name
+  2. Youth-centered directory view lets users expand a youth entry to see linked parents with their name, phone, and email
+  3. Flat "everyone" view shows all members alphabetically with tap-to-call and tap-to-email action links
+  4. Dashboard adapts to meeting state: shows upcoming meeting card when one exists, shows active meeting stations when meeting is active, shows only directory and previous meetings when no upcoming meeting exists
+  5. Users can mark attendance (kommer/kommer ikke) on the upcoming meeting, and the attendance count is visible on the meeting card
+**Plans**: TBD
+
+Plans:
+- [ ] 08-01: TBD
+- [ ] 08-02: TBD
+- [ ] 08-03: TBD
+
+### Phase 9: Meeting History
+**Goal**: Users can browse previous meetings and read past discussions, and admin has a consolidated per-meeting detail view
+**Depends on**: Phase 8
+**Requirements**: DASH-03, DASH-04
+**Success Criteria** (what must be TRUE):
+  1. Previous meetings are listed on the dashboard with date, venue, and summary info, and users can tap into any past meeting
+  2. Past meeting discussions are viewable in read-only mode per station per group, reusing the existing ChatRoom component
+  3. Admin meeting detail view consolidates stations config, groups, word cloud, and export for each meeting in one place
+**Plans**: TBD
+
+Plans:
+- [ ] 09-01: TBD
+- [ ] 09-02: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
+Phases execute in numeric order: 6 -> 7 -> 8 -> 9
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Foundation and Authentication | 2/2 | Complete    | 2026-02-19 |
-| 2. Admin Panel | 3/3 | Complete    | 2026-02-19 |
-| 3. Station Chat and Timer | 2/2 | Complete | 2026-02-19 |
-| 4. Station Flow and Resilience | 2/2 | Complete | 2026-02-19 |
-| 5. Export | 1/1 | Complete | 2026-02-19 |
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. Foundation and Authentication | v1.0 | 2/2 | Complete | 2026-02-19 |
+| 2. Admin Panel | v1.0 | 3/3 | Complete | 2026-02-19 |
+| 3. Station Chat and Timer | v1.0 | 2/2 | Complete | 2026-02-19 |
+| 4. Station Flow and Resilience | v1.0 | 2/2 | Complete | 2026-02-19 |
+| 5. Export | v1.0 | 1/1 | Complete | 2026-02-19 |
+| 6. Schema Migration | v1.1 | 0/2 | Planned | - |
+| 7. Admin Meeting Management | v1.1 | 0/? | Not started | - |
+| 8. Contact Directory and Dashboard | v1.1 | 0/? | Not started | - |
+| 9. Meeting History | v1.1 | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-02-19*
-*Last updated: 2026-02-19*
+*Last updated: 2026-02-25 -- v1.1 milestone added*
