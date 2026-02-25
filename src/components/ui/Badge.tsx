@@ -1,4 +1,4 @@
-type BadgeVariant = "youth" | "parent" | "admin";
+type BadgeVariant = "youth" | "parent" | "admin" | "upcoming" | "active" | "completed";
 
 interface BadgeProps {
   children: React.ReactNode;
@@ -10,6 +10,9 @@ const variantStyles: Record<BadgeVariant, string> = {
   youth: "bg-teal-primary/10 text-teal-primary",
   parent: "bg-coral/10 text-coral",
   admin: "bg-warning/10 text-warning",
+  upcoming: "bg-teal-primary/10 text-teal-primary",
+  active: "bg-coral/10 text-coral",
+  completed: "bg-gray-100 text-text-muted",
 };
 
 export default function Badge({
