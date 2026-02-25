@@ -1,3 +1,16 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: Multi-Meeting Platform
+status: unknown
+last_updated: "2026-02-25T22:39:33.720Z"
+progress:
+  total_phases: 6
+  completed_phases: 5
+  total_plans: 12
+  completed_plans: 11
+---
+
 # Project State
 
 ## Project Reference
@@ -5,39 +18,53 @@
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** Groups can have real-time discussions at stations with a visible timer and see each other's messages instantly
-**Current focus:** Milestone v1.1 — Multi-Meeting Platform
+**Current focus:** Phase 6 - Schema Migration (v1.1)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-25 — Milestone v1.1 started
+Phase: 6 of 9 (Schema Migration)
+Plan: 1 of 2 in current phase
+Status: Executing
+Last activity: 2026-02-25 -- completed 06-01 (meetings migration SQL)
+
+Progress: [###########.........] 58% (v1.0 complete, phase 6 plan 1/2 done)
+
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: 11 (10 v1.0 + 1 v1.1)
+- Average duration: 3.7 min
+- Total execution time: 0.68 hours
+
+**By Phase (v1.0):**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 1. Foundation | 2 | - | - |
+| 2. Admin | 3 | - | - |
+| 3. Chat/Timer | 2 | - | - |
+| 4. Flow | 2 | - | - |
+| 5. Export | 1 | - | - |
+
+*Updated after each plan completion*
+| Phase 06 P01 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Key decisions from v1.0 affecting v1.1:
+Key decisions affecting v1.1:
 
-- [Roadmap]: Use Next.js 15 (not 14) per research -- v14 reached EOL Oct 2025
-- [Roadmap]: Supabase Broadcast for real-time chat delivery, direct DB inserts for persistence (two-path approach)
-- [Roadmap]: Server-timestamp timer sync (store end_timestamp, clients compute remaining)
-- [Roadmap]: Auth middleware must use getUser() not getSession()
-- [01-01]: Pinned Next.js to v15.5 (create-next-app defaults to v16)
-- [02-ctx]: Parents and their linked youth must NEVER be in same group
-- [02-ctx]: Group names from predefined list of famous russ group names, randomly assigned
-- [02-03]: dnd-kit/react for drag-and-drop; BottomSheet tap-to-assign on mobile
-- [03-01]: open_station uses SECURITY DEFINER Postgres function with FOR UPDATE row lock
-- [03-01]: useRealtimeChat exposes setMessages for merging initial history
-- [04-01]: channelRef exposed from useRealtimeChat for broadcast
-- [05-01]: Markdown builder as pure function for testability
-- [quick-5]: createAdminClient to bypass RLS for cross-user profile visibility
-- [quick-12]: CSS flexbox word cloud -- zero dependencies, mobile-friendly
-- [quick-14]: Nullable boolean for attendance (null = unanswered, true = yes, false = no)
-- [quick-15]: isParentLike() helper function for DRY role checks
-- [quick-17]: Native sms: URI for SMS -- zero server-side dependency
+- [v1.1 Roadmap]: Schema migration first -- all meeting-scoped features depend on new tables
+- [v1.1 Roadmap]: UUID preservation during migration keeps all existing FK references valid
+- [v1.1 Roadmap]: Groups per-meeting (new UUIDs each time) eliminates Realtime compound filter limitation
+- [v1.1 Roadmap]: Zero new npm dependencies -- existing stack covers all v1.1 features
+- [v1.0]: Supabase Broadcast for real-time chat, direct DB inserts for persistence
+- [v1.0]: Server-timestamp timer sync (store end_timestamp, clients compute remaining)
+- [v1.0]: open_station uses SECURITY DEFINER Postgres function with FOR UPDATE row lock
+- [06-01]: Partial unique index ON meetings ((true)) WHERE status = 'upcoming' enforces single upcoming meeting at DB level
+- [06-01]: Nullable-then-backfill-then-NOT-NULL pattern for safe meeting_id FK migration
 
 ### Pending Todos
 
@@ -45,13 +72,13 @@ None yet.
 
 ### Blockers/Concerns
 
-- Supabase free tier Realtime limit is 200 concurrent connections; ~80 users with 2-3 subscriptions each could hit ~240. Consider Pro tier ($25/mo) as insurance before events.
-
-## v1.0 Summary
-
-All 5 phases complete (10 plans, 0.65 hours total execution). 31/31 requirements delivered. 18 quick tasks completed. See MILESTONES.md for archive.
+- Supabase free tier Realtime limit (200 concurrent) may be tight for ~80 users with 2-3 subscriptions each
+- Migration must be tested on Supabase branch database before production
+- "One upcoming meeting" enforcement needs UX decision in Phase 7 (disable button vs auto-transition)
+- Station ordering UI decision needed in Phase 7 (drag-and-drop vs arrow buttons)
 
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Starting milestone v1.1 — defining requirements
+Stopped at: Completed 06-01-PLAN.md (meetings migration SQL)
+Resume file: None

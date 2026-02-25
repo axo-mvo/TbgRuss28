@@ -122,7 +122,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 06-01-PLAN.md -- Migration SQL file: meetings table, FK columns, backfill, constraints, RLS policies
+- [x] 06-01-PLAN.md -- Migration SQL file: meetings table, FK columns, backfill, constraints, RLS policies
 - [ ] 06-02-PLAN.md -- Apply migration to Supabase and verify zero regressions
 
 ### Phase 7: Admin Meeting Management

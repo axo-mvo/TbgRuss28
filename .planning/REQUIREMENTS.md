@@ -11,15 +11,15 @@ Requirements for milestone v1.1 — Multi-Meeting Platform. Each maps to roadmap
 
 - [ ] **MEET-01**: Admin can create a meeting with date, time, and venue
 - [ ] **MEET-02**: Admin can configure stations per meeting (title, questions, optional tip)
-- [ ] **MEET-03**: Only one upcoming meeting exists at a time (enforced by DB constraint)
+- [x] **MEET-03**: Only one upcoming meeting exists at a time (enforced by DB constraint)
 - [ ] **MEET-04**: Admin controls meeting lifecycle: upcoming → active → completed
-- [ ] **MEET-05**: Existing v1.0 data migrates into new schema as the first previous meeting
+- [x] **MEET-05**: Existing v1.0 data migrates into new schema as the first previous meeting
 
 ### Per-Meeting Scoping
 
 - [ ] **SCOPE-01**: Groups are created fresh per meeting via the existing group builder
 - [ ] **SCOPE-02**: Attendance (kommer/kommer ikke) is tracked per meeting, not globally
-- [ ] **SCOPE-03**: Station sessions and messages are scoped to their meeting via FK chain
+- [x] **SCOPE-03**: Station sessions and messages are scoped to their meeting via FK chain
 - [ ] **SCOPE-04**: Export downloads discussions from a specific meeting with meeting title/date in header
 - [ ] **SCOPE-05**: Word cloud shows word frequencies from a specific meeting's discussions
 
@@ -83,12 +83,12 @@ Deferred beyond v1.1. Tracked but not in current roadmap.
 |-------------|-------|--------|
 | MEET-01 | Phase 7 | Pending |
 | MEET-02 | Phase 7 | Pending |
-| MEET-03 | Phase 6 | Pending |
+| MEET-03 | Phase 6 | Complete |
 | MEET-04 | Phase 7 | Pending |
-| MEET-05 | Phase 6 | Pending |
+| MEET-05 | Phase 6 | Complete |
 | SCOPE-01 | Phase 7 | Pending |
 | SCOPE-02 | Phase 8 | Pending |
-| SCOPE-03 | Phase 6 | Pending |
+| SCOPE-03 | Phase 6 | Complete |
 | SCOPE-04 | Phase 7 | Pending |
 | SCOPE-05 | Phase 7 | Pending |
 | DIR-01 | Phase 8 | Pending |
