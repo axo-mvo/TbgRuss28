@@ -135,12 +135,12 @@ Plans:
   3. Admin can build groups for a specific meeting using the existing drag-and-drop group builder, and those groups are scoped to that meeting only
   4. Admin can progress a meeting through its lifecycle (upcoming to active to completed) and the app responds accordingly
   5. Export downloads a markdown file scoped to a specific meeting, and word cloud displays frequencies from that meeting's discussions only
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 07-01: TBD
-- [ ] 07-02: TBD
-- [ ] 07-03: TBD
+- [ ] 07-01-PLAN.md -- Meeting CRUD server actions, meetings overview/creation/detail routes, admin hub restructure
+- [ ] 07-02-PLAN.md -- Meeting detail tabs, station CRUD with drag-and-drop reorder, inline station editor
+- [ ] 07-03-PLAN.md -- Meeting-scoped groups, lifecycle controls, meeting-scoped export and word cloud
 
 ### Phase 8: Contact Directory and Dashboard
 **Goal**: Users see a permanent searchable contact directory on the dashboard with meeting-state-aware content and per-meeting attendance
