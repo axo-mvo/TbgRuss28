@@ -9,7 +9,7 @@ Requirements for milestone v1.1 — Multi-Meeting Platform. Each maps to roadmap
 
 ### Meeting Management
 
-- [ ] **MEET-01**: Admin can create a meeting with date, time, and venue
+- [x] **MEET-01**: Admin can create a meeting with date, time, and venue
 - [ ] **MEET-02**: Admin can configure stations per meeting (title, questions, optional tip)
 - [x] **MEET-03**: Only one upcoming meeting exists at a time (enforced by DB constraint)
 - [ ] **MEET-04**: Admin controls meeting lifecycle: upcoming → active → completed
@@ -81,7 +81,7 @@ Deferred beyond v1.1. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MEET-01 | Phase 7 | Pending |
+| MEET-01 | Phase 7 | Complete |
 | MEET-02 | Phase 7 | Pending |
 | MEET-03 | Phase 6 | Complete |
 | MEET-04 | Phase 7 | Pending |
