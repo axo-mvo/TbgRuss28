@@ -81,30 +81,30 @@ Deferred beyond v1.1. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MEET-01 | TBD | Pending |
-| MEET-02 | TBD | Pending |
-| MEET-03 | TBD | Pending |
-| MEET-04 | TBD | Pending |
-| MEET-05 | TBD | Pending |
-| SCOPE-01 | TBD | Pending |
-| SCOPE-02 | TBD | Pending |
-| SCOPE-03 | TBD | Pending |
-| SCOPE-04 | TBD | Pending |
-| SCOPE-05 | TBD | Pending |
-| DIR-01 | TBD | Pending |
-| DIR-02 | TBD | Pending |
-| DIR-03 | TBD | Pending |
-| DIR-04 | TBD | Pending |
-| DASH-01 | TBD | Pending |
-| DASH-02 | TBD | Pending |
-| DASH-03 | TBD | Pending |
-| DASH-04 | TBD | Pending |
+| MEET-01 | Phase 7 | Pending |
+| MEET-02 | Phase 7 | Pending |
+| MEET-03 | Phase 6 | Pending |
+| MEET-04 | Phase 7 | Pending |
+| MEET-05 | Phase 6 | Pending |
+| SCOPE-01 | Phase 7 | Pending |
+| SCOPE-02 | Phase 8 | Pending |
+| SCOPE-03 | Phase 6 | Pending |
+| SCOPE-04 | Phase 7 | Pending |
+| SCOPE-05 | Phase 7 | Pending |
+| DIR-01 | Phase 8 | Pending |
+| DIR-02 | Phase 8 | Pending |
+| DIR-03 | Phase 8 | Pending |
+| DIR-04 | Phase 8 | Pending |
+| DASH-01 | Phase 8 | Pending |
+| DASH-02 | Phase 8 | Pending |
+| DASH-03 | Phase 9 | Pending |
+| DASH-04 | Phase 9 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 18 total
-- Mapped to phases: 0 (pending roadmap creation)
-- Unmapped: 18
+- Mapped to phases: 18
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-25*
-*Last updated: 2026-02-25 after initial definition*
+*Last updated: 2026-02-25 after roadmap creation*
