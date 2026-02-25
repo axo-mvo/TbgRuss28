@@ -1,236 +1,191 @@
 # Project Research Summary
 
-**Project:** Buss 2028 Fellesmote-appen
-**Domain:** Real-time structured group discussion webapp (World Cafe facilitation)
-**Researched:** 2026-02-19
+**Project:** Buss 2028 Fellesmote v1.1
+**Domain:** Multi-meeting platform evolution for in-person structured group discussions
+**Researched:** 2026-02-25
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This is a purpose-built single-event facilitation app for ~80 Norwegian users (youth aged 16-18 and parents) rotating through 6 themed discussion stations in a World Cafe format. No existing tool — Slido, GroupMap, Stagetimer, Mentimeter — combines station-based group rotation with real-time free-form chat and countdown timers in one integrated experience. The recommended approach is Next.js 15 (not v14 as the PRD specifies — it reached end-of-life October 2025) with Supabase as the all-in-one backend for auth, PostgreSQL, and real-time WebSocket delivery. The entire stack is well-documented, free-tier sufficient for 80 users, and deployable on Vercel.
+The v1.0 app is a fully working single-meeting real-time discussion platform built on Next.js 15, Supabase, and Tailwind CSS. The v1.1 evolution converts it into a meeting-series platform by introducing a `meetings` table as the new central entity, then re-scoping every meeting-day artifact — stations, groups, attendance, sessions, messages — under that container via foreign keys. The central finding from research is that zero new npm packages are required. The work is entirely SQL schema migration, route restructuring, and component composition using patterns already proven in the v1.0 codebase. Every v1.1 feature was evaluated individually and confirmed coverable by the existing stack.
 
-The dominant architectural pattern is Server Component shells fetching initial data, paired with Client Component islands that hold Realtime subscriptions and interactive state. All mutations route through Server Actions, never direct client inserts. Real-time message delivery is the central challenge and the highest-risk architectural decision: Supabase Realtime Postgres Changes introduces per-subscriber RLS authorization overhead that becomes a bottleneck at 80 concurrent users. The recommended mitigation is to use Supabase Broadcast for real-time message delivery and direct database INSERTs for persistence — a two-path approach that decouples latency from security.
+The recommended approach is a strictly phased migration: start with the database schema and data migration (the single most critical and highest-risk step), then build admin meeting management, then redesign the dashboard around a permanent contact directory, and finally add read-only meeting history. The migration must run atomically in a single SQL transaction and must preserve existing row UUIDs so that all existing `station_sessions` and `messages` rows remain valid without data rewriting. Deploying the schema first means every subsequent phase can be developed and tested against real migrated v1.0 data.
 
-The top risks are not feature-related but infrastructure-related: subscription channel leaks, auth middleware using `getSession()` instead of `getUser()`, and RLS policies that silently block Realtime delivery. All three must be addressed in Phase 1 (foundation) before any feature work begins, because retrofitting correct patterns is significantly more costly than building them correctly from the start. The app's single-use, single-event nature means over-engineering is the enemy — defer everything not required for the live event.
-
----
+The key risks are concentrated in Phase 1: wrong constraint ordering, un-updated Postgres functions, or a buggy Realtime RLS policy can each cause silent data corruption or break real-time chat entirely. All risks are fully mitigable by running the migration on a Supabase branch database first and making groups per-meeting (new UUIDs each time), which naturally scopes all Realtime channel names and eliminates the Supabase `postgres_changes` compound filter limitation without any workaround code.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The PRD targets Next.js 14, but that version reached end-of-life on October 26, 2025, with no further security patches. Use Next.js 15 (^15.5): it is actively supported until October 2026, uses the same App Router paradigm as v14, and requires only two mechanical adaptations (async request APIs and explicit caching). Next.js 16 exists but introduces unnecessary complexity (renamed middleware, Turbopack-only, React Compiler) for a deadline-pressured project. Tailwind CSS v4 is the clear choice for new projects — stable since January 2025, 70% smaller output, and CSS-first configuration. Supabase provides the full backend stack (auth, PostgreSQL, Realtime) on a free tier that comfortably handles 80 concurrent users, eliminating any need for separate services.
+No new npm dependencies are required. The existing stack — Next.js 15.5 App Router, React 19, Supabase JS 2.97, @supabase/ssr 0.8, Tailwind CSS 4, @dnd-kit/react 0.3.2, TypeScript 5 — already covers every v1.1 feature. Date formatting uses the native `Intl.DateTimeFormat('nb-NO')` API already working in production. Search uses client-side `Array.filter()`, sufficient for 80 users. Form handling uses plain HTML forms with server actions, the established app pattern throughout v1.0.
 
 **Core technologies:**
-- **Next.js ^15.5:** Full-stack React framework (App Router) — supported until Oct 2026, same paradigm as PRD's v14 spec
-- **React ^19:** UI library — required by Next.js 15, includes `useActionState` replacing deprecated `useFormState`
-- **TypeScript ^5.9:** Type safety — essential for tight timelines; catches bugs at compile time
-- **Tailwind CSS ^4.2:** Utility-first styling — v4 stable since Jan 2025, CSS-first config, zero reason to use v3 for a new project
-- **Supabase (latest):** Auth + PostgreSQL + Realtime — all-in-one backend; free tier handles ~80 users; eliminates separate backend service
-- **@supabase/supabase-js ^2.97:** Core Supabase client — use this, never the deprecated `@supabase/auth-helpers-nextjs`
-- **@supabase/ssr ^0.8:** SSR auth helpers for Next.js — provides `createBrowserClient()` and `createServerClient()` for cookie-based auth in App Router
+- **Next.js 15 App Router:** Server Components + Server Actions for all data fetching and mutations — already in use, no version change
+- **Supabase JS v2.97 + @supabase/ssr:** Database CRUD, RLS, Realtime channels — already in use; new tables follow identical query patterns
+- **Tailwind CSS 4:** All new UI components styled with existing utility classes — no config changes needed
+- **@dnd-kit/react 0.3.2:** Group builder drag-and-drop already installed; reused as-is for per-meeting group management
+- **Raw SQL migrations:** Project writes manual `.sql` files in `supabase/migrations/` — continue this pattern for the v1.1 migration
 
-**Do not use:** Next.js 14 (EOL), `@supabase/auth-helpers-nextjs` (deprecated), Socket.IO/Pusher (Supabase Realtime covers all needs), Redux/Zustand (overkill), Prisma/Drizzle (double abstraction over Supabase's typed client), NextAuth.js/Clerk (Supabase Auth is built-in and free).
+**What NOT to add:** `date-fns`, `react-datepicker`, `Fuse.js`, `react-hook-form`, `zod`, `react-query` — all evaluated and rejected as unnecessary overhead at this scale and usage pattern.
 
 ### Expected Features
 
-No competitor covers the full combination of group rotation + real-time chat + countdown timers. This is a focused tool that does one thing well for one event.
+**Must have (table stakes) — P1:**
+- Meeting entity CRUD with title, date, time, venue, and lifecycle status — the foundational data model change that enables everything else
+- Schema migration adding `meeting_id` FKs throughout and backfilling v1.0 data as "Fellesmote #1"
+- Admin-configurable stations per meeting (title, questions array, optional tip) — replaces v1.0 hardcoded stations
+- Per-meeting groups — Group Builder scoped to each meeting (new UUIDs each time)
+- Per-meeting attendance — `meeting_attendance` junction table replacing `profiles.attending`
+- Meeting lifecycle management — admin controls progressing meetings: upcoming → active → completed
+- Searchable contact directory — permanent dashboard anchor, independent of meetings, serves the app between meetings
+- Expandable directory entries with phone, email, and tap-to-call / tap-to-email action buttons
+- Dashboard state awareness — three states: upcoming meeting, active meeting, no upcoming meeting
+- Meeting history browsing — read-only past discussions per station per group
+- Per-meeting export and word cloud — query filter additions to existing working features
 
-**Must have (table stakes — event cannot run without these):**
-- Invite-code registration with role assignment (youth/parent/admin) — frictionless join, no passwords, no email
-- Real-time chat per station per group — the core interaction, highest implementation complexity
-- Visible countdown timer — synced globally from server timestamp, not client-decremented
-- Discussion questions panel — collapsible, per-station static content
-- Station and group awareness — users always know where they are in the rotation
-- Admin: group management and user assignment — prerequisite for all meeting-day features
-- Admin: start/stop/advance meeting — state machine driving the entire event flow
-- Mobile-responsive layout with auto-scroll chat — 90%+ of users are on phones
-- Message persistence and connection resilience — survive page refreshes and brief signal drops
+**Should have (polish) — P2:**
+- Attendance summary on meeting card ("18 kommer / 5 kan ikke / 12 ikke svart" stat pills)
+- Contact action buttons in directory (tel: and mailto: links styled as tappable buttons)
+- Consolidated admin meeting detail view with stations, groups, attendance, word cloud, and export in one page
 
-**Should have (add after core is stable, before event day):**
-- Timer warnings (color changes at 5 min / 2 min / 30 sec) — low effort, high impact
-- Admin: export chat logs as CSV — the lasting output of the entire event
-- Visual rotation indicator — progress dots showing which stations are complete
-- Slow mode / rate limiting — insurance against spam from excited teenagers
-- Notification sound for new messages — keeps attention during discussion
-- Admin: user management view — see who is online, handle latecomers
+**Defer to v2+ — P3:**
+- Station copy from previous meeting (only valuable after 2+ meetings exist)
+- Flat "everyone" directory view toggle (alphabetical list regardless of role)
+- Meeting summary cards with aggregate stats in history list
 
-**Defer to v2+ (only if time permits after P1 and P2 are solid):**
-- Pinned messages, anonymous mode toggle, emoji reactions, admin live dashboard
-
-**Confirmed anti-features (do not build):** User accounts with email/password, video/audio calling, direct messages, message editing/deletion by users, file/image upload, threaded conversations, push notifications, i18n framework, offline-first sync, persistent user profiles.
+**Explicitly excluded (anti-features):** Recurring meeting templates, multiple concurrent upcoming meetings, push notifications, calendar integration (ical/Google), in-app user-to-user messaging, PDF export, attendance reminders — all evaluated and rejected in FEATURES.md with rationale.
 
 ### Architecture Approach
 
-The architecture follows a Server Component shell + Client Component island pattern: page-level Server Components fetch initial data server-side and pass it as props to Client Components that own Realtime subscriptions and interactive state. All mutations flow through Server Actions, never direct client-side inserts. The Supabase client is split into three variants (browser singleton for client components, per-request server client for Server Components and Actions, service-role admin client for privileged operations). Row-Level Security enforces data access at the database level with a defense-in-depth approach — middleware validates auth, layout guards enforce role-based routing, and RLS policies protect individual rows.
+The v1.0 app has a flat, single-meeting architecture with global `groups`, `group_members`, `stations`, and a singleton `meeting_status` row. The v1.1 strategy is UUID-preserving table replacement: old tables (`groups`, `group_members`, `stations`, `meeting_status`) are replaced by new meeting-scoped tables (`meeting_groups`, `meeting_group_members`, `meeting_stations`, `meetings` with per-row status). By copying v1.0 rows into the new tables with the same primary key UUIDs, all existing `station_sessions` and `messages` rows remain valid with no data rewriting. The Realtime channel convention (`station:{sessionId}`) is unchanged because sessionId already encodes meeting context via the FK chain.
 
 **Major components:**
-1. **Next.js Middleware (`middleware.ts`)** — auth token refresh on every request; role-based redirects (admin vs participant paths); uses `getUser()` not `getSession()`
-2. **Browser Supabase Client (singleton)** — all client-side Realtime subscriptions and direct DB reads filtered by RLS; created once in `lib/supabase/client.ts`
-3. **Server Supabase Client (per-request)** — initial page data fetching in Server Components, Server Actions mutations; created via `lib/supabase/server.ts` using `cookies()` from `next/headers`
-4. **Server Actions (`lib/actions/`)** — all write operations: send message, start/end station, manage groups, create invite codes; validates business logic before DB write
-5. **Custom Realtime Hooks (`lib/hooks/`)** — `useRealtimeMessages`, `useRealtimeSessions`, `useMeetingStatus`, `useCountdown`; each manages subscription lifecycle with cleanup
-6. **RLS Policies** — row-level security on all 8 tables; `is_admin()` helper; simple `auth.uid()` comparisons on indexed columns (no JOINs in policies)
-7. **Supabase Realtime Channels** — Broadcast for high-frequency chat delivery; Postgres Changes for low-frequency events (group assignment, meeting status)
 
-**Critical architectural constraint:** Supabase Realtime supports only ONE filter column per Postgres Changes subscription (GitHub issue open since 2021, unresolved). Filter by `station_id` at subscription level, then client-side filter by `group_id` in the callback. RLS policies provide the actual security boundary. Alternatively, use Broadcast for message delivery (recommended for performance at 80 users).
-
-**Recommended build order from architecture research:**
-1. Foundation: Supabase schema + migrations + three client utilities + middleware + base UI
-2. Auth: invite code validation + registration + login + role-based routing
-3. Admin panel: user management + group management + invite codes + meeting control
-4. Meeting-day core: station chat + Realtime subscriptions + countdown timer + question panel
-5. Export and polish: CSV export + read-only mode + mobile polish + error handling
+1. **SQL Migration (020_multi_meeting.sql)** — Creates new tables, backfills v1.0 data as "Fellesmote #1" with UUID preservation, updates UNIQUE constraints and SECURITY DEFINER Postgres functions, updates all RLS policies including the Realtime channel policy, drops obsolete tables — all in a single transaction
+2. **Admin Meeting Management (/admin/meetings + /admin/meetings/[meetingId])** — Create/edit meetings, configure stations per meeting, manage per-meeting groups; replaces current top-level `/admin/groups` and `/admin/wordcloud` routes
+3. **Contact Directory (components/directory/ContactDirectory.tsx)** — New client component with `useState` search, reuses existing `SearchInput` component; reads global `profiles` + `parent_youth_links`, not meeting-scoped
+4. **Dashboard Redesign (dashboard/page.tsx rewrite)** — Always shows contact directory; conditionally shows upcoming meeting card with station selector when groups are locked; always shows previous meetings list
+5. **Meeting History (/meeting/[meetingId])** — New read-only route group; reuses existing `ChatRoom` with `readOnly=true` prop (already implemented in v1.0)
+6. **Updated Server Actions** — New `lib/actions/meetings.ts`, `meeting-stations.ts`, `attendance.ts`; modified `station.ts` to derive meeting context from stationId via FK lookup rather than querying global `group_members`
 
 ### Critical Pitfalls
 
-1. **Supabase Realtime subscription leaks** — channels accumulate without cleanup, hitting the 100-channel limit and silencing all real-time updates. Always call `supabase.removeChannel(channel)` (not just `channel.unsubscribe()`) in useEffect cleanup. Use a singleton browser client. Add `getChannels().length` diagnostics in development. Must be baked in from Phase 1 — retrofitting is error-prone.
+1. **Migration constraint ordering causes mid-execution failure** — Add `meeting_id` as NULLABLE first, backfill all rows, set NOT NULL, then update UNIQUE constraints. Drop old `UNIQUE(number)` on stations and replace with `UNIQUE(meeting_id, number)`. All 12 migration steps must run in a single SQL transaction. Test on a Supabase branch before production. (PITFALLS #1, #5)
 
-2. **Postgres Changes authorization bottleneck at 80 users** — each INSERT triggers an RLS authorization check for every subscriber: 1 message = 80 auth queries. With JOIN-based RLS policies, messages arrive 2-5 seconds late. Fix: use Supabase Broadcast for real-time message delivery (no per-subscriber auth overhead) and INSERT separately for persistence. This is an architectural decision that must be made in Phase 1 — switching later requires rewriting all subscription code.
+2. **Realtime RLS policy update is the single highest-risk change** — The `realtime.messages` policy must be updated to reference `meeting_group_members` instead of `group_members`. A bug here silently breaks all real-time chat for all users with no visible error. Thoroughly test on staging before deploying. (PITFALL #3)
 
-3. **Auth middleware using `getSession()` instead of `getUser()`** — `getSession()` reads cookies without validating the JWT signature, allowing tampered sessions to pass auth checks. Combined with the March 2025 Next.js middleware bypass CVE-2025-29927, this is a double vulnerability. Always use `getUser()` in server contexts. Never let middleware be the sole auth check — validate in Server Components and Server Actions too.
+3. **Postgres SECURITY DEFINER functions must update atomically with schema** — `open_station()` and `view_station()` use `ON CONFLICT (station_id, group_id)` which references the old unique constraint. After adding `meeting_id` to the composite unique constraint, both functions must be updated in the same migration or ON CONFLICT silently stops matching and creates duplicate sessions. (PITFALL #4)
 
-4. **Timer drift across 80 devices** — any code that decrements a local counter (`setTimeRemaining(prev => prev - 1)`) will show timers 3-15 seconds apart within 5 minutes due to JavaScript timer imprecision and mobile tab throttling. Fix: store `end_timestamp` on the server, broadcast it once, and have all clients compute `end_timestamp - Date.now()` on each tick. Never decrement a local counter.
+4. **Groups must be per-meeting (new UUIDs each time)** — This single architectural decision eliminates the Supabase `postgres_changes` single-filter limitation (PITFALL #11) and naturally scopes all Realtime `dashboard:{groupId}` channels. If groups were reused across meetings, `postgres_changes` subscriptions would receive events from all meetings for that group, requiring complex client-side filtering.
 
-5. **RLS policy gaps blocking Realtime or INSERTs** — enabling RLS without defining all required policies blocks all access silently. Every table needs SELECT + INSERT policies minimum; UPDATE needs both `USING` and `WITH CHECK`. RLS and Realtime channel authorization are independent systems — a Realtime subscription filter that doesn't match the RLS SELECT policy causes silent auth failures. Test every policy in the SQL editor using `SET ROLE authenticated` before deployment.
-
----
+5. **UUID preservation is non-negotiable during migration** — The migration MUST use `INSERT INTO meeting_stations (id, ...) SELECT s.id, ...` syntax to copy rows with the same primary keys. If UUIDs change, all `station_sessions` and `messages` rows become orphaned foreign key violations and the v1.0 discussion data is lost.
 
 ## Implications for Roadmap
 
-Based on combined research, the architecture research's recommended build order is well-justified by feature dependencies and pitfall prevention requirements. Five phases are suggested.
+The feature dependency graph from FEATURES.md and the build order from ARCHITECTURE.md are in complete agreement. The research supports a 4-phase structure with a clear dependency chain.
 
-### Phase 1: Foundation and Auth
+### Phase 1: Schema Migration and Foundation
 
-**Rationale:** Everything depends on knowing who the user is and what group they belong to. The Supabase client patterns, middleware auth, and RLS policies must be correct before any feature code is written. The three most critical pitfalls (subscription leaks, getSession() auth, RLS gaps) all manifest in this phase.
+**Rationale:** Every other feature depends on the new schema. Nothing meeting-scoped can be built until `meetings`, `meeting_stations`, `meeting_groups`, `meeting_group_members`, and `meeting_attendance` tables exist with correct RLS and updated Postgres functions. This is the highest-risk phase — all 5 critical pitfalls live here. Complete and verify this before writing any UI code.
 
-**Delivers:** Working Supabase project with schema, three-client pattern, auth middleware using `getUser()`, invite-code registration with roles (youth/parent/admin), login/logout, role-based routing, and base UI primitives (Button, Card, Input, Badge).
+**Delivers:** A migrated database where v1.0 data is preserved as "Fellesmote #1", all new tables exist with correct indexes and RLS policies, all Postgres functions are updated, Realtime RLS policy is updated, and TypeScript types are regenerated. The app should continue functioning as v1.0 after this phase.
 
-**Addresses (from FEATURES.md):** Invite-code registration, role assignment, mobile-responsive layout foundation
+**Features addressed:** Meeting entity foundation, schema migration, per-meeting attendance table, `meeting_status` removal, `profiles.attending` migration
 
-**Avoids (from PITFALLS.md):** Auth middleware `getSession()` vulnerability (Pitfall 3), RLS policy gaps (Pitfall 5), subscription leak infrastructure (Pitfall 1 — patterns established here)
+**Pitfalls to avoid:** #1 (constraint ordering), #3 (Realtime RLS), #4 (Postgres function atomicity), #5 (stations UNIQUE constraint), #6 (meeting_status obsolescence), #10 (attending column migration), #11 (groups per-meeting decision), #12 (REPLICA IDENTITY FULL on new tables), #15 (sensible defaults for backfill meeting)
 
-**Key decisions to make in this phase:**
-- Broadcast vs Postgres Changes for message delivery (architectural commitment)
-- RLS policy design (denormalized `group_id` columns vs JOIN-based — choose denormalized)
-- Browser client singleton pattern
+**Research flag:** No additional research needed. The full migration script with exact SQL is specified in ARCHITECTURE.md. Standard Supabase migration workflow.
 
-### Phase 2: Admin Panel
+### Phase 2: Admin Meeting Management
 
-**Rationale:** Group management and user assignment must exist before any meeting-day features work. Admin cannot start a meeting or assign users to stations without groups. Build admin tools before the participant experience.
+**Rationale:** Admin must be able to create meetings and configure stations before the dashboard has anything meeting-related to show. The group builder and attendance features also need a meeting to scope to. This phase unblocks all user-facing meeting features.
 
-**Delivers:** Admin dashboard with user management (view all registered users, roles, online status), invite code management (create/revoke codes), group creation and member assignment, meeting start/stop/advance control.
+**Delivers:** `/admin/meetings` list with create form, `/admin/meetings/[meetingId]` detail page with station editor (add/edit/remove/reorder), adapted Group Builder for per-meeting groups, meeting lifecycle controls (start/end), updated export route with `meetingId` parameter.
 
-**Addresses (from FEATURES.md):** Admin group management, admin user management, admin start/stop/advance meeting — all P1 table stakes
+**Features addressed:** Admin meeting CRUD, admin-configurable stations per meeting, per-meeting groups (Group Builder), meeting lifecycle management, per-meeting export
 
-**Avoids (from PITFALLS.md):** Service role key exposure (server-side only), client-sent user_id impersonation (Server Actions enforce auth.uid())
+**Pitfalls to avoid:** #7 (deploy URL changes between meetings, never during one), #9 (export route must filter by meetingId), #13 (all admin server actions need meetingId parameter)
 
-**Uses (from STACK.md):** Server Actions for all admin mutations, service-role admin client for privileged operations, `supabase gen types` for TypeScript safety
+**Research flag:** No additional research needed. All patterns (Server Components, Server Actions, Supabase CRUD) are well-documented and established in the v1.0 codebase.
 
-### Phase 3: Meeting-Day Core
+### Phase 3: Dashboard Redesign and Contact Directory
 
-**Rationale:** This is the highest-complexity phase containing the critical path feature (real-time chat). Groups must already exist (Phase 2) before chat channels can be scoped. Build all features a participant needs during the live event.
+**Rationale:** The contact directory is independent of meetings (reads from global `profiles`) so its component can be built in parallel with Phase 2. However, the full dashboard integration — combining meeting card, station selector, directory, and history list — requires Phase 1 schema to exist. Grouping directory and dashboard together keeps the user-facing surface consistent at launch.
 
-**Delivers:** Station selector dashboard with group-aware routing, real-time chat per station per group (Broadcast delivery + Postgres INSERT persistence), countdown timer synchronized from server `started_at` timestamp, collapsible discussion questions panel, station/group awareness display, auto-scroll chat, end-station flow with group-wide redirect, Realtime subscriptions for meeting status and session state.
+**Delivers:** Permanent contact directory with search and expandable youth-parent entries with contact action buttons, redesigned dashboard with meeting-state awareness (upcoming meeting card, station selector when groups locked, previous meetings list), updated `AttendingToggle` writing to `meeting_attendance`, attendance summary stat pills on meeting card.
 
-**Addresses (from FEATURES.md):** Real-time chat per station per group, visible countdown timer, discussion questions panel, station/group awareness, auto-scroll chat, message persistence, connection resilience — the entire P1 list
+**Features addressed:** Searchable contact directory, expandable entries with contact info, dashboard state awareness, per-meeting attendance toggle, attendance summary on meeting card
 
-**Avoids (from PITFALLS.md):** Subscription leaks (cleanup in every useEffect), Postgres Changes bottleneck (Broadcast for chat delivery), timer drift (server timestamp arithmetic, never decrement), mobile keyboard layout (h-dvh, not h-screen)
+**Pitfalls to avoid:** #2 (RLS on groups/sessions must be meeting-scoped, completed in Phase 1), #8 (profile data exposure — query only needed columns at application layer; acceptable risk for this closed group)
 
-**Implements (from ARCHITECTURE.md):** Pattern 1 (Server Component shell + Client Component island), Pattern 2 (Realtime subscription hook with cleanup), Pattern 3 (optimistic UI for chat), Pattern 4 (server-timestamp timer sync)
+**Research flag:** No additional research needed. Contact directory is client-side `Array.filter()` on 80 rows. Dashboard state machine has three well-defined states documented in FEATURES.md and ARCHITECTURE.md.
 
-**Research flag:** This phase is the highest technical risk. If load testing with 20+ simulated users shows message latency above 500ms, revisit the Broadcast vs Postgres Changes decision immediately.
+### Phase 4: Meeting History and Cleanup
 
-### Phase 4: Polish and Resilience
+**Rationale:** Meeting history requires migrated v1.0 data (Phase 1) and the dashboard meeting list (Phase 3) to navigate from. The read-only chat view already exists in v1.0 (`ChatRoom` has `readOnly=true` mode). This is the lowest-risk phase and can be deprioritized without blocking the core multi-meeting functionality.
 
-**Rationale:** After the core meeting flow works end-to-end and is tested, add the features that make the experience resilient and polished. These are all relatively low-effort additions on top of the working core.
+**Delivers:** `/meeting/[meetingId]` overview page with station list and group discussion counts, read-only station chat views reusing existing `ChatRoom` component, per-meeting word cloud scoped to meeting's stations, redirect handlers for deprecated routes (`/admin/groups` → `/admin/meetings/[id]/groups`, `/admin/wordcloud` → `/admin/meetings/[id]`).
 
-**Delivers:** Timer warnings with color changes (green/yellow/red at 5 min/2 min/30 sec), slow mode / rate limiting per user per channel, notification sound for new messages, visual rotation indicator (progress dots), admin user management view with online status, connection status indicator with auto-reconnect banner, optimistic message error state (red "failed to send" with retry, not silent removal).
+**Features addressed:** Meeting history browsing, per-meeting word cloud, consolidated admin meeting detail view, route cleanup
 
-**Addresses (from FEATURES.md):** All P2 features (timer warnings, visual rotation indicator, slow mode, notification sound, admin user management view)
+**Pitfalls to avoid:** #7 (add redirects in `next.config.ts` for old admin routes), #14 (word cloud must filter messages by meetingId's stations)
 
-**Avoids (from PITFALLS.md):** Optimistic UI inconsistency (failed messages show retry UI, not disappear), connection recovery gap (airplane mode test), scroll behavior correctness
-
-### Phase 5: Export and Event Wrap-Up
-
-**Rationale:** Export is needed after the event, not during. It depends on all messages being persisted correctly (Phase 3). Build it last — it's low-risk, low-complexity, and cannot be tested until the meeting has generated data.
-
-**Delivers:** Admin export of all chat logs per station per group as CSV, read-only mode for completed stations, any remaining edge case handling, final mobile QA pass (test on actual iPhone Safari and Android Chrome).
-
-**Addresses (from FEATURES.md):** Admin export chat logs (P2), read-only completed station view
-
-**Uses (from STACK.md):** Server Action calling `export_meeting_data()` SQL function, client-side CSV/Markdown formatting, browser download
-
-**Note:** The "Looks Done But Isn't" checklist from PITFALLS.md should be run in full during this phase before the event.
+**Research flag:** No additional research needed. Read-only `ChatRoom` is already implemented. New routes follow established Next.js App Router dynamic route patterns.
 
 ### Phase Ordering Rationale
 
-- Auth comes before everything because group membership is the security and routing boundary for all features
-- Admin tools come before participant features because groups must be configured before the meeting-day experience is testable
-- Real-time chat (Phase 3) is built as a single phase rather than split across phases because its components are tightly interdependent (Broadcast channel, subscription hooks, optimistic UI, server-timestamp timer all interact)
-- Polish (Phase 4) is separated from core (Phase 3) to ensure the critical path is validated before adding complexity
-- Export is last because it only has value after data exists and is highest-confidence to ship quickly
+- Schema-first is mandatory: the FK chain `meetings → stations → sessions → messages` underpins every query in the app. Building UI against the old schema would require complete rewrites after migration.
+- Admin before dashboard: admin must create a meeting with stations and groups before the dashboard has meeting-scoped content to display. The contact directory is the only dashboard feature buildable in parallel.
+- History last: meeting history provides the most value after multiple meetings have been run and is the lowest technical risk (read-only + existing components), making it safe to deprioritize if time is constrained.
+- Groups per-meeting is a Phase 1 architectural commitment that eliminates a class of Realtime bugs in Phase 3 at no additional implementation cost.
 
 ### Research Flags
 
-**Phases needing deeper research during planning:**
-- **Phase 1 (Foundation):** The Broadcast vs Postgres Changes architectural decision is consequential and should be validated against the specific Supabase Realtime Broadcast API before committing. The key question: can Broadcast be filtered to specific group members by RLS, or does it require application-level routing?
-- **Phase 3 (Meeting-Day Core):** Supabase Realtime single-filter limitation and the workaround strategy (filter by `station_id` at subscription, client-filter by `group_id`) should be prototyped early before building the full chat component.
+**Phases with standard, well-documented patterns — skip `/gsd:research-phase`:**
+- **Phase 1:** Migration SQL is fully specified in ARCHITECTURE.md with exact DDL. Standard Supabase SQL migration workflow.
+- **Phase 2:** Admin CRUD follows patterns already in `src/lib/actions/admin.ts`. Server Components + Server Actions are well-documented.
+- **Phase 3:** Contact directory is straightforward client-side filtering. Dashboard state machine has three defined states.
+- **Phase 4:** Read-only chat is already implemented in v1.0. Route cleanup is mechanical.
 
-**Phases with standard, well-documented patterns (skip research-phase):**
-- **Phase 2 (Admin Panel):** Standard CRUD with Server Actions. Supabase documentation covers all patterns. No novel integration required.
-- **Phase 4 (Polish):** Standard UX patterns (timer colors, rate limiting, connection banners). No infrastructure unknowns.
-- **Phase 5 (Export):** Standard CSV generation in a Server Action. Well-documented pattern.
-
----
+No phase requires additional domain research before implementation begins.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All versions verified against npm registry, official docs, and endoflife.date on 2026-02-19. The Next.js 14 EOL finding is definitive and critical. |
-| Features | HIGH | Feature decisions grounded in World Cafe facilitation research, competitor analysis (Slido, Mentimeter, GroupMap, Stagetimer), and established chat UX patterns from GetStream. Anti-features are well-reasoned for the specific use case. |
-| Architecture | HIGH | Architectural patterns are directly from official Supabase and Next.js documentation. The single-filter Realtime limitation is verified against a confirmed open GitHub issue (#97). |
-| Pitfalls | HIGH | All critical pitfalls sourced from official Supabase docs and confirmed GitHub issues. CVE references are real and documented. The Postgres Changes bottleneck is explicitly warned against in official Realtime documentation. |
+| Stack | HIGH | All technologies validated in production v1.0. Zero new packages confirmed by evaluating each v1.1 feature individually against the existing stack. |
+| Features | HIGH | Based on direct codebase analysis of all v1.0 files and PROJECT.md requirements. Dependency tree is explicit and verified against the migration structure. |
+| Architecture | HIGH | Migration strategy directly analyzed all 19 migration files, 4 Postgres functions, 5 server actions, and the complete route structure. UUID preservation strategy is technically sound. |
+| Pitfalls | HIGH | Each pitfall is traced to specific code locations in the codebase. Prevention strategies are concrete with exact SQL. Verified against official Supabase and PostgreSQL documentation. |
 
 **Overall confidence: HIGH**
 
 ### Gaps to Address
 
-- **Supabase new key format migration:** Supabase is transitioning to new key formats (`sb_publishable_xxx`, `sb_secret_xxx`) for projects created after November 2025. If the project's Supabase instance was created after this date, the environment variable setup differs in name (but not in client code). Verify which format the project's keys use when setting up `.env.local`. (MEDIUM confidence on timeline.)
-
-- **Supabase Broadcast RLS behavior:** The research recommends Broadcast over Postgres Changes for message delivery, but Supabase Broadcast authorization is channel-level (not row-level). This means group isolation for Broadcast messages must be enforced at the application level (correct channel naming per group) rather than by database RLS. This is a known pattern but needs explicit implementation in Phase 1's architectural decisions.
-
-- **Supabase free tier Realtime limits:** Supabase free tier has a limit of 200 concurrent Realtime connections. With 80 users each holding potentially 2-3 active subscriptions (messages, meeting status, session state), the theoretical ceiling is ~240 connections — marginally above the free tier limit. Verify current free tier limits before the event and consider upgrading to the Pro tier ($25/month) as insurance.
-
----
+- **Migration staging environment:** The migration must be tested on a Supabase branch or staging project before production. Confirm a branch database is available before starting Phase 1. This is a process requirement, not a technical uncertainty.
+- **"One upcoming meeting" enforcement in UI:** ARCHITECTURE.md specifies a partial unique index (`WHERE status = 'upcoming'`) to enforce only one upcoming meeting at the database level. The admin UI must also handle this gracefully — either disabling the "create meeting" button when one exists, or auto-transitioning the previous upcoming meeting. The exact UX is unspecified; Phase 2 should decide this explicitly.
+- **Station ordering UI decision:** STACK.md notes drag-and-drop for stations is optional since admin can assign numbers manually, and `@dnd-kit/react` is already installed if needed. Phase 2 should decide upfront whether to use drag-and-drop or simple up/down arrow buttons for station reordering. Either approach is technically trivial; the decision just needs to be made.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Next.js endoflife.date](https://endoflife.date/nextjs) — v14 EOL Oct 2025, v15 supported until Oct 2026
-- [Next.js v15 upgrade guide](https://nextjs.org/docs/app/guides/upgrading/version-15) — breaking changes, async APIs, caching defaults
-- [Supabase Auth SSR setup for Next.js](https://supabase.com/docs/guides/auth/server-side/nextjs) — client patterns, middleware, `getUser()` vs `getSession()` warning
-- [Supabase Realtime with Next.js](https://supabase.com/docs/guides/realtime/realtime-with-nextjs) — subscription patterns, cleanup
-- [Supabase Postgres Changes](https://supabase.com/docs/guides/realtime/postgres-changes) — filter limitations, authorization overhead
-- [Supabase Realtime Limits](https://supabase.com/docs/guides/realtime/limits) — 100 channels per connection limit
-- [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security) — policy structure, WITH CHECK requirement
-- [Tailwind CSS v4 Next.js guide](https://tailwindcss.com/docs/guides/nextjs) — @tailwindcss/postcss setup
-- [React docs: useOptimistic](https://react.dev/reference/react/useOptimistic) — optimistic UI patterns
-- [GitHub Issue #97: Multi-column filter not supported](https://github.com/supabase/realtime-js/issues/97) — confirmed single-filter limitation
+- Existing codebase: all 19 migration files, 4 Postgres functions, 5 server actions, complete route structure — direct analysis
+- PROJECT.md — primary requirements document
+- [Supabase Row Level Security docs](https://supabase.com/docs/guides/database/postgres/row-level-security) — RLS policy patterns
+- [Supabase Realtime Authorization docs](https://supabase.com/docs/guides/realtime/authorization) — Realtime RLS
+- [Supabase Realtime Postgres Changes docs](https://supabase.com/docs/guides/realtime/postgres-changes) — single-filter limitation confirmed
+- [Supabase Database Migrations docs](https://supabase.com/docs/guides/deployment/database-migrations) — migration workflow patterns
+- [Next.js Dynamic Routes docs](https://nextjs.org/docs/app/api-reference/file-conventions/dynamic-routes) — `[meetingId]` route patterns
+- [@supabase/supabase-js npm](https://www.npmjs.com/package/@supabase/supabase-js) — v2.97.0 confirmed latest as of 2026-02-25
+- [MDN Intl.DateTimeFormat](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat) — nb-NO locale support
 
 ### Secondary (MEDIUM confidence)
-- [Supabase API key migration discussion](https://github.com/orgs/supabase/discussions/29260) — new key format timeline
-- [Next.js 15 vs 16 comparison](https://www.descope.com/blog/post/nextjs15-vs-nextjs16) — feature differences
-- [MakerKit: Next.js + Supabase patterns](https://makerkit.dev/docs/next-supabase/) — production patterns for Server Actions vs API routes
-- [Timer sync across clients](https://medium.com/@flowersayo/syncing-countdown-timers-across-multiple-clients-a-subtle-but-critical-challenge-384ba5fbef9a) — server-timestamp approach validation
-- [Mobile keyboard fix with dvh](https://www.franciscomoretti.com/blog/fix-mobile-keyboard-overlap-with-visualviewport) — `h-dvh` over `h-screen`
-- [170+ apps exposed by missing RLS](https://byteiota.com/supabase-security-flaw-170-apps-exposed-by-missing-rls/) — CVE-2025-48757 incident report
-- [Stagetimer](https://stagetimer.io/) — countdown timer feature comparison
-- [GroupMap facilitation tools](https://www.groupmap.com/online-workshop-facilitation-tools/) — World Cafe pattern comparison
-- [GetStream chat UX best practices](https://getstream.io/blog/chat-ux/) — auto-scroll, connection recovery patterns
-- [World Cafe method](https://www.facilitator.school/glossary/world-cafe) — facilitation pattern reference
+- [Supabase Realtime channel discussion #31267](https://github.com/orgs/supabase/discussions/31267) — channel behavior across meetings
+- [Zero-downtime Postgres migrations (GoCardless)](https://gocardless.com/blog/zero-downtime-postgres-migrations-the-hard-parts/) — migration safety patterns
+- [formatjs/formatjs#3066](https://github.com/formatjs/formatjs/issues/3066) — Chrome nb-NO issue was formatjs-specific, not Intl API (resolved July 2024)
+- [PostgreSQL ALTER TABLE ADD COLUMN done right (Cybertec)](https://www.cybertec-postgresql.com/en/postgresql-alter-table-add-column-done-right/) — nullable-first column addition
+- [Next.js Redirecting docs](https://nextjs.org/docs/app/building-your-application/routing/redirecting) — redirect patterns for deprecated routes
 
 ---
-*Research completed: 2026-02-19*
+*Research completed: 2026-02-25*
 *Ready for roadmap: yes*

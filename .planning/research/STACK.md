@@ -1,202 +1,308 @@
-# Stack Research
+# Stack Research: v1.1 Multi-Meeting Platform
 
-**Domain:** Real-time group discussion webapp (small-scale, single-event)
-**Researched:** 2026-02-19
+**Domain:** Multi-meeting platform additions to existing real-time group discussion webapp
+**Researched:** 2026-02-25
 **Confidence:** HIGH
 
-## Critical Finding: Next.js 14 is End-of-Life
+## Critical Finding: No New Dependencies Required
 
-The PRD specifies Next.js 14, but Next.js 14 reached end-of-life on 2025-10-26 and no longer receives security patches. The latest v14 release is 14.2.35. **Do not start a new project on Next.js 14.**
+After analyzing the v1.1 feature set against the existing codebase, **zero new npm packages are needed.** The existing stack -- Next.js 15.5, Supabase JS 2.97, Tailwind CSS 4, React 19 -- already provides every capability required for meeting CRUD, admin-configurable stations, searchable contact directory, meeting history, and data migration.
 
-**Recommendation: Use Next.js 15 (latest 15.5.x).** Next.js 15 is in active security support until 2026-10-21, giving this project an 8-month runway. It uses the same App Router patterns as v14 with manageable breaking changes (async request APIs, changed caching defaults). Next.js 16 exists (16.1.6) but introduces more disruptive changes (middleware renamed to proxy.ts, React Compiler, Turbopack-only) that are unnecessary complexity for a time-pressured project.
+This is not a laziness finding. Each v1.1 feature was evaluated individually. The stack additions needed are purely **Supabase schema changes (SQL migrations)**, **new Next.js routes**, and **new React components** -- all using tools already installed.
 
-Similarly, Tailwind CSS v4 is now stable and the clear choice for new projects over v3.
+## Existing Stack (DO NOT CHANGE)
 
-## Recommended Stack
+These are validated in production. Listed here for reference only.
 
-### Core Technologies
+| Technology | Version | Status |
+|------------|---------|--------|
+| Next.js (App Router) | ^15.5.12 | Active, supported until Oct 2026 |
+| React | ^19.2.4 | Required by Next.js 15 |
+| TypeScript | ^5 | Working, no upgrade needed |
+| @supabase/supabase-js | ^2.97.0 | Latest stable v2 |
+| @supabase/ssr | ^0.8.0 | Latest, handles cookie-based auth |
+| Tailwind CSS | ^4 | Stable, CSS-first config |
+| @dnd-kit/react | ^0.3.2 | Group builder drag-and-drop (reused per-meeting) |
+| ESLint + eslint-config-next | ^9 / ^15.5.12 | Working |
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Next.js | ^15.5 | Full-stack React framework (App Router) | Supported until Oct 2026. Same App Router paradigm as v14 but with security patches. Async APIs and explicit caching are the main changes from v14 -- small adaptation for a new project. Vercel deployment is seamless. |
-| React | ^19 | UI library | Required by Next.js 15. Includes `use()` hook for unwrapping promises in client components, `useActionState` for forms. Stable and well-documented. |
-| TypeScript | ^5.9 | Type safety | Latest stable (6.0 is in beta). Full Next.js 15 integration. Catches bugs at compile time, essential for a project with tight timeline. |
-| Tailwind CSS | ^4.2 | Utility-first styling | v4 is production-stable since Jan 2025. CSS-first config (@theme instead of tailwind.config.js), 70% smaller output than v3, automatic content detection. Zero reason to use v3 for a new project. |
-| Supabase (platform) | Latest | Auth + PostgreSQL + Realtime | All-in-one backend: authentication, database, real-time subscriptions. Free tier handles ~80 users easily. Eliminates need for separate backend service. |
+## Feature-by-Feature Stack Analysis
 
-**Confidence: HIGH** -- Versions verified against npm registry, Next.js endoflife.date, and official docs (2026-02-19).
+### 1. Meeting Entity CRUD (Create, Read, Update, Delete)
 
-### Supabase Client Libraries
+**What's needed:** Admin creates meetings with title, date, time, venue. Admin edits/deletes meetings. All users see upcoming meeting info.
 
-| Library | Version | Purpose | Why Recommended |
-|---------|---------|---------|-----------------|
-| `@supabase/supabase-js` | ^2.97 | Core Supabase client (Auth, DB queries, Realtime) | Actively maintained (updated hours ago). Stable v2 API. Handles all Supabase interactions from both client and server. |
-| `@supabase/ssr` | ^0.8 | Server-side rendering auth helpers for Next.js | Official replacement for deprecated @supabase/auth-helpers-nextjs. Provides `createBrowserClient()` and `createServerClient()` for proper cookie-based auth in App Router. Required for middleware auth refresh. |
+**Stack answer:** This is standard Supabase CRUD. The app already does CRUD for groups, invite codes, and user profiles using the exact same pattern:
+- Server Actions (`'use server'`) calling `createAdminClient()` or `createClient()`
+- Supabase `.insert()`, `.update()`, `.delete()`, `.select()` queries
+- `revalidatePath()` for cache invalidation
+- RLS policies for access control
 
-**Confidence: HIGH** -- Versions verified on npm (2026-02-19).
+**New SQL:** A `meetings` table with columns: `id UUID`, `title TEXT`, `date DATE`, `time TIME`, `venue TEXT`, `status TEXT`, `created_at TIMESTAMPTZ`. Plus foreign keys from `groups`, `stations`, `station_sessions` to `meetings.id`.
 
-### Supporting Libraries
+**No new libraries.** The existing Supabase client handles all query types. Server Actions handle mutation. No form library needed -- the app already uses plain HTML forms with server actions (see `RegisterForm.tsx`, `AttendingToggle.tsx`).
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| `@tailwindcss/postcss` | ^4.2 | PostCSS plugin for Tailwind v4 | Required for Tailwind v4 integration with Next.js. Replaces the old `tailwindcss` PostCSS plugin. |
-| `postcss` | ^8.5 | CSS transformation pipeline | Required peer dependency for @tailwindcss/postcss. |
+**Confidence: HIGH** -- Same patterns as existing admin.ts actions.
 
-**Confidence: HIGH** -- Verified via official Tailwind CSS Next.js setup guide.
+### 2. Date/Time Input for Meeting Creation
 
-### Development Tools
+**What's needed:** Admin enters date, time, and venue when creating a meeting.
 
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| `eslint` + `eslint-config-next` | Linting | Included by create-next-app. Next.js-specific rules catch common mistakes (missing Image alt, incorrect Link usage). |
-| `@types/react` + `@types/react-dom` | React type definitions | Must match React 19. Included by create-next-app with TypeScript. |
-| Supabase CLI (`supabase`) | Local development, migrations | Optional but recommended. Enables `supabase db push` for schema management and local Supabase instance for development. Install globally: `npm install -g supabase`. |
+**Stack answer:** Use native HTML `<input type="date">` and `<input type="time">`. The admin creates meetings manually (per PROJECT.md: "admin creates each meeting manually"), and the form only needs a date picker and time picker -- not a complex calendar.
 
-## Installation
+**Why NOT react-datepicker or date-fns:**
+- The app is mobile-first. Native date/time inputs on iOS and Android render as native OS pickers, which are more accessible and familiar than any JS widget.
+- At most 4-6 meetings per year. This is not a calendaring app.
+- The existing codebase already formats dates with `new Date(dateStr).toLocaleDateString('nb-NO')` (in `UserTable.tsx` line 232) and `new Date().toLocaleString('nb-NO')` (in `build-markdown.ts` line 70). The native `Intl.DateTimeFormat` API handles Norwegian locale formatting. No date library needed.
+- Adding `date-fns` (18kb gzipped) or `dayjs` (6kb) for what amounts to `toLocaleDateString('nb-NO')` in 3-4 places is unjustifiable overhead.
 
-```bash
-# Create the project (installs Next.js 16 by default, then pin to 15)
-npx create-next-app@latest tbg-russ28 --typescript --eslint --app --tailwind
+**Chrome nb-NO note:** There was a known Chrome issue with Norwegian locale support in `Intl` APIs (Chrome >= 92, reported 2021). This affected `formatjs` library specifically. The existing app already uses `toLocaleDateString('nb-NO')` in production without issues, confirming this is not a problem for raw `Intl.DateTimeFormat` usage. If edge cases arise, a simple fallback formatter (10 lines of code) is preferable to adding a dependency.
 
-# Pin Next.js to v15 (create-next-app installs latest which is v16)
-cd tbg-russ28
-npm install next@15 react@19 react-dom@19
+**Confidence: HIGH** -- Existing codebase proves pattern works.
 
-# Install Supabase client libraries
-npm install @supabase/supabase-js @supabase/ssr
+### 3. Admin-Configurable Stations per Meeting
 
-# Tailwind v4 setup (create-next-app may scaffold v3 config)
-# If so, follow Tailwind v4 upgrade:
-npm install tailwindcss@latest @tailwindcss/postcss postcss
+**What's needed:** Admin creates stations (title, questions array, optional tip) per meeting instead of hardcoded seed data. Admin can add/remove/reorder stations.
 
-# Dev dependencies (should already be present from create-next-app)
-npm install -D @types/react @types/react-dom typescript eslint eslint-config-next
+**Stack answer:** The existing `stations` table already has the right column structure: `title TEXT`, `description TEXT`, `questions JSONB`, `tip TEXT`. The change is:
+1. Add `meeting_id UUID REFERENCES meetings(id)` to `stations`
+2. Remove the `UNIQUE` constraint on `stations.number` (number is now unique per meeting, not globally)
+3. Add `UNIQUE(meeting_id, number)` instead
+4. Admin CRUD via new server actions (same pattern as `createGroup`, `deleteGroup` in `admin.ts`)
+
+**For station reordering:** The `number` column already exists and represents order. Admin reordering is just updating `number` values. No drag-and-drop needed for stations -- the admin creates 3-7 stations manually and can number them. If drag-and-drop reordering is desired later, `@dnd-kit/react` is already installed.
+
+**For JSONB questions editing:** A simple textarea-per-question UI with add/remove buttons. The existing `questions JSONB` column stores a string array. No JSON editor library needed -- this is a list of text inputs.
+
+**No new libraries.** Server actions + Supabase queries + Tailwind form styling.
+
+**Confidence: HIGH** -- Schema evolution, same query patterns.
+
+### 4. Searchable Contact Directory
+
+**What's needed:** Dashboard shows all members (youth + parents) with name, phone, email. Two views: youth-centered (expand to see parents) and flat list. Search by name.
+
+**Stack answer:** The dashboard page (`page.tsx` lines 71-105) already fetches all youth with linked parents using the admin client. The `RegisteredUsersOverview` component already renders a youth-with-parents list. The contact directory is an evolution of this existing view, adding:
+- `phone` column (already exists, added in migration 015)
+- `email` column (already exists on `profiles` table)
+- Client-side search filtering with `useState` and `Array.filter()`
+
+**For search:** At ~80 users, client-side `String.includes()` filtering is instant. No search library needed. The app already has a `SearchInput` component (`src/components/ui/SearchInput.tsx`). Use it.
+
+**For expandable youth-parent grouping:** A simple `useState` toggle per youth entry. The `ParentLinkSheet.tsx` already shows parent-youth relationships. This is pure React state + Tailwind styling.
+
+**No new libraries.** The `SearchInput` component already exists. The data fetching pattern exists. Just new UI composition.
+
+**Confidence: HIGH** -- Existing components and patterns cover this.
+
+### 5. Meeting History Browsing
+
+**What's needed:** Previous meetings shown in a list. Click to view read-only discussions from that meeting (stations, groups, messages).
+
+**Stack answer:** This is read-only data fetching with nested relationships. Supabase's PostgREST client handles nested `select()` queries beautifully -- the app already uses them:
+```typescript
+// Existing pattern from dashboard/page.tsx
+.select('station_id, id, status, end_timestamp')
+.eq('group_id', group.id)
 ```
 
-**Alternative: Manual setup (recommended for control)**
+For meeting history:
+```typescript
+// Same pattern, scoped to meeting
+.select('*, stations(*), station_sessions(*, messages(*))')
+.eq('id', meetingId)
+```
+
+The station chat page (`station/[sessionId]/page.tsx`) already renders messages in read-only mode (when `isReadOnly` is true). The `ChatRoom` component has a `readOnly` prop. The `useRealtimeChat` hook skips subscription when `readOnly` is true. All of this exists.
+
+**New routes needed:**
+- `/dashboard/meetings` -- meeting list
+- `/dashboard/meetings/[meetingId]` -- single meeting view with stations
+- `/dashboard/meetings/[meetingId]/station/[sessionId]` -- read-only station chat (reuse existing component)
+
+**No new libraries.** Dynamic routes, Supabase queries, existing read-only components.
+
+**Confidence: HIGH** -- Existing read-only mode proves the pattern.
+
+### 6. Data Migration (Single-Meeting to Multi-Meeting)
+
+**What's needed:** Existing v1.0 data (stations, groups, station_sessions, messages) must be preserved as the first "previous meeting." Tables need `meeting_id` foreign keys.
+
+**Stack answer:** This is a SQL migration, not an application-level concern. The pattern is:
+
+1. Create the `meetings` table
+2. Insert a "Fellesmote 1" meeting row representing the existing data
+3. Add `meeting_id` columns (nullable) to `stations`, `groups`, `station_sessions`
+4. Backfill: `UPDATE stations SET meeting_id = [first-meeting-uuid]`
+5. Add `NOT NULL` constraint after backfill
+6. Add foreign key constraints
+7. Update RLS policies to scope by meeting
+8. Update Postgres functions (`open_station`, `complete_station`, `view_station`, `reopen_station`) to accept meeting context
+
+This is standard Supabase migration workflow. The project already has 19 migrations following this pattern. No migration tool or ORM needed -- raw SQL in `supabase/migrations/` as established.
+
+**Confidence: HIGH** -- Follows existing migration patterns exactly.
+
+### 7. Per-Meeting Attendance
+
+**What's needed:** Attendance tracking scoped to each meeting (currently a single `attending` boolean on `profiles`).
+
+**Stack answer:** Move from `profiles.attending` (global) to a junction table `meeting_attendance(meeting_id, user_id, attending)`. The `AttendingToggle` component already exists -- it just needs to accept a `meetingId` prop and update the junction table instead of the profile column.
+
+**No new libraries.** Same toggle UI, different table target.
+
+**Confidence: HIGH** -- Minor refactor of existing component.
+
+### 8. Per-Meeting Word Cloud and Export
+
+**What's needed:** Word cloud and markdown export scoped to a specific meeting.
+
+**Stack answer:** Both features already exist:
+- `WordCloud.tsx` fetches all messages and builds word frequencies via `build-word-frequencies.ts`
+- `build-markdown.ts` exports all station conversations
+
+Both need a `meetingId` filter added to their Supabase queries. The components and logic remain unchanged.
+
+**No new libraries.**
+
+**Confidence: HIGH** -- Adding a `.eq('meeting_id', meetingId)` filter.
+
+## Recommended Stack Changes
+
+### New Dependencies: None
 
 ```bash
-mkdir tbg-russ28 && cd tbg-russ28
-npm init -y
-
-# Core
-npm install next@15 react@19 react-dom@19
-
-# Supabase
-npm install @supabase/supabase-js @supabase/ssr
-
-# Styling
-npm install tailwindcss@latest @tailwindcss/postcss postcss
-
-# Dev
-npm install -D typescript @types/react @types/react-dom eslint eslint-config-next
-
-# Supabase CLI (global, for migrations)
-npm install -g supabase
+# No new packages to install
 ```
+
+### New SQL Migrations Needed
+
+| Migration | Purpose | Complexity |
+|-----------|---------|------------|
+| 020_meetings_table.sql | Create `meetings` table, insert first meeting, add `meeting_id` FK to `stations`, `groups`, `station_sessions`. Backfill existing data. | High -- most complex single migration |
+| 021_meeting_attendance.sql | Create `meeting_attendance` junction table, migrate existing `profiles.attending` data, drop old column | Medium |
+| 022_meeting_rls.sql | Update all RLS policies to scope by meeting. Update Postgres functions for meeting context. | Medium -- many policies to update |
+| 023_meeting_stations_unique.sql | Change stations unique constraint from `UNIQUE(number)` to `UNIQUE(meeting_id, number)` | Low |
+
+### New Next.js Routes Needed
+
+| Route | Purpose | Type |
+|-------|---------|------|
+| `/admin/meetings` | Meeting list + create form | Server Component + Server Action |
+| `/admin/meetings/[meetingId]` | Meeting detail: edit meeting, manage stations | Server Component + Server Action |
+| `/admin/meetings/[meetingId]/groups` | Per-meeting group builder (moves from `/admin/groups`) | Server Component (reuses GroupBuilder) |
+| `/admin/meetings/[meetingId]/export` | Per-meeting export | Route Handler |
+| `/admin/meetings/[meetingId]/wordcloud` | Per-meeting word cloud | Server Component (reuses WordCloud) |
+| `/dashboard/meetings` | Previous meetings list | Server Component |
+| `/dashboard/meetings/[meetingId]` | Read-only meeting view | Server Component |
+
+### New/Modified Server Actions
+
+| Action | File | Change |
+|--------|------|--------|
+| `createMeeting` | `src/lib/actions/meeting.ts` (new) | New -- insert into meetings table |
+| `updateMeeting` | `src/lib/actions/meeting.ts` (new) | New -- update meeting details |
+| `deleteMeeting` | `src/lib/actions/meeting.ts` (new) | New -- soft delete or hard delete |
+| `createStation` | `src/lib/actions/meeting.ts` (new) | New -- insert station for meeting |
+| `updateStation` | `src/lib/actions/meeting.ts` (new) | New -- edit station title/questions |
+| `deleteStation` | `src/lib/actions/meeting.ts` (new) | New -- remove station from meeting |
+| `createGroup` | `src/lib/actions/admin.ts` (modify) | Add `meetingId` parameter |
+| `saveGroupMembers` | `src/lib/actions/admin.ts` (modify) | Scope to meeting |
+| `toggleGroupsLock` | `src/lib/actions/admin.ts` (modify) | Scope to meeting |
+| `openStation` | `src/lib/actions/station.ts` (modify) | Already scoped by station_id which will have meeting_id FK |
+| `updateAttending` | `src/lib/actions/auth.ts` (modify) | Accept meetingId, write to junction table |
 
 ## Alternatives Considered
 
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| Next.js 15 | Next.js 16 (16.1.6) | If starting a project with 1+ year timeline. v16 has Turbopack default, React Compiler, renamed middleware. More future-proof but more to learn. For a days-away deadline, 15 is safer. |
-| Next.js 15 | Next.js 14 (14.2.35) | Never for a new project. EOL since Oct 2025. No security patches. |
-| Tailwind CSS v4 | Tailwind CSS v3.4 | Only if using a UI component library that requires v3 (check compatibility first). Most libraries support v4 now. |
-| @supabase/ssr | @supabase/auth-helpers-nextjs | Never. auth-helpers is deprecated. All fixes go to @supabase/ssr. |
-| Supabase Realtime | Socket.IO / Pusher | If you need features Supabase Realtime lacks (e.g., presence channels with complex state, rooms). For this project, Supabase Realtime postgres_changes covers all needs and avoids an extra dependency. |
-| Raw Tailwind | shadcn/ui component library | If building a larger app with complex UI patterns (data tables, command palettes, sheets). For this project with ~10 pages and straightforward chat UI, raw Tailwind utilities are simpler and avoid the overhead of configuring a component library. |
-| No state management | Zustand / Jotai | If you had complex cross-component state. This app's state is mostly server data (Supabase queries) + local UI state (timer, input). React's built-in useState/useContext is sufficient. |
+| Decision | Alternative | Why Not |
+|----------|-------------|---------|
+| Native `<input type="date/time">` | react-datepicker | 3-5 meetings/year, mobile-first. Native pickers are better UX on mobile, zero bundle cost. |
+| Native `Intl.DateTimeFormat('nb-NO')` | date-fns | Already working in production (UserTable, build-markdown). Adding 18kb for 4 format calls is wasteful. |
+| Client-side `Array.filter()` for search | Fuse.js / flexsearch | 80 users. `String.toLowerCase().includes()` is O(n) on n=80. Fuzzy search adds complexity for no benefit at this scale. |
+| Raw SQL migrations | Supabase CLI `supabase db diff` | The project manually writes SQL files in `supabase/migrations/`. This works well and gives full control over data backfill. Continue the established pattern. |
+| Single `meetings` table | Separate `meeting_templates` table | Out of scope per PROJECT.md: "No recurring meeting templates -- admin creates each meeting manually." |
+| Junction table for attendance | Keep `profiles.attending` + add `meeting_id` | `profiles.attending` is not meeting-scoped. A junction table `meeting_attendance(meeting_id, user_id, attending)` properly models per-meeting RSVP. |
 
-## What NOT to Use
+## What NOT to Add
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| `@supabase/auth-helpers-nextjs` | Deprecated. No bug fixes. Will eventually break with newer Supabase versions. | `@supabase/ssr` ^0.8 |
-| Next.js 14 | EOL since Oct 2025. No security patches. Using it for a new project is irresponsible. | Next.js ^15.5 |
-| Tailwind CSS v3 for new projects | v4 is stable, faster, smaller output, better DX. No reason to start with v3. | Tailwind CSS ^4.2 |
-| Socket.IO / Pusher / Ably | Adds external dependency when Supabase already includes Realtime. Extra cost, complexity, and another point of failure for a feature Supabase handles natively. | Supabase Realtime (included) |
-| Redux / MobX | Massive overkill for ~80 users, ~10 pages, server-driven data. Adds boilerplate and learning curve. | React useState + useContext + Supabase client queries |
-| Prisma / Drizzle ORM | Adds an abstraction layer on top of Supabase's already-typed client. Supabase JS client with generated types is sufficient and avoids double-abstraction. | `@supabase/supabase-js` with `supabase gen types` |
-| NextAuth.js / Clerk | Supabase Auth is built-in and free. Adding another auth provider creates integration headaches and costs money. | Supabase Auth (included) |
-| CSS Modules / styled-components | Splits styling across files, harder to maintain, no utility-first benefits. Tailwind is already in the stack. | Tailwind CSS |
-| `@next/font` package | Removed in Next.js 15. | `next/font` (built-in) |
-| `useFormState` | Deprecated in React 19. | `useActionState` |
+| `date-fns` or `dayjs` | Overkill for formatting 3-4 dates in Norwegian. `Intl.DateTimeFormat` is already working in the codebase. | `new Date(str).toLocaleDateString('nb-NO', options)` |
+| `react-datepicker` or `react-day-picker` | Admin creates 4-6 meetings/year. Native HTML date input renders OS-native picker on mobile. | `<input type="date">` + `<input type="time">` |
+| `Fuse.js` or `flexsearch` | 80 users. Client-side `filter()` + `includes()` is instant. | `users.filter(u => u.name.toLowerCase().includes(query))` |
+| `react-hook-form` or `formik` | Meeting creation is a simple 4-field form. The app already uses uncontrolled forms with server actions. | Plain HTML form + server action (established pattern) |
+| `zod` for validation | Server-side validation is already done imperatively in server actions (see `register()` in auth.ts). Adding zod for 2-3 new forms is overhead. | Inline validation in server actions |
+| `react-query` / `tanstack-query` | Data is server-fetched in Server Components. Client mutations use server actions with `revalidatePath`. No client-side cache management needed. | Server Components + `revalidatePath()` |
+| `uuid` package | Supabase generates UUIDs server-side with `gen_random_uuid()`. No client-side UUID generation needed for meetings/stations. | Supabase default column values |
+| Supabase CLI migration tooling | The project writes raw `.sql` files and applies them via Supabase dashboard. This works. Don't change the workflow mid-project. | Manual SQL files in `supabase/migrations/` |
 
-## Stack Patterns by Variant
+## Integration Points with Existing Code
 
-**For Supabase client creation:**
-- Browser (client components): Use `createBrowserClient()` from `@supabase/ssr`
-- Server components: Use `createServerClient()` from `@supabase/ssr` with cookies
-- Middleware: Use `createServerClient()` with request/response cookie handling
-- Route handlers: Use `createServerClient()` with cookies from `next/headers`
-- Server actions: Use `createServerClient()` with cookies from `next/headers`
+### Dashboard Restructure
 
-**For real-time subscriptions (chat messages):**
-- Must be in client components (`'use client'`)
-- Use `supabase.channel('channel-name').on('postgres_changes', ...)` pattern
-- Filter by `station_id` and `group_id` for scoped updates
-- Clean up with `supabase.removeChannel()` in useEffect cleanup
-- Cannot filter DELETE events in postgres_changes (Supabase limitation)
+The current dashboard (`src/app/dashboard/page.tsx`) is a monolithic 237-line Server Component that mixes contact info, station selection, and group display. For v1.1:
 
-**For the countdown timer:**
-- Client-side only (no server push needed)
-- Calculate from `station_sessions.started_at` server timestamp
-- Use `setInterval(1000)` for countdown
-- No external timer library needed -- simple arithmetic
+- **Dashboard root** becomes the contact directory (always visible)
+- **Upcoming meeting** section shows if one exists (meeting info + attendance toggle + station selector when locked)
+- **Previous meetings** link/section at bottom
+
+This is a component decomposition task, not a technology change.
+
+### Existing Components to Reuse
+
+| Component | Current Use | v1.1 Reuse |
+|-----------|-------------|------------|
+| `StationSelector` | Dashboard station grid | Same, but scoped to meeting |
+| `ChatRoom` | Live station chat | Same, already has readOnly mode |
+| `GroupBuilder` | Admin group drag-and-drop | Same, but per meeting |
+| `WordCloud` | Admin word cloud | Same, but scoped to meeting |
+| `SearchInput` | (exists but unused in dashboard) | Contact directory search |
+| `AttendingToggle` | Dashboard RSVP | Same, scoped to meeting |
+| `UserTable` | Admin user list | Reuse for contact directory |
+| `Badge` | Role badges | Same |
+| `Card`, `Button`, `Input` | UI primitives | Same |
+
+### Supabase Realtime Changes
+
+Realtime chat (`useRealtimeChat.ts`) subscribes to `station:{sessionId}` channels. Station sessions already have a unique ID. Adding `meeting_id` to the stations table does not change the realtime subscription pattern -- sessions are still identified by their own UUID.
+
+**No realtime changes needed.** The channel naming convention is session-based, not meeting-based.
+
+### RLS Policy Updates
+
+Current RLS policies on `station_sessions` and `messages` check group membership. These remain valid because:
+- Groups are scoped to meetings (via `groups.meeting_id`)
+- Station sessions are scoped to stations (which are scoped to meetings)
+- The existing RLS chain (user -> group_member -> group -> station_session -> message) still holds
+
+The only RLS additions needed are:
+- `meetings` table: All authenticated users can read, only admins can write
+- `meeting_attendance` table: Users can read all, update own row
+- Updated station/group policies to verify `meeting_id` context where needed
 
 ## Version Compatibility
 
-| Package | Compatible With | Notes |
-|---------|-----------------|-------|
-| `next@15` | `react@19`, `react-dom@19` | Next.js 15 requires React 19. Do not use React 18. |
-| `@supabase/ssr@0.8` | `@supabase/supabase-js@2.x` | Must use supabase-js v2. ssr v0.8 does not work with v1. |
-| `tailwindcss@4.2` | `@tailwindcss/postcss@4.2`, `postcss@8.x` | Tailwind v4 requires its own PostCSS plugin, not the old `tailwindcss` PostCSS entry. |
-| `next@15` | `tailwindcss@4.x` | Fully compatible. Official Tailwind docs show Next.js setup with v4. |
-| `next@15` | `eslint-config-next@15` | Match major versions. |
-| `typescript@5.9` | `next@15`, `react@19` | Latest stable TS. 6.0 is beta -- do not use in production. |
+No changes from v1.0 stack. All existing version constraints remain valid:
 
-## Key Migration Notes from PRD's v14 Spec
-
-The PRD was written targeting Next.js 14. The following patterns from the PRD need adaptation for Next.js 15:
-
-1. **Async request APIs**: `cookies()`, `headers()`, `params`, `searchParams` must be awaited. The PRD's middleware and server-side code patterns need `await` added. This is straightforward.
-
-2. **Caching defaults changed**: Fetch requests are no longer cached by default in v15. For this app this is actually better -- real-time data should not be cached.
-
-3. **`useFormState` -> `useActionState`**: If any server actions use form state, use the React 19 API.
-
-4. **Middleware pattern unchanged**: The `src/middleware.ts` pattern for auth refresh works identically in v15. The Supabase SSR docs show the v15-compatible pattern.
-
-5. **App Router unchanged**: Route structure, layouts, loading states, error boundaries -- all work the same. The PRD's directory structure is fully valid.
-
-## Environment Variables
-
-```bash
-# .env.local
-NEXT_PUBLIC_SUPABASE_URL=https://[project-id].supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=[anon-key]
-SUPABASE_SERVICE_ROLE_KEY=[service-role-key]
-```
-
-**Note on Supabase key migration:** Supabase is transitioning to new key formats (`sb_publishable_xxx` replacing anon key, `sb_secret_xxx` replacing service_role key). New Supabase projects created after Nov 2025 use the new format. The client libraries accept both formats transparently -- no code changes needed, just use whichever key format your project provides.
-
-**Confidence: MEDIUM** -- Key migration timeline verified via GitHub discussion, but exact enforcement dates for existing projects are unclear.
+| Package | Version | Status |
+|---------|---------|--------|
+| next | ^15.5.12 | Current, supported |
+| react / react-dom | ^19.2.4 | Current, required by Next.js 15 |
+| @supabase/supabase-js | ^2.97.0 | Latest stable (verified 2026-02-25) |
+| @supabase/ssr | ^0.8.0 | Latest stable |
+| tailwindcss | ^4 | Stable |
+| @dnd-kit/react | ^0.3.2 | Stable, reused for per-meeting group builder |
+| typescript | ^5 | Stable |
 
 ## Sources
 
-- [Next.js endoflife.date](https://endoflife.date/nextjs) -- v14 EOL Oct 2025, v15 supported until Oct 2026, v16.1.6 latest (HIGH confidence)
-- [Next.js v15 upgrade guide](https://nextjs.org/docs/app/guides/upgrading/version-15) -- Breaking changes, async APIs, caching (HIGH confidence)
-- [@supabase/supabase-js npm](https://www.npmjs.com/package/@supabase/supabase-js) -- v2.97.0 latest (HIGH confidence)
-- [@supabase/ssr npm](https://www.npmjs.com/package/@supabase/ssr) -- v0.8.0 latest (HIGH confidence)
-- [Supabase Auth SSR setup for Next.js](https://supabase.com/docs/guides/auth/server-side/nextjs) -- Client patterns, middleware (HIGH confidence)
-- [Supabase Realtime with Next.js](https://supabase.com/docs/guides/realtime/realtime-with-nextjs) -- Subscription patterns (HIGH confidence)
-- [Supabase Postgres Changes](https://supabase.com/docs/guides/realtime/postgres-changes) -- Filter limitations (HIGH confidence)
-- [Tailwind CSS v4 Next.js guide](https://tailwindcss.com/docs/guides/nextjs) -- Setup with @tailwindcss/postcss (HIGH confidence)
-- [Tailwind CSS v4 releases](https://github.com/tailwindlabs/tailwindcss/releases) -- v4.2.0 latest (HIGH confidence)
-- [TypeScript releases](https://github.com/microsoft/typescript/releases) -- v5.9 stable, v6.0 beta (HIGH confidence)
-- [Supabase API key migration discussion](https://github.com/orgs/supabase/discussions/29260) -- New key format timeline (MEDIUM confidence)
-- [Next.js 15 vs 16 comparison](https://www.descope.com/blog/post/nextjs15-vs-nextjs16) -- Feature differences (MEDIUM confidence)
+- [Supabase Database Migrations docs](https://supabase.com/docs/guides/deployment/database-migrations) -- Migration workflow patterns (HIGH confidence)
+- [Supabase RLS docs](https://supabase.com/docs/guides/getting-started/ai-prompts/database-rls-policies) -- Policy creation patterns (HIGH confidence)
+- [Next.js Dynamic Routes](https://nextjs.org/docs/app/api-reference/file-conventions/dynamic-routes) -- `[meetingId]` route patterns (HIGH confidence)
+- [@supabase/supabase-js npm](https://www.npmjs.com/package/@supabase/supabase-js) -- v2.97.0 confirmed latest (HIGH confidence)
+- [MDN Intl.DateTimeFormat](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat) -- Norwegian locale `nb-NO` support (HIGH confidence)
+- [formatjs/formatjs#3066](https://github.com/formatjs/formatjs/issues/3066) -- Chrome nb-NO issue was formatjs-specific, not Intl API. Resolved July 2024 (MEDIUM confidence)
+- Existing codebase analysis: `src/lib/actions/admin.ts`, `src/lib/actions/station.ts`, `src/app/dashboard/page.tsx`, `supabase/migrations/001_schema.sql` through `019_update_stations_5.sql` -- Established patterns verified (HIGH confidence)
 
 ---
-*Stack research for: Buss 2028 Fellesmote-appen -- real-time group discussion webapp*
-*Researched: 2026-02-19*
+*Stack research for: Buss 2028 Fellesmote v1.1 -- multi-meeting platform additions*
+*Researched: 2026-02-25*

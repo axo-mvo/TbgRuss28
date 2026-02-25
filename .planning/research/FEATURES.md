@@ -1,20 +1,22 @@
 # Feature Research
 
-**Domain:** Real-time structured group discussion webapp for in-person meetings
-**Researched:** 2026-02-19
+**Domain:** Multi-meeting platform evolution for in-person structured group discussions
+**Researched:** 2026-02-25
 **Confidence:** HIGH
 
 ## Context
 
-This app ("Buss 2028 Fellesmote-appen") facilitates a single in-person meeting event where ~25 youth + parents (~80 users total) rotate between 6 discussion stations with real-time chat and countdown timers. It follows a "World Cafe" facilitation pattern: small groups rotate between themed stations, each with a fixed set of discussion questions and a time limit.
+This is a v1.1 feature research for the Buss 2028 Fellesmote app. v1.0 is fully built and working: invite-code registration, real-time station chat, countdown timers, groups, export, word cloud, attendance tracking. All features currently assume a single meeting.
 
-Key constraints that shape feature decisions:
-- **Single-event, single-use** -- not a SaaS platform, not recurring
-- **~80 users** -- no need for scale-oriented features
-- **In-person** -- all users are physically co-located
-- **Mixed demographics** -- youth (16-18) and their parents (40-60)
-- **Norwegian UI** -- all text in Norwegian (Bokmal)
-- **Mobile-first** -- most users will be on phones during the event
+v1.1 evolves the app from a single-meeting tool into a **meeting-series platform** where:
+- Admin creates meetings over time (one upcoming at a time)
+- Each meeting has its own stations, groups, attendance, discussions, export, and word cloud
+- Between meetings, the app serves as a **contact directory** for all members
+- Previous meetings and their discussions are browsable in **read-only mode**
+
+**Scale remains small:** ~25 youth + ~30-50 parents + 1-3 admins. The complexity is in the data model restructuring and navigation, not in scale.
+
+**Key constraint:** All existing v1.0 features (chat, timer, station lifecycle, group builder, export, word cloud) already work. The challenge is re-scoping them to operate within a meeting container without breaking existing functionality. Existing v1.0 data must migrate into the new structure as the first "previous meeting."
 
 ---
 
@@ -22,155 +24,146 @@ Key constraints that shape feature decisions:
 
 ### Table Stakes (Users Expect These)
 
-Features users assume exist. Missing these = product feels broken during the live event.
+Features that are non-negotiable for v1.1 to function. Without these, the multi-meeting concept does not work.
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| **Invite-code registration** | Users need a frictionless way to join without creating accounts. Typing a short code on mobile is the standard pattern (Slido, Mentimeter, Kahoot all use this). | LOW | Single invite code per role (youth vs parent). No email/password. Store display name + role. |
-| **Role assignment (youth/parent/admin)** | Different users need different permissions. Parents should not have admin controls. Admins need full control. | LOW | Three roles: admin (full control), youth (chat + view), parent (chat + view). Code determines role at join. |
-| **Real-time chat per station per group** | The core interaction. Each group at each station needs its own chat channel. Without real-time delivery, users will just talk out loud and the app becomes pointless. | HIGH | This is the hardest table-stakes feature. Requires WebSocket infrastructure, channel routing (group x station matrix), and message persistence. |
-| **Visible countdown timer** | Users must know how much time remains at their current station. Every facilitation tool (Stagetimer, GroupMap, Slido) includes timers as core. Without it, the facilitator has to shout "2 minutes left!" | LOW | Single global timer controlled by admin. All clients display the same countdown. Timer state synced via the same real-time channel. |
-| **Discussion questions panel** | Each station has specific discussion prompts. Users need to see them without asking the facilitator. Collapsible so it does not eat screen space during active chat. | LOW | Static content per station. Collapsible/expandable panel. Pre-loaded by admin. |
-| **Station/group awareness** | Users must know which station they are at and which group they belong to. Without this, the rotating format creates confusion. | LOW | Display current station name + group name prominently. Update when admin advances rotation. |
-| **Admin: start/stop/advance meeting** | The facilitator must control meeting flow: start timer, advance all groups to next station, pause if needed, end meeting. This is the orchestration backbone. | MEDIUM | State machine: lobby -> station 1 -> station 2 -> ... -> station 6 -> completed. Admin triggers transitions. All clients react in real-time. |
-| **Admin: user management** | Admin needs to see who joined, assign them to groups, and handle latecomers. | MEDIUM | View all registered users, assign to groups (drag-drop or dropdown), see online/offline status. |
-| **Admin: group management** | Admin must create groups and assign users before the meeting starts. Groups define the rotation schedule. | MEDIUM | CRUD for groups. Assign users to groups. Each group gets a rotation order through the 6 stations. |
-| **Mobile-responsive layout** | 90%+ of users will be on phones. If the chat is unusable on a 375px screen, the app fails. | MEDIUM | Chat input anchored to bottom. Messages scroll up. Timer visible without scrolling. Touch-friendly tap targets (min 44x44px per WCAG). |
-| **Auto-scroll chat** | New messages must scroll into view automatically unless the user has scrolled up to read history. Standard chat UX pattern -- breaking this frustrates users. | LOW | Scroll to bottom on new message unless user has scrolled up. Show "new messages" indicator when not at bottom. |
-| **Message persistence** | Chat messages must survive page refreshes. If a user accidentally closes their browser, they should see previous messages when they rejoin. | LOW | Store all messages server-side. Load history on reconnect. This also enables the export feature. |
-| **Connection resilience** | Mobile connections drop. The app must reconnect automatically and show connection status. Users should not lose context when their phone briefly loses signal. | MEDIUM | Auto-reconnect with exponential backoff. Visual indicator for connection state (connected/reconnecting/offline). Queue outgoing messages during disconnection. |
+| Feature | Why Expected | Complexity | Depends On (v1.0) | Notes |
+|---------|--------------|------------|-------------------|-------|
+| **Meeting entity (CRUD)** | Admin needs to create meetings with date, time, place. Without a meeting entity, everything remains single-meeting. This is the foundational data model change. | MEDIUM | None (new table) | New `meetings` table with: title (optional, auto-generated from date), date, time, venue, status (draft/upcoming/active/completed). Only one meeting can be `upcoming` at a time. Admin form: date picker, time picker, venue text field. |
+| **Admin-configurable stations per meeting** | v1.0 has hardcoded stations. Admin must be able to set discussion topics per meeting because each meeting covers different themes. | MEDIUM | Existing `stations` table (must add `meeting_id` FK) | Station form: title, questions (array of strings), optional tip. Admin creates 3-6 stations per meeting. Stations belong to a meeting. Support reordering (drag or up/down arrows). |
+| **Per-meeting groups** | Groups are formed fresh each meeting -- different people attend each time, discussion benefits from new group compositions. | LOW | Existing `groups` + `group_members` tables (must add `meeting_id` FK) | Add `meeting_id` to `groups`. Group builder already works (drag-and-drop). Just scope it to the upcoming meeting. |
+| **Per-meeting attendance** | "Kommer du?" must ask about a specific meeting, not a global property. Each meeting has its own attendance tally. | LOW | Existing `attending` column on `profiles` (must move to a junction table) | New `meeting_attendance` table: `meeting_id`, `user_id`, `attending` (nullable boolean). Replace the current `profiles.attending` column. AttendingToggle component needs meeting context. |
+| **Per-meeting scoped station sessions and messages** | When a meeting is active, all chat/timer/session data belongs to that meeting. This is implicit through the chain: meeting -> stations -> sessions -> messages. | LOW | Existing `station_sessions` + `messages` tables | No new tables needed. The FK chain `meetings -> stations -> station_sessions -> messages` scopes everything naturally. Sessions already reference `station_id` and `group_id`, both of which will be meeting-scoped. |
+| **Per-meeting export** | Export downloads discussions from a specific meeting, not all messages ever. The existing export already structures by station + group -- just add meeting filtering. | LOW | Existing `/api/export` route | Add `meetingId` query parameter. Filter messages through the station -> meeting chain. Add meeting title/date to export header. |
+| **Per-meeting word cloud** | Word cloud shows word frequencies from a specific meeting's discussions, not all meetings combined. | LOW | Existing `WordCloud` component | Pass meeting-scoped messages to the existing component. Move word cloud from `/admin/wordcloud` to within each meeting's detail view. |
+| **Searchable contact directory** | Between meetings, the app's main value is being a member directory. Users need to find each other by name to coordinate logistics (rides, payments, etc). Search is essential at 50-80 members. | MEDIUM | Existing `profiles` table + `parent_youth_links` | New primary dashboard view. Client-side search filtering on `full_name`. Two views: youth-centered (expand to see parents) and flat everyone list. Show phone + email in expanded entries. |
+| **Expandable directory entries** | Youth-centered view: tap a youth name to see their linked parents with contact info. Must be tap-friendly on mobile. | LOW | Existing `RegisteredUsersOverview` component (already uses `<details>` expand pattern) | Extend existing component. Add phone/email to expanded view. The `<details>` accordion pattern already works and is accessible. Add contact action buttons (tel: and mailto: links). |
+| **Meeting history browsing** | Users want to revisit what was discussed at previous meetings. Read-only access to past discussions gives the meeting series lasting value beyond the live event. | MEDIUM | Existing station chat UI (must support read-only mode) | List of past meetings sorted by date (newest first). Each meeting expands to show its stations. Each station shows read-only discussion threads by group. Reuse existing `MessageList` component with chat input hidden. |
+| **Dashboard state awareness** | The dashboard must reflect the current state: Is there an upcoming meeting? Is a meeting active right now? Are there only past meetings? Each state shows different content. | MEDIUM | Existing dashboard page | Three dashboard states: (1) Upcoming meeting: show meeting card with attendance toggle + directory below. (2) Active meeting: show station selector + group info (current v1.0 behavior). (3) No upcoming meeting: show directory + past meetings list. |
+| **Meeting lifecycle management** | Admin controls meeting progression: draft -> upcoming -> active -> completed. Only one upcoming meeting at a time. Completing a meeting archives it to history. | MEDIUM | Existing `meeting_status` table (must evolve to per-meeting) | Replace singleton `meeting_status` with `status` column on `meetings` table. Admin actions: publish draft -> upcoming, start meeting -> active, end meeting -> completed. Status transitions are irreversible (cannot un-complete a meeting). |
 
 ### Differentiators (Competitive Advantage)
 
-Features that make this app feel polished and purpose-built rather than a generic chat bolted onto a timer. Not required for launch, but high-value for the event experience.
+Features that make the multi-meeting experience feel polished. Not required for launch, but valuable.
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| **Admin: export chat logs** | After the meeting, organizers want to review what was discussed. Export all chat messages per station per group as CSV or PDF. This is the lasting output of the entire event. | LOW | Query messages by station+group, format as CSV/PDF. Run after meeting ends. Does not need to be real-time. |
-| **Visual rotation indicator** | Show a map or progress bar of which stations the group has visited and which remain. Gives participants a sense of progress and anticipation. | LOW | Simple progress dots or numbered list. Highlight current station. Grey out completed ones. |
-| **Slow mode / rate limiting** | Prevent chat spam from excited teenagers. Limit to 1 message per N seconds per user. Keeps discussions focused and readable. Used by Twitch, Discord, and livestream chat platforms. | LOW | Server-side throttle per user per channel. Return error if sending too fast. Configure interval in admin. |
-| **Timer warnings** | Audio/visual alert at 5 min, 2 min, and 30 sec remaining. Users get absorbed in chat and lose time awareness. Stagetimer and CueTimer both use color-coded warnings. | LOW | Change timer color (green -> yellow -> red). Optional vibration/sound on mobile. Thresholds configurable by admin. |
-| **Pinned messages** | Admin or facilitator can pin an important message to the top of a chat channel. Useful for mid-discussion clarifications or reminders. | LOW | Pin/unpin action on messages (admin only). Pinned message displayed above chat scroll area. |
-| **Anonymous mode toggle** | Allow participants to post anonymously within a station's chat. Youth may be more honest about sensitive topics (like bus trip concerns) if their name is not attached. Slido's anonymous Q&A is their most-used feature. | MEDIUM | Toggle per station (admin configures). Messages show "Anonym" instead of display name. Server still tracks sender for moderation. |
-| **Admin: live dashboard** | Real-time overview showing: messages per station, active users per group, timer status, connection health. Gives the facilitator situational awareness during a fast-moving event. | MEDIUM | Aggregate stats from real-time data. Display on admin screen (likely a laptop/tablet at the front of the room). |
-| **Emoji reactions on messages** | Quick non-verbal agreement/disagreement without cluttering the chat with "+1" messages. Lightweight engagement that youth demographics expect from modern chat. | LOW | Predefined emoji set (thumbs up, heart, checkmark, question mark). Increment counter on message. |
-| **Notification sound for new messages** | Audio cue when a new message arrives while the phone screen is off or the user is looking away. Keeps engagement high during the discussion. | LOW | Short notification sound on new message. Respect device mute settings. User can toggle on/off. |
+| Feature | Value Proposition | Complexity | Depends On (v1.0) | Notes |
+|---------|-------------------|------------|-------------------|-------|
+| **Attendance summary on meeting card** | Before a meeting, admin and users see at a glance: "18 kommer, 5 kan ikke, 12 har ikke svart." Reduces uncertainty about turnout. | LOW | Per-meeting attendance (table stakes) | Aggregate query on `meeting_attendance`. Display as compact stat pills (existing pattern from `RegisteredUsersOverview`). |
+| **Contact action buttons** | Tap phone number to call, tap email to send. Eliminates the copy-paste friction of a static directory. | LOW | Searchable contact directory | Use `tel:` and `mailto:` href links. Style as tappable buttons with icons. Obvious on mobile, still works on desktop. |
+| **Station copy from previous meeting** | When creating a new meeting, admin can optionally copy stations from a previous meeting as a starting point, then edit. Saves time for recurring discussion themes. | LOW | Admin-configurable stations | "Kopier fra forrige mote" button on station creation. Deep-copies station titles, questions, and tips into the new meeting. Admin can then edit/delete/add. |
+| **Meeting summary card in history** | Each past meeting shows a compact summary: date, venue, number of stations, number of messages, attendance count. Gives a quick overview without opening. | LOW | Meeting history browsing | Aggregate stats computed on meeting completion and cached on the meeting row, or computed live (cheap at this scale). |
+| **Flat "everyone" directory view** | In addition to youth-centered view, show all members alphabetically regardless of role. Useful when a parent wants to find another parent directly without knowing which youth they are linked to. | LOW | Searchable contact directory | Toggle between "Ungdom + foreldre" and "Alle" views. Same search, different grouping. |
+| **Admin meeting detail view** | Consolidated admin view per meeting showing: stations config, groups, attendance list, word cloud, export button. One-stop management. | MEDIUM | All per-meeting admin features | New `/admin/meetings/[id]` page with tabs or sections for each concern. Replaces the current flat admin panel structure. |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
-Features that seem good but create problems for this specific use case.
+Features to explicitly NOT build for v1.1.
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| **User accounts with email/password** | "We need proper authentication" | Massive friction for a single-event app. Parents will not remember passwords. Youth will abandon onboarding. The event has a fixed 2-hour window -- every second of onboarding friction is lost discussion time. | Invite code + display name. No passwords. Session persists via cookie/token. Admin can kick bad actors manually. |
-| **Video/audio calling** | "People could video chat between stations" | Everyone is in the same room. Adding WebRTC is enormous complexity for zero value. Network bandwidth for 80 simultaneous video streams on event WiFi would collapse. | They are literally standing next to each other. Chat is for structured written input that can be exported later. |
-| **Direct messages between users** | "Users should be able to DM each other" | Enables bullying, off-topic side-conversations, and moderation nightmares. Youth safety concern. Parents would object. | All communication happens in station channels where it is visible to admins. If someone needs to talk privately, they are in the same room. |
-| **Message editing/deletion by users** | "Users should fix typos" | Creates moderation problems. Users could post something inappropriate, others see it, then delete it. With 80 users and fast-moving chat, this is a harassment vector. | Messages are permanent. Admin can delete inappropriate messages. Users learn to type carefully. |
-| **File/image upload** | "Users should share photos" | Moderation nightmare with youth. Inappropriate image risk. Storage/bandwidth cost. Slows down the focused text discussion. Not needed for structured Q&A-style discussion. | Text-only chat. If organizers want to share images, they can be included in the station question panel as pre-approved content. |
-| **Threaded conversations** | "Replies should thread like Slack" | Over-engineered for short 15-minute discussion windows. Threads fragment the conversation and confuse less-technical parents. The discussion is meant to be a flowing conversation. | Flat chat with @mentions if someone wants to reference another user. Simple, familiar, works for all ages. |
-| **Push notifications** | "Users should get notified on their phone" | Requires service worker registration, notification permissions (users often deny), and platform-specific handling. The app is open and active during the entire event. No one is "away" -- they are all in the room. | In-app notification sounds and visual indicators are sufficient. The timer itself creates urgency. |
-| **Multi-language support / i18n framework** | "We should internationalize for future use" | This is a single-event app for a Norwegian audience. Adding i18n infrastructure is wasted complexity. All 80 users speak Norwegian. | Hardcode Norwegian (Bokmal) strings directly. If reused later, extract strings then. YAGNI. |
-| **Offline mode with sync** | "What if WiFi drops?" | Full offline-first architecture (IndexedDB, conflict resolution, sync queues) is enormous complexity for an edge case. The event venue should have working WiFi. | Auto-reconnect with message queuing for brief disconnections. If WiFi is truly down for extended periods, the facilitator pauses the meeting. Verify WiFi before the event. |
-| **Persistent user profiles** | "Users should have avatars and bios" | Single-use app. No one will customize a profile for a 2-hour event. Development time better spent on core chat experience. | Display name + role badge (youth/parent). That is all the identity needed. |
+| **Recurring meeting templates** | "Admin should schedule recurring meetings automatically" | This is a 4-8 meeting series over 2 years. Manual creation takes 2 minutes per meeting. Template/recurrence logic adds scheduling complexity (conflicts, exceptions, timezone edge cases) for negligible time savings. | Admin creates each meeting manually. Station copy from previous meeting handles the most tedious part. |
+| **Multiple concurrent upcoming meetings** | "What if we need two meetings in the same week?" | Adds enormous complexity to attendance, group assignment, and the dashboard state machine. Users would need to pick which meeting they are RSVPing to. The app is for one bus group with one meeting at a time. | One upcoming meeting at a time. Create the next one after the current one completes. |
+| **Push notifications for new meetings** | "Notify users when admin creates a meeting" | Requires service worker, notification permission prompts (users decline), and platform-specific handling. Admin already communicates via Telegram/SMS. The app is a supplement, not the primary communication channel. | Admin shares meeting link via existing Telegram group. Users see the meeting when they open the app. |
+| **Calendar integration (ical/Google Calendar)** | "Users should add meetings to their calendar" | Small scope (4-8 meetings over 2 years). Implementation requires generating ICS files or OAuth for Google Calendar API. Meeting details are simple enough to add manually. | Show date/time/venue clearly on the meeting card. Users screenshot or add manually. |
+| **Meeting notes or minutes (separate from discussions)** | "Admin should be able to write meeting notes" | The discussions ARE the meeting notes. Adding a separate notes editor duplicates functionality and creates confusion about where the "real" notes live. | Use the Markdown export as meeting minutes. Admin can add context in the export prompt or edit the exported file. |
+| **User-to-user messaging** | "Parents should message each other through the app" | Contact directory already exposes phone and email. Adding in-app messaging creates a parallel communication channel that competes with the Telegram group. Moderation burden. Youth safety concerns. | Contact directory with tap-to-call and tap-to-email. Telegram group for group chat. |
+| **Station templates library** | "Build a library of reusable discussion templates" | With 4-8 meetings over 2 years, a template library is over-engineering. "Copy from previous meeting" covers the reuse case with zero additional UI complexity. | Station copy from previous meeting. |
+| **PDF export** | "Some people prefer PDF over Markdown" | The Markdown export is specifically designed for downstream processing with Claude (AI-generated PowerPoint). PDF would need a rendering library (puppeteer/react-pdf), adds deployment complexity, and the output is less useful for AI processing. | Markdown export. Users can paste into any Markdown viewer for formatted reading. |
+| **Attendance reminders** | "Send reminders to people who haven't responded" | Requires notification infrastructure (email, SMS, or push). Admin already pings people via Telegram. The app is not the primary communication channel. | Admin checks "Har ikke svart" count and follows up via Telegram. |
 
 ---
 
 ## Feature Dependencies
 
 ```
-[Invite-code registration]
+[Meeting entity CRUD] (new foundation)
     |
-    +--requires--> [Role assignment]
-    |                  |
-    |                  +--enables--> [Admin: user management]
-    |                                    |
-    |                                    +--enables--> [Admin: group management]
-    |                                                      |
-    +------------------------------------------------------+
-    |
-    v
-[Station/group awareness]
-    |
-    +--requires--> [Admin: group management]
-    |
-    +--enables--> [Real-time chat per station per group]
+    +--enables--> [Admin-configurable stations per meeting]
     |                 |
-    |                 +--enables--> [Auto-scroll chat]
-    |                 +--enables--> [Message persistence]
-    |                 +--enables--> [Pinned messages]
-    |                 +--enables--> [Emoji reactions]
-    |                 +--enables--> [Anonymous mode toggle]
-    |                 +--enables--> [Slow mode / rate limiting]
-    |                 +--enables--> [Admin: export chat logs]
+    |                 +--enables--> [Per-meeting station sessions + messages]
+    |                 |                 |
+    |                 |                 +--enables--> [Per-meeting export]
+    |                 |                 +--enables--> [Per-meeting word cloud]
+    |                 |
+    |                 +--enables--> [Station copy from previous meeting]
     |
-    +--enables--> [Visual rotation indicator]
-
-[Visible countdown timer]
+    +--enables--> [Per-meeting groups]
+    |                 |
+    |                 +--combined with stations--> [Per-meeting station sessions + messages]
     |
-    +--enables--> [Timer warnings]
-    +--requires--> [Admin: start/stop/advance meeting]
+    +--enables--> [Per-meeting attendance]
+    |                 |
+    |                 +--enables--> [Attendance summary on meeting card]
+    |
+    +--enables--> [Meeting lifecycle management]
+    |                 |
+    |                 +--enables--> [Dashboard state awareness]
+    |                 +--enables--> [Meeting history browsing]
+    |                                   |
+    |                                   +--enables--> [Meeting summary card in history]
+    |
+    +--enables--> [Admin meeting detail view]
 
-[Connection resilience]
-    +--enhances--> [Real-time chat per station per group]
-    +--enhances--> [Visible countdown timer]
+[Searchable contact directory] (independent of meetings)
+    |
+    +--enables--> [Expandable directory entries]
+    |                 |
+    |                 +--enables--> [Contact action buttons]
+    |
+    +--enables--> [Flat "everyone" directory view]
 
-[Admin: start/stop/advance meeting]
-    +--requires--> [Admin: group management]
-    +--requires--> [Visible countdown timer]
-    +--enables--> [Station/group awareness] (triggers rotation)
-
-[Admin: live dashboard]
-    +--requires--> [Real-time chat per station per group]
-    +--requires--> [Admin: start/stop/advance meeting]
+[Dashboard state awareness]
+    +--requires--> [Meeting lifecycle management]
+    +--requires--> [Searchable contact directory]
+    +--requires--> [Meeting history browsing]
 ```
 
 ### Dependency Notes
 
-- **Registration must come first:** Everything depends on knowing who the user is and what role they have. This is the foundation.
-- **Group management gates the meeting:** You cannot start rotating between stations until groups exist and users are assigned.
-- **Real-time chat is the critical path:** It is the highest-complexity table-stakes feature and the one most other features depend on. Get this working and stable before building anything on top.
-- **Timer and meeting control are tightly coupled:** The timer is meaningless without admin control to start/stop it. The meeting state machine drives the timer.
-- **Export depends on persistence:** You can only export what you have stored. Message persistence must be solid before export makes sense.
+- **Meeting entity is the foundation:** Every per-meeting feature depends on the `meetings` table existing first. This must be built in the first phase.
+- **Contact directory is independent:** It does not depend on meetings at all. It reads from `profiles` + `parent_youth_links` + contact fields. Can be built in parallel with meeting CRUD.
+- **Stations must exist before sessions:** The FK chain `meeting -> stations -> sessions -> messages` means stations must be configurable before the real-time chat features can be scoped to a meeting.
+- **Dashboard state awareness is the integration point:** It ties together meetings, directory, and history into a coherent user experience. Build this after the individual pieces work.
+- **Export and word cloud are low-hanging fruit:** They already work. Scoping them to a meeting is a query filter change + moving them into the meeting detail view.
+- **Migration of v1.0 data must happen alongside the meeting entity creation:** The existing stations, groups, sessions, and messages need to be wrapped in a "Meeting 1" container during the schema migration.
 
 ---
 
 ## MVP Definition
 
-### Launch With (v1) -- Before the event
+### Phase 1: Schema + Meeting CRUD + Directory
 
-The absolute minimum to run the meeting successfully.
+The foundational changes that enable everything else.
 
-- [x] **Invite-code registration with roles** -- Users must be able to join
-- [x] **Admin: group management** -- Groups must be created and users assigned
-- [x] **Admin: start/stop/advance meeting** -- Facilitator must control the flow
-- [x] **Visible countdown timer** -- Users must know time remaining
-- [x] **Discussion questions panel** -- Users must see what to discuss
-- [x] **Station/group awareness** -- Users must know where they are
-- [x] **Real-time chat per station per group** -- The core interaction
-- [x] **Auto-scroll chat** -- Basic chat UX
-- [x] **Message persistence** -- Messages survive refresh
-- [x] **Connection resilience** -- Auto-reconnect on mobile
-- [x] **Mobile-responsive layout** -- Usable on phones
+- [ ] **Meeting entity with CRUD** -- Without this, nothing else can be meeting-scoped
+- [ ] **Schema migration** -- Add `meeting_id` FKs, create `meeting_attendance` table, migrate v1.0 data into Meeting 1
+- [ ] **Admin meeting creation form** -- Date, time, venue, status management
+- [ ] **Searchable contact directory** -- Independent of meetings, becomes the permanent dashboard anchor
+- [ ] **Expandable entries with contact info** -- Phone + email visible on expand, with action buttons
+- [ ] **Dashboard state awareness** -- Show correct content based on meeting state
 
-### Add After Core Works (v1.x) -- Polish before event day
+### Phase 2: Per-Meeting Features
 
-Features to add once the core is stable, before the actual event.
+Scope existing features to work within a meeting container.
 
-- [ ] **Timer warnings (color changes)** -- Low effort, high impact for time awareness
-- [ ] **Admin: export chat logs** -- Needed after the event, not during
-- [ ] **Visual rotation indicator** -- Nice orientation aid
-- [ ] **Slow mode / rate limiting** -- Insurance against spam
-- [ ] **Notification sound** -- Keeps attention during discussion
-- [ ] **Admin: user management view** -- See who is online, handle latecomers
+- [ ] **Admin-configurable stations per meeting** -- Station form with title, questions, tip
+- [ ] **Per-meeting groups** -- Group builder scoped to the upcoming meeting
+- [ ] **Per-meeting attendance** -- Replace `profiles.attending` with `meeting_attendance` table
+- [ ] **Meeting lifecycle management** -- Admin controls: publish, start, end
 
-### Future Consideration (v2+) -- Only if time permits
+### Phase 3: History + Polish
 
-Features to add only if development time remains and testing reveals a need.
+Make past meetings browsable and polish the experience.
 
-- [ ] **Pinned messages** -- Useful but not critical for 15-min windows
-- [ ] **Anonymous mode** -- Valuable for sensitive topics but adds moderation complexity
-- [ ] **Emoji reactions** -- Fun but not essential
-- [ ] **Admin: live dashboard** -- Nice for facilitator situational awareness
+- [ ] **Meeting history browsing** -- Read-only past discussions
+- [ ] **Per-meeting export** -- Scoped Markdown download
+- [ ] **Per-meeting word cloud** -- Scoped word frequencies within meeting detail
+- [ ] **Admin meeting detail view** -- Consolidated admin view per meeting
+
+### Future Consideration
+
+- [ ] **Station copy from previous meeting** -- Only valuable after 2+ meetings exist
+- [ ] **Flat "everyone" directory view** -- Nice toggle, not essential for launch
+- [ ] **Meeting summary cards in history** -- Polish feature for history browsing
 
 ---
 
@@ -178,68 +171,68 @@ Features to add only if development time remains and testing reveals a need.
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Invite-code registration | HIGH | LOW | P1 |
-| Role assignment | HIGH | LOW | P1 |
-| Real-time chat per station/group | HIGH | HIGH | P1 |
-| Visible countdown timer | HIGH | LOW | P1 |
-| Discussion questions panel | HIGH | LOW | P1 |
-| Station/group awareness | HIGH | LOW | P1 |
-| Admin: start/stop/advance | HIGH | MEDIUM | P1 |
-| Admin: group management | HIGH | MEDIUM | P1 |
-| Mobile-responsive layout | HIGH | MEDIUM | P1 |
-| Auto-scroll chat | MEDIUM | LOW | P1 |
-| Message persistence | MEDIUM | LOW | P1 |
-| Connection resilience | MEDIUM | MEDIUM | P1 |
-| Admin: user management | MEDIUM | LOW | P1 |
-| Timer warnings | MEDIUM | LOW | P2 |
-| Admin: export chat logs | MEDIUM | LOW | P2 |
-| Visual rotation indicator | LOW | LOW | P2 |
-| Slow mode / rate limiting | MEDIUM | LOW | P2 |
-| Notification sound | LOW | LOW | P2 |
-| Pinned messages | LOW | LOW | P3 |
-| Anonymous mode | MEDIUM | MEDIUM | P3 |
-| Emoji reactions | LOW | LOW | P3 |
-| Admin: live dashboard | LOW | MEDIUM | P3 |
+| Meeting entity CRUD | HIGH | MEDIUM | P1 |
+| Schema migration (add meeting_id FKs) | HIGH | MEDIUM | P1 |
+| Admin-configurable stations | HIGH | MEDIUM | P1 |
+| Per-meeting groups | HIGH | LOW | P1 |
+| Per-meeting attendance | HIGH | LOW | P1 |
+| Searchable contact directory | HIGH | MEDIUM | P1 |
+| Expandable entries + contact info | HIGH | LOW | P1 |
+| Dashboard state awareness | HIGH | MEDIUM | P1 |
+| Meeting lifecycle management | HIGH | MEDIUM | P1 |
+| Meeting history browsing | MEDIUM | MEDIUM | P1 |
+| Per-meeting export | MEDIUM | LOW | P1 |
+| Per-meeting word cloud | MEDIUM | LOW | P1 |
+| Admin meeting detail view | MEDIUM | MEDIUM | P2 |
+| Attendance summary on meeting card | MEDIUM | LOW | P2 |
+| Contact action buttons (tel:/mailto:) | MEDIUM | LOW | P2 |
+| Station copy from previous meeting | LOW | LOW | P3 |
+| Flat "everyone" directory view | LOW | LOW | P3 |
+| Meeting summary cards in history | LOW | LOW | P3 |
 
 **Priority key:**
-- P1: Must have for launch -- the event cannot run without these
-- P2: Should have -- adds polish and resilience, build before event day
-- P3: Nice to have -- only if time permits after P1 and P2 are solid
+- P1: Must have -- the multi-meeting platform does not work without these
+- P2: Should have -- adds polish, build within the v1.1 milestone
+- P3: Nice to have -- only if time permits
 
 ---
 
-## Competitor Feature Analysis
+## Existing v1.0 Component Reuse Analysis
 
-| Feature | Slido | Mentimeter | GroupMap | Stagetimer | Our Approach |
-|---------|-------|------------|---------|------------|--------------|
-| Join via code | Yes (event code) | Yes (voting code) | Yes (access code) | Yes (room link) | Yes -- invite code per role |
-| Real-time chat | Q&A only (not free chat) | No (responses only) | Brainstorm mode | No | Full chat per station per group |
-| Countdown timer | No | No (presenter controls) | Yes (activity timer) | Yes (core feature) | Yes -- global synced timer |
-| Discussion prompts | No | Slide-based questions | Template-based | Agenda display | Collapsible question panel per station |
-| Group rotation | No | No | Manual | No | Automated -- admin advances all groups |
-| Data export | Yes (CSV) | Yes (Excel/PDF) | Yes (CSV/PDF) | No | Yes -- CSV export of all chat logs |
-| Role-based access | Limited (host/participant) | Limited (presenter/audience) | Yes (facilitator/participant) | Yes (controller/viewer) | Yes -- admin/youth/parent |
-| Anonymous input | Yes | Yes (default) | Yes | N/A | Optional per station (P3) |
-| Mobile-first | Responsive | Responsive | Responsive | Responsive | Mobile-first (primary target) |
+Understanding which existing components can be reused, extended, or must be rewritten.
 
-**Key insight from competitor analysis:** No existing tool combines station-based group rotation with real-time free-form chat and countdown timers in a single integrated experience. Slido is closest for audience interaction but lacks chat. Stagetimer handles timers but not discussion. GroupMap handles facilitated brainstorming but not real-time chat. This app fills a specific gap for in-person World Cafe-style structured discussions.
+| v1.0 Component | v1.1 Status | Change Required |
+|----------------|-------------|-----------------|
+| `RegisteredUsersOverview` | **Extend** | Add search, phone/email fields, contact action buttons. Already uses `<details>` accordion pattern. |
+| `SearchInput` | **Reuse as-is** | Already built as a generic search component. Wire it into the directory. |
+| `AttendingToggle` | **Extend** | Must accept `meetingId` prop and write to `meeting_attendance` table instead of `profiles.attending`. |
+| `StationSelector` | **Reuse as-is** | Already receives stations and sessions as props. Just pass meeting-scoped data. |
+| `ChatRoom` / `MessageList` / `ChatInput` | **Extend** | Add read-only mode (hide ChatInput) for history browsing. Chat itself already works. |
+| `WordCloud` | **Reuse as-is** | Already receives messages as props. Just pass meeting-scoped messages. |
+| `GroupBuilder` / `GroupBucket` / `UnassignedPool` | **Extend** | Must scope to a specific meeting's groups. Add `meetingId` to queries. |
+| `CountdownTimer` | **Reuse as-is** | Already driven by session data. No meeting-level changes needed. |
+| `/api/export` route | **Extend** | Add `meetingId` query parameter to filter messages. Add meeting title/date to export header. |
+| `build-markdown.ts` | **Extend** | Add meeting title and date to the export header. Otherwise unchanged. |
+| Admin page (`/admin`) | **Restructure** | Current flat list of admin tools (users, groups, wordcloud, export) must become meeting-scoped. New structure: `/admin/meetings` list + `/admin/meetings/[id]` detail. User management stays global. |
 
 ---
 
 ## Sources
 
-- [Slido features](https://www.slido.com/product) -- Audience interaction platform feature set
-- [Mentimeter](https://www.mentimeter.com/) -- Interactive presentation tool comparison
-- [Stagetimer](https://stagetimer.io/) -- Remote-controlled countdown timer for events
-- [GroupMap facilitation tools](https://www.groupmap.com/online-workshop-facilitation-tools/) -- Online workshop facilitation features
-- [Howspace](https://howspace.com/) -- Digital facilitation platform
-- [GetStream chat UX best practices](https://getstream.io/blog/chat-ux/) -- Chat UX patterns and moderation
-- [GetStream livestream chat UX](https://getstream.io/blog/7-ux-best-practices-for-livestream-chat/) -- Livestream chat patterns
-- [GetStream content moderation](https://getstream.io/blog/live-content-moderation/) -- Real-time chat moderation approaches
-- [World Cafe method](https://www.facilitator.school/glossary/world-cafe) -- World Cafe facilitation pattern
-- [WCAG mobile guidance](https://www.w3.org/TR/wcag2mobile-22/) -- Accessibility standards for mobile apps
-- [Norway youth participation](https://national-policies.eacea.ec.europa.eu/youthwiki/chapters/norway/54-young-peoples-participation-in-policy-making) -- Norwegian youth council framework
+- Existing codebase analysis: `supabase/migrations/001_schema.sql` (current data model)
+- Existing codebase analysis: `src/app/dashboard/page.tsx` (current dashboard structure)
+- Existing codebase analysis: `src/components/dashboard/RegisteredUsersOverview.tsx` (expandable list pattern)
+- Existing codebase analysis: `src/components/dashboard/AttendingToggle.tsx` (attendance UX)
+- Existing codebase analysis: `src/components/admin/WordCloud.tsx` (word cloud component)
+- Existing codebase analysis: `src/app/api/export/route.ts` (export route)
+- Existing codebase analysis: `src/lib/export/build-markdown.ts` (export builder)
+- PROJECT.md requirements (active requirements for v1.1)
+- [List UI design patterns](https://www.eleken.co/blog-posts/list-ui-design) -- expandable list UX
+- [Mobile-first design patterns](https://www.browserstack.com/guide/how-to-implement-mobile-first-design) -- touch-friendly design
+- [Chronological activity feeds](https://www.aubergine.co/insights/a-guide-to-designing-chronological-activity-feeds) -- meeting history feed patterns
+- [RSVP best practices](https://rsvpify.com/event-registration-software/event-attendance-tracking/) -- per-event attendance tracking
+- [GroupCal RSVP patterns](https://www.groupcal.app/guide/events-rsvp-attendance-status/) -- per-event attendance status
 
 ---
-*Feature research for: Buss 2028 Fellesmote-appen (real-time structured group discussion)*
-*Researched: 2026-02-19*
+*Feature research for: Buss 2028 Fellesmote v1.1 (multi-meeting platform evolution)*
+*Researched: 2026-02-25*

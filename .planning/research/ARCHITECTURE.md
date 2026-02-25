@@ -1,569 +1,910 @@
-# Architecture Research
+# Architecture Research: v1.1 Multi-Meeting Integration
 
-**Domain:** Real-time group discussion webapp (Next.js 14 App Router + Supabase)
-**Researched:** 2026-02-19
-**Confidence:** HIGH
+**Domain:** Multi-meeting platform evolution of existing real-time group discussion app
+**Researched:** 2026-02-25
+**Confidence:** HIGH (based on direct codebase analysis of existing v1.0 schema and code)
 
-## System Overview
+## Executive Summary
+
+The v1.0 app has a flat, single-meeting architecture: one global `meeting_status` row, global `groups`/`group_members`, global `stations`, and `station_sessions`/`messages` that implicitly belong to "the one meeting." The v1.1 evolution introduces a `meetings` table as the central entity, and every meeting-day artifact (stations, groups, sessions, messages) becomes scoped to a specific meeting via foreign keys. The core patterns (Server Component shell + Client Component island, Realtime broadcast channels, atomic Postgres functions) remain unchanged -- the work is schema evolution plus URL restructuring.
+
+---
+
+## Current v1.0 Schema (As-Built)
+
+Based on direct analysis of migration files 001-019:
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        CLIENT (Browser)                             │
-│                                                                     │
-│  ┌──────────┐  ┌──────────────┐  ┌──────────┐  ┌───────────────┐  │
-│  │ Auth UI  │  │ Dashboard /  │  │ Station  │  │  Admin Panel  │  │
-│  │ (Login/  │  │  Station     │  │  Chat    │  │  (Users/      │  │
-│  │ Register)│  │  Selector    │  │  View    │  │  Groups/Codes)│  │
-│  └────┬─────┘  └──────┬───────┘  └────┬─────┘  └──────┬────────┘  │
-│       │               │               │               │            │
-│       │     ┌─────────┴───────────────┴───────────────┘            │
-│       │     │         Supabase Browser Client                      │
-│       │     │    (createBrowserClient from @supabase/ssr)          │
-│       │     │    ┌──────────┐  ┌────────────┐                      │
-│       │     │    │ Realtime │  │  DB Reads   │                      │
-│       │     │    │ Channels │  │  (select)   │                      │
-│       │     │    └──────────┘  └────────────┘                      │
-├───────┴─────┴──────────────────────────────────────────────────────┤
-│                     Next.js Middleware                              │
-│           (Auth token refresh + role-based redirect)               │
-├────────────────────────────────────────────────────────────────────┤
-│                        SERVER (Next.js)                            │
-│                                                                     │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────────┐  │
-│  │ Server       │  │ Server       │  │ Route Handlers           │  │
-│  │ Components   │  │ Actions      │  │ (API routes for export,  │  │
-│  │ (initial     │  │ (mutations:  │  │  invite code validation) │  │
-│  │  data fetch) │  │  send msg,   │  │                          │  │
-│  │              │  │  end station) │  │                          │  │
-│  └──────┬───────┘  └──────┬───────┘  └───────────┬──────────────┘  │
-│         │                 │                       │                │
-│         └─────────────────┴───────────────────────┘                │
-│                  Supabase Server Client                            │
-│            (createServerClient from @supabase/ssr)                 │
-├────────────────────────────────────────────────────────────────────┤
-│                        SUPABASE                                    │
-│                                                                     │
-│  ┌──────────┐  ┌──────────────┐  ┌──────────┐  ┌──────────────┐  │
-│  │   Auth   │  │  PostgreSQL  │  │ Realtime │  │   Storage    │  │
-│  │ (email/  │  │  (8 tables   │  │ (WS for  │  │  (not used)  │  │
-│  │ password)│  │   + RLS)     │  │ messages,│  │              │  │
-│  │          │  │              │  │ sessions,│  │              │  │
-│  │          │  │              │  │ meeting) │  │              │  │
-│  └──────────┘  └──────────────┘  └──────────┘  └──────────────┘  │
-└─────────────────────────────────────────────────────────────────────┘
+profiles (id, full_name, email, role, phone, attending, parent_invite_code, created_at)
+invite_codes (id, code, role, max_uses, uses, active, created_at)
+parent_youth_links (id, parent_id, youth_id, created_at)
+groups (id, name, locked, created_at)
+group_members (id, group_id, user_id, created_at)
+stations (id[uuid], number, title, description, questions[jsonb], tip, created_at)
+station_sessions (id, station_id, group_id, status, started_at, end_timestamp, completed_at, created_at)
+messages (id, session_id, user_id, content, created_at)
+meeting_status (id, status, started_at, ended_at)
+temp_access_codes (id, user_id, code, expires_at, used, created_at)
 ```
 
-### Component Responsibilities
+**Key observations:**
+- `stations` uses UUID primary key with a separate `number` column for ordering
+- `station_sessions` has UNIQUE(station_id, group_id) -- one session per station per group
+- `messages` references `session_id` (not station_id + group_id directly)
+- `meeting_status` is a singleton row (no FK to anything)
+- `groups` and `group_members` are global -- not scoped to any meeting
+- `profiles.attending` is a single boolean -- not per-meeting
+- Four SECURITY DEFINER functions: `open_station`, `view_station`, `complete_station`, `reopen_station`
+- Realtime: `station_sessions` in supabase_realtime publication; chat uses Broadcast channels (not postgres_changes)
 
-| Component | Responsibility | Typical Implementation |
-|-----------|----------------|------------------------|
-| **Next.js Middleware** | Refresh auth tokens on every request, redirect unauthenticated users, enforce role-based routing (admin vs participant paths) | `middleware.ts` at project root using `@supabase/ssr` `createServerClient` with cookie get/set handlers |
-| **Browser Supabase Client** | All client-side Supabase operations: Realtime subscriptions, direct DB reads (filtered by RLS) | Singleton from `createBrowserClient()` in `lib/supabase/client.ts` |
-| **Server Supabase Client** | Server-side data fetching in Server Components, mutations in Server Actions, secure operations with service role | Created per-request in `lib/supabase/server.ts` using `cookies()` from `next/headers` |
-| **Server Components** | Initial page data loading (station list, group info, session state) | Async components that `await` Supabase queries directly |
-| **Server Actions** | All write operations: send message, start/end station, manage groups, create invite codes | `'use server'` functions called from Client Components |
-| **Client Components** | Interactive UI: chat input, timer, Realtime subscriptions, optimistic updates | `'use client'` components that hold state and subscriptions |
-| **RLS Policies** | Row-level security scoping all data access by authenticated user and group membership | SQL policies on all 8 tables, `is_admin()` helper function |
-| **Realtime Channels** | Push database changes to subscribed clients for messages, station sessions, and meeting status | `supabase.channel().on('postgres_changes', ...).subscribe()` |
+---
 
-## Recommended Project Structure
+## v1.1 Schema Evolution
+
+### New Tables
+
+```sql
+-- Central meeting entity
+CREATE TABLE meetings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,              -- e.g. "Fellesmote #1"
+  date DATE NOT NULL,
+  time TIME,                        -- optional: start time
+  location TEXT,                    -- venue name
+  status TEXT NOT NULL DEFAULT 'upcoming'
+    CHECK (status IN ('upcoming', 'active', 'completed')),
+  started_at TIMESTAMPTZ,
+  ended_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Per-meeting attendance replaces profiles.attending
+CREATE TABLE meeting_attendance (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  meeting_id UUID NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'attending', 'not_attending')),
+  responded_at TIMESTAMPTZ,
+  UNIQUE(meeting_id, user_id)
+);
+
+-- Per-meeting discussion groups (replaces global groups)
+CREATE TABLE meeting_groups (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  meeting_id UUID NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  locked BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Per-meeting group membership (replaces global group_members)
+CREATE TABLE meeting_group_members (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id UUID NOT NULL REFERENCES meeting_groups(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(group_id, user_id)
+);
+
+-- Per-meeting stations (replaces global stations)
+CREATE TABLE meeting_stations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  meeting_id UUID NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+  number INT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  questions JSONB DEFAULT '[]',
+  tip TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(meeting_id, number)
+);
+```
+
+### Modified Tables
+
+```sql
+-- station_sessions: re-point FKs to meeting-scoped tables
+-- The UNIQUE constraint changes from (station_id, group_id) to
+-- (station_id, group_id) where station_id now references meeting_stations
+ALTER TABLE station_sessions
+  DROP CONSTRAINT station_sessions_station_id_fkey,
+  ADD CONSTRAINT station_sessions_station_id_fkey
+    FOREIGN KEY (station_id) REFERENCES meeting_stations(id) ON DELETE CASCADE;
+
+ALTER TABLE station_sessions
+  DROP CONSTRAINT station_sessions_group_id_fkey,
+  ADD CONSTRAINT station_sessions_group_id_fkey
+    FOREIGN KEY (group_id) REFERENCES meeting_groups(id) ON DELETE CASCADE;
+
+-- profiles: drop the global 'attending' column
+ALTER TABLE profiles DROP COLUMN attending;
+```
+
+### Tables Unchanged
+
+| Table | Why Unchanged |
+|-------|---------------|
+| `profiles` | User identity is global (name, email, phone, role). Only `attending` column removed. |
+| `invite_codes` | Registration is a one-time event, not per-meeting. |
+| `parent_youth_links` | Family relationships are permanent, not per-meeting. |
+| `messages` | Already references `session_id` which chains to meeting via station_sessions -> meeting_stations -> meetings. No direct changes needed. |
+| `temp_access_codes` | Login mechanism is global, not per-meeting. |
+
+### Tables to Drop (After Migration)
+
+| Table | Reason |
+|-------|--------|
+| `meeting_status` | Replaced by `meetings.status`. The singleton pattern was v1.0-specific. |
+| `groups` | Replaced by `meeting_groups`. |
+| `group_members` | Replaced by `meeting_group_members`. |
+| `stations` | Replaced by `meeting_stations`. |
+
+### Updated Postgres Functions
+
+All four SECURITY DEFINER functions need parameter type changes but retain the same logic:
+
+| Function | Change |
+|----------|--------|
+| `open_station(p_station_id, p_group_id)` | Parameter types already UUID. Now references `meeting_stations` and `meeting_groups` via `station_sessions` FKs. Logic unchanged -- the UNIQUE constraint and FOR UPDATE locking work identically. |
+| `view_station(p_station_id, p_group_id)` | Same FK chain change. Logic unchanged. |
+| `complete_station(p_session_id)` | No change needed -- operates on `station_sessions.id` which is unchanged. |
+| `reopen_station(p_session_id, p_extra_minutes)` | No change needed -- operates on `station_sessions.id` which is unchanged. |
+
+### New Indexes
+
+```sql
+CREATE INDEX idx_meeting_attendance_meeting ON meeting_attendance(meeting_id);
+CREATE INDEX idx_meeting_attendance_user ON meeting_attendance(user_id);
+CREATE INDEX idx_meeting_groups_meeting ON meeting_groups(meeting_id);
+CREATE INDEX idx_meeting_group_members_user ON meeting_group_members(user_id);
+CREATE INDEX idx_meeting_stations_meeting ON meeting_stations(meeting_id);
+CREATE INDEX idx_meetings_status ON meetings(status);
+CREATE INDEX idx_meetings_date ON meetings(date DESC);
+```
+
+---
+
+## RLS Policy Updates
+
+### New Table Policies
+
+```sql
+-- meetings: all authenticated can read, admin can write
+ALTER TABLE meetings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "meetings_select" ON meetings FOR SELECT TO authenticated USING (true);
+CREATE POLICY "meetings_admin_all" ON meetings FOR ALL TO authenticated USING (is_admin());
+
+-- meeting_attendance: read own + admin read all, users update own
+ALTER TABLE meeting_attendance ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "attendance_select" ON meeting_attendance FOR SELECT TO authenticated USING (true);
+CREATE POLICY "attendance_upsert_own" ON meeting_attendance FOR INSERT TO authenticated
+  WITH CHECK (user_id = auth.uid());
+CREATE POLICY "attendance_update_own" ON meeting_attendance FOR UPDATE TO authenticated
+  USING (user_id = auth.uid());
+CREATE POLICY "attendance_admin_all" ON meeting_attendance FOR ALL TO authenticated USING (is_admin());
+
+-- meeting_groups: all can read, admin can write
+ALTER TABLE meeting_groups ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "meeting_groups_select" ON meeting_groups FOR SELECT TO authenticated USING (true);
+CREATE POLICY "meeting_groups_admin_all" ON meeting_groups FOR ALL TO authenticated USING (is_admin());
+
+-- meeting_group_members: all can read, admin can write
+ALTER TABLE meeting_group_members ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "meeting_group_members_select" ON meeting_group_members FOR SELECT TO authenticated USING (true);
+CREATE POLICY "meeting_group_members_admin_all" ON meeting_group_members FOR ALL TO authenticated USING (is_admin());
+
+-- meeting_stations: all can read, admin can write
+ALTER TABLE meeting_stations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "meeting_stations_select" ON meeting_stations FOR SELECT TO authenticated USING (true);
+CREATE POLICY "meeting_stations_admin_all" ON meeting_stations FOR ALL TO authenticated USING (is_admin());
+```
+
+### Modified Policies
+
+The existing RLS policies on `station_sessions` and `messages` reference `group_members` for group membership checks. These must be updated to reference `meeting_group_members`:
+
+```sql
+-- station_sessions: update group membership check
+DROP POLICY "station_sessions_select" ON station_sessions;
+CREATE POLICY "station_sessions_select" ON station_sessions FOR SELECT TO authenticated
+  USING (group_id IN (SELECT group_id FROM meeting_group_members WHERE user_id = auth.uid()));
+
+-- messages: update group membership check (via session -> group)
+-- Current policy checks group_members. Since messages reference session_id,
+-- and sessions reference group_id from meeting_groups, the check chains through:
+-- messages -> station_sessions.group_id -> meeting_group_members.user_id
+```
+
+### Realtime Channel Policy
+
+The existing realtime.messages policy for broadcast channels checks `group_members`. This must reference `meeting_group_members`:
+
+```sql
+-- Update the realtime channel authorization
+DROP POLICY "Group members can use station channels" ON "realtime"."messages";
+CREATE POLICY "Group members can use station channels"
+ON "realtime"."messages"
+FOR ALL TO authenticated
+USING (
+  EXISTS (
+    SELECT 1
+    FROM station_sessions ss
+    JOIN meeting_group_members mgm ON mgm.group_id = ss.group_id
+    WHERE mgm.user_id = (SELECT auth.uid())
+      AND 'station:' || ss.id::text = (SELECT realtime.topic())
+      AND realtime.messages.extension IN ('broadcast', 'presence')
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1
+    FROM station_sessions ss
+    JOIN meeting_group_members mgm ON mgm.group_id = ss.group_id
+    WHERE mgm.user_id = (SELECT auth.uid())
+      AND 'station:' || ss.id::text = (SELECT realtime.topic())
+      AND realtime.messages.extension IN ('broadcast', 'presence')
+  )
+);
+```
+
+---
+
+## Data Migration Strategy: v1.0 to v1.1
+
+The existing v1.0 data (5 stations, groups, station_sessions, messages from the first meeting) must be preserved as the first "previous meeting."
+
+### Migration Script (Single Transaction)
+
+```sql
+BEGIN;
+
+-- Step 1: Create the v1.0 meeting in the new meetings table
+INSERT INTO meetings (id, title, date, location, status, started_at, ended_at)
+SELECT
+  gen_random_uuid(),
+  'Fellesmote #1',
+  COALESCE(ms.started_at::date, '2026-02-26'),  -- use meeting start date or fallback
+  'Bjerke VGS',                                   -- known venue
+  'completed',
+  ms.started_at,
+  ms.ended_at
+FROM meeting_status ms
+LIMIT 1;
+
+-- Capture the new meeting ID
+-- (In practice, use a DO block with a variable or a CTE chain)
+
+-- Step 2: Copy stations -> meeting_stations
+INSERT INTO meeting_stations (id, meeting_id, number, title, description, questions, tip)
+SELECT s.id, m.id, s.number, s.title, s.description, s.questions, s.tip
+FROM stations s, meetings m
+WHERE m.title = 'Fellesmote #1';
+
+-- Step 3: Copy groups -> meeting_groups
+INSERT INTO meeting_groups (id, meeting_id, name, locked)
+SELECT g.id, m.id, g.name, g.locked
+FROM groups g, meetings m
+WHERE m.title = 'Fellesmote #1';
+
+-- Step 4: Copy group_members -> meeting_group_members
+INSERT INTO meeting_group_members (id, group_id, user_id)
+SELECT gm.id, gm.group_id, gm.user_id
+FROM group_members gm;
+
+-- Step 5: Copy attendance from profiles.attending -> meeting_attendance
+INSERT INTO meeting_attendance (meeting_id, user_id, status)
+SELECT m.id, p.id,
+  CASE
+    WHEN p.attending = true THEN 'attending'
+    WHEN p.attending = false THEN 'not_attending'
+    ELSE 'pending'
+  END
+FROM profiles p, meetings m
+WHERE m.title = 'Fellesmote #1'
+  AND p.role IN ('youth', 'parent', 'admin');
+
+-- Step 6: Re-point station_sessions FKs
+-- Since we preserved the same UUIDs for meeting_stations and meeting_groups,
+-- the existing station_sessions rows already point to valid IDs in the new tables.
+-- We just need to change the FK constraints (done in DDL migration, not data migration).
+
+-- Step 7: Drop old tables and columns
+DROP TABLE meeting_status;
+DROP TABLE group_members;
+DROP TABLE groups;
+DROP TABLE stations;
+ALTER TABLE profiles DROP COLUMN attending;
+
+COMMIT;
+```
+
+### Migration Safety Strategy
+
+**Approach: Preserve UUIDs.** By copying v1.0 rows into v1.1 tables with the same primary key UUIDs, all existing FK references in `station_sessions` and `messages` remain valid. This avoids rewriting every `station_sessions.station_id` and `station_sessions.group_id` -- they still point to the same UUIDs, just in renamed tables.
+
+**Risk mitigation:**
+1. Run migration on a Supabase branch database first (Supabase Branching or a staging project)
+2. Verify message count before and after: `SELECT COUNT(*) FROM messages`
+3. Verify station_sessions integrity: `SELECT COUNT(*) FROM station_sessions ss JOIN meeting_stations ms ON ss.station_id = ms.id`
+4. Test the read-only meeting history view against migrated data
+
+---
+
+## URL Structure Evolution
+
+### Current v1.0 Routes
+
+```
+/                           Landing page
+/login                      Login
+/register                   Register with invite code
+/dashboard                  Station selector (when groups locked)
+/dashboard/station/[sessionId]  Chat room
+/admin                      Admin hub
+/admin/users                User management
+/admin/groups               Group builder
+/admin/wordcloud            Word cloud
+/api/export                 Markdown export
+```
+
+### v1.1 Routes
+
+```
+/                           Landing page (redirect to /dashboard)
+/login                      Login (unchanged)
+/register                   Register (unchanged)
+
+-- Dashboard: Contact directory + meeting awareness
+/dashboard                  Contact directory + next meeting card + previous meetings list
+
+-- Active meeting: station flow (scoped to the upcoming meeting)
+/dashboard/station/[sessionId]  Chat room (unchanged -- sessionId is already meeting-scoped via FKs)
+
+-- Meeting history: read-only browsing
+/meeting/[meetingId]        Meeting overview (stations, groups, attendance summary)
+/meeting/[meetingId]/station/[sessionId]  Read-only chat view for past meeting
+
+-- Admin: meeting management
+/admin                      Admin hub (updated with meeting management link)
+/admin/meetings             Meeting list + create new meeting
+/admin/meetings/[meetingId] Meeting detail: stations editor, groups, attendance, wordcloud, export
+/admin/meetings/[meetingId]/groups    Group builder for this meeting
+/admin/meetings/[meetingId]/stations  Station editor for this meeting
+/admin/users                User management (unchanged)
+```
+
+### Route Design Rationale
+
+1. **`/dashboard` becomes the permanent home:** No longer conditional on meeting status. Always shows the contact directory. When an upcoming meeting exists with locked groups, the station selector appears above the directory.
+
+2. **`/dashboard/station/[sessionId]` stays unchanged:** The sessionId already encodes which meeting, station, and group via FK chain. No need to add meetingId to the URL -- it would be redundant.
+
+3. **`/meeting/[meetingId]` for history:** New route group for browsing past meetings. Read-only by design. The station chat view is reused but with `readOnly=true` (this pattern already exists in v1.0).
+
+4. **`/admin/meetings/[meetingId]` nests meeting admin:** Groups, stations, wordcloud, and export all live under a specific meeting. This replaces the current top-level `/admin/groups`, `/admin/wordcloud`, and `/api/export` which assumed a single meeting.
+
+5. **`/admin/users` remains top-level:** User management is not meeting-scoped. Users exist across all meetings.
+
+---
+
+## Component Architecture Changes
+
+### Dashboard Page (`/dashboard`)
+
+**v1.0:** Conditional rendering based on group lock status. Shows either station selector or user overview.
+**v1.1:** Always shows contact directory. Conditionally shows upcoming meeting card with station selector.
+
+```
+v1.1 Dashboard Layout:
+┌─────────────────────────────────┐
+│  Velkommen, [Name]! [Role]      │
+│                                 │
+│  ┌─ Neste mote ──────────────┐  │  ← Only shown when upcoming meeting exists
+│  │ [Title] - [Date] [Time]   │  │    with locked groups for this user
+│  │ [Location]                │  │
+│  │                           │  │
+│  │ Din gruppe: [Group Name]  │  │
+│  │ [Member chips]            │  │
+│  │                           │  │
+│  │ ┌───┐ ┌───┐ ┌───┐ ┌───┐  │  │  ← Station selector grid
+│  │ │ 1 │ │ 2 │ │ 3 │ │ 4 │  │  │
+│  │ └───┘ └───┘ └───┘ └───┘  │  │
+│  └───────────────────────────┘  │
+│                                 │
+│  ┌─ Kontaktliste ────────────┐  │  ← Always shown
+│  │ [Search bar]              │  │
+│  │ [Toggle: Youth / All]     │  │
+│  │                           │  │
+│  │ [Youth 1] ▶ [Parents]    │  │
+│  │ [Youth 2] ▶ [Parents]    │  │
+│  │ ...                       │  │
+│  └───────────────────────────┘  │
+│                                 │
+│  ┌─ Tidligere moter ─────────┐  │  ← Always shown (empty state if none)
+│  │ ▶ Fellesmote #1 - 26 feb  │  │
+│  │ ▶ Fellesmote #2 - 15 mar  │  │
+│  └───────────────────────────┘  │
+│                                 │
+│  [Logg ut]                      │
+└─────────────────────────────────┘
+```
+
+### Contact Directory Component (New)
+
+**Purpose:** Searchable list of all registered members with phone and email.
+**Data source:** `profiles` + `parent_youth_links` (global, not meeting-scoped).
+**Views:**
+- Youth-centered (default): Youth names expandable to show their parents
+- Full list: All members alphabetically
+
+```typescript
+// components/directory/ContactDirectory.tsx (new)
+// 'use client' - for search filtering and view toggle
+interface ContactDirectoryProps {
+  youth: Array<{
+    id: string
+    fullName: string
+    phone: string | null
+    email: string
+    parents: Array<{ id: string; fullName: string; phone: string | null; email: string }>
+  }>
+  allMembers: Array<{
+    id: string
+    fullName: string
+    role: string
+    phone: string | null
+    email: string
+  }>
+}
+```
+
+### Meeting History Page (New)
+
+**Purpose:** Read-only overview of a past meeting's discussions.
+**Data:** `meeting_stations` + `meeting_groups` + `station_sessions` + `messages` for that meeting.
+
+```
+/meeting/[meetingId]:
+┌─────────────────────────────────┐
+│  ← Tilbake til dashbord         │
+│                                 │
+│  Fellesmote #1                  │
+│  26. februar 2026 - Bjerke VGS  │
+│                                 │
+│  Stasjoner:                     │
+│  ┌───────────────────────────┐  │
+│  │ 1. Fellesskap og inkl.    │  │  ← Click opens station with
+│  │    5 grupper diskuterte   │  │    read-only group discussions
+│  ├───────────────────────────┤  │
+│  │ 2. Rus og narkotika       │  │
+│  │    5 grupper diskuterte   │  │
+│  ├───────────────────────────┤  │
+│  │ ...                       │  │
+│  └───────────────────────────┘  │
+│                                 │
+│  Grupper:                       │
+│  [Group 1] [Group 2] ...       │
+│                                 │
+│  Deltakere: 42 av 55           │
+└─────────────────────────────────┘
+```
+
+### Admin Meeting Management (New)
+
+**Purpose:** Create meetings, configure stations, manage per-meeting groups.
+**Location:** `/admin/meetings` and `/admin/meetings/[meetingId]`
+
+The admin meeting detail page replaces the current top-level admin sections:
+
+| v1.0 Route | v1.1 Equivalent |
+|------------|-----------------|
+| `/admin/groups` | `/admin/meetings/[meetingId]/groups` |
+| `/admin/wordcloud` | `/admin/meetings/[meetingId]` (wordcloud tab/section) |
+| `/api/export` | `/admin/meetings/[meetingId]` (export button) |
+
+### Components Requiring Modification
+
+| Component | Change Required |
+|-----------|----------------|
+| `StationSelector` | Accept `meetingId` prop; query `meeting_stations` instead of `stations` |
+| `StationCard` | No change (already receives station data as props) |
+| `ChatRoom` | No change (already receives sessionId, station data as props) |
+| `useRealtimeChat` | No change (already scoped to sessionId) |
+| `CountdownTimer` | No change |
+| `GroupBuilder` (admin) | Accept `meetingId`; query `meeting_groups`/`meeting_group_members` |
+| `WordCloud` (admin) | Accept `meetingId`; filter messages by meeting's stations |
+| `AttendingToggle` | Accept `meetingId`; write to `meeting_attendance` instead of `profiles.attending` |
+| `RegisteredUsersOverview` | Remove (replaced by ContactDirectory + meeting-specific attendance) |
+| Export route (`/api/export`) | Accept `meetingId` query param; filter by meeting's stations |
+
+### New Components
+
+| Component | Purpose |
+|-----------|---------|
+| `ContactDirectory` | Searchable member list with phone/email |
+| `MeetingCard` | Summary card for upcoming/past meeting |
+| `MeetingList` | List of past meetings on dashboard |
+| `MeetingForm` | Admin form to create/edit meeting (title, date, time, location) |
+| `StationEditor` | Admin form to add/edit/reorder stations for a meeting |
+| `AttendanceList` | Per-meeting attendance status with RSVP toggle |
+
+---
+
+## Server Action Changes
+
+### Modified Actions
+
+```typescript
+// lib/actions/station.ts
+// viewStation, openStation: add meetingId awareness
+// Current: gets group from group_members, calls open_station RPC
+// v1.1: gets group from meeting_group_members for the active meeting
+// The RPC functions don't need meetingId -- they work on station_sessions
+// which are already scoped via meeting_stations/meeting_groups FKs
+
+export async function viewStation(stationId: string): Promise<...> {
+  // Change: query meeting_group_members instead of group_members
+  const { data: membership } = await supabase
+    .from('meeting_group_members')
+    .select('group_id')
+    .eq('user_id', user.id)
+    // Need to find the group for the ACTIVE meeting's station
+    // Filter by groups belonging to the station's meeting
+    // This requires a join or subquery
+}
+```
+
+**Key challenge:** The current `viewStation` action gets the user's group from `group_members` (global). In v1.1, the user could have groups in multiple meetings. The action needs to know WHICH meeting to use.
+
+**Solution:** Derive meeting context from the stationId. Since `meeting_stations` belongs to a specific meeting, and the station_session references a meeting_station, the meeting is implicit:
+
+```typescript
+// Better approach: the station already belongs to a meeting.
+// Get the meeting from the station, then get the user's group for THAT meeting.
+export async function viewStation(stationId: string) {
+  // 1. Get the station's meeting
+  const { data: station } = await supabase
+    .from('meeting_stations')
+    .select('meeting_id')
+    .eq('id', stationId)
+    .single()
+
+  // 2. Get user's group for this meeting
+  const { data: membership } = await supabase
+    .from('meeting_group_members')
+    .select('group_id, group:meeting_groups!inner(meeting_id)')
+    .eq('user_id', user.id)
+    .eq('meeting_groups.meeting_id', station.meeting_id)
+    .maybeSingle()
+
+  // 3. Call RPC as before
+}
+```
+
+### New Actions
+
+```typescript
+// lib/actions/meetings.ts (new)
+export async function createMeeting(data: {
+  title: string; date: string; time?: string; location?: string
+}): Promise<{ meetingId?: string; error?: string }>
+
+export async function updateMeeting(meetingId: string, data: Partial<{
+  title: string; date: string; time: string; location: string; status: string
+}>): Promise<{ error?: string }>
+
+export async function startMeeting(meetingId: string): Promise<{ error?: string }>
+export async function endMeeting(meetingId: string): Promise<{ error?: string }>
+
+// lib/actions/meeting-stations.ts (new)
+export async function addStation(meetingId: string, data: {
+  number: int; title: string; description?: string; questions: string[]; tip?: string
+}): Promise<{ stationId?: string; error?: string }>
+
+export async function updateStation(stationId: string, data: Partial<{
+  number: int; title: string; description: string; questions: string[]; tip: string
+}>): Promise<{ error?: string }>
+
+export async function deleteStation(stationId: string): Promise<{ error?: string }>
+
+// lib/actions/attendance.ts (new)
+export async function updateAttendance(meetingId: string, status: 'attending' | 'not_attending'): Promise<{ error?: string }>
+```
+
+---
+
+## Data Flow: How Meeting Context Propagates
+
+### Dashboard -> Station Chat (Active Meeting)
+
+```
+Dashboard Page (Server Component)
+    |
+    ├── 1. Query upcoming meeting:
+    │   SELECT * FROM meetings WHERE status = 'upcoming' ORDER BY date LIMIT 1
+    |
+    ├── 2. If meeting exists, get user's group for this meeting:
+    │   SELECT mg.* FROM meeting_groups mg
+    │   JOIN meeting_group_members mgm ON mgm.group_id = mg.id
+    │   WHERE mg.meeting_id = [meetingId] AND mgm.user_id = [userId]
+    |
+    ├── 3. Get meeting's stations:
+    │   SELECT * FROM meeting_stations WHERE meeting_id = [meetingId] ORDER BY number
+    |
+    ├── 4. Get station sessions for user's group:
+    │   SELECT * FROM station_sessions WHERE group_id = [groupId]
+    |
+    └── 5. Render StationSelector with stations + sessions
+            |
+            └── User clicks station -> viewStation(stationId)
+                    |
+                    └── Returns sessionId -> navigate to /dashboard/station/[sessionId]
+                            |
+                            └── Station page loads (identical to v1.0)
+```
+
+### Meeting History Browse
+
+```
+Dashboard -> Click "Fellesmote #1"
+    |
+    └── Navigate to /meeting/[meetingId]
+            |
+            ├── Query meeting details (title, date, location)
+            ├── Query meeting_stations for this meeting
+            ├── Query meeting_groups for this meeting
+            ├── Query station_sessions with completion status
+            └── Render read-only meeting overview
+                    |
+                    └── Click station -> shows group discussions
+                            |
+                            ├── For each group: load messages via session_id
+                            └── Render read-only ChatRoom (existing component)
+```
+
+---
+
+## Meeting Lifecycle State Machine
+
+```
+                  createMeeting()
+                       │
+                       ▼
+                 ┌──────────┐
+                 │ upcoming  │  ← Admin creates meeting, configures stations
+                 └─────┬────┘    Admin creates groups, assigns members
+                       │         Users RSVP attendance
+                 startMeeting()
+                       │
+                       ▼
+                 ┌──────────┐
+                 │  active   │  ← Meeting day: stations open for discussion
+                 └─────┬────┘    Groups rotate through stations
+                       │         Real-time chat active
+                  endMeeting()
+                       │
+                       ▼
+                 ┌──────────┐
+                 │ completed │  ← Read-only history, export available
+                 └──────────┘    Becomes a "previous meeting"
+```
+
+**Constraint:** Only ONE meeting can have status `upcoming` at a time (PROJECT.md requirement: "One upcoming meeting at a time"). Enforce via:
+
+```sql
+-- Partial unique index: only one upcoming meeting allowed
+CREATE UNIQUE INDEX idx_meetings_one_upcoming
+  ON meetings ((true))
+  WHERE status = 'upcoming';
+```
+
+---
+
+## File Structure Evolution
 
 ```
 src/
 ├── app/
-│   ├── layout.tsx               # Root layout: metadata, font, Tailwind
-│   ├── page.tsx                 # Landing page (redirect to login or dashboard)
-│   ├── login/
-│   │   └── page.tsx             # Login form (Server Component shell, Client form)
-│   ├── register/
-│   │   └── page.tsx             # Registration with invite code
+│   ├── layout.tsx                               # Unchanged
+│   ├── page.tsx                                 # Unchanged (landing)
+│   ├── login/page.tsx                           # Unchanged
+│   ├── register/page.tsx                        # Unchanged
 │   ├── dashboard/
-│   │   ├── layout.tsx           # Auth guard layout (redirects if not logged in)
-│   │   ├── page.tsx             # Station selector grid
+│   │   ├── layout.tsx                           # Unchanged (auth guard)
+│   │   ├── page.tsx                             # REWRITTEN: directory + meeting card
 │   │   └── station/
-│   │       └── [stationId]/
-│   │           └── page.tsx     # Station chat view
+│   │       └── [sessionId]/page.tsx             # MODIFIED: meeting-aware group lookup
+│   ├── meeting/                                 # NEW: meeting history
+│   │   └── [meetingId]/
+│   │       ├── page.tsx                         # Meeting overview (read-only)
+│   │       └── station/
+│   │           └── [sessionId]/page.tsx         # Read-only chat view
 │   ├── admin/
-│   │   ├── layout.tsx           # Admin guard layout (redirects if not admin)
-│   │   ├── page.tsx             # Admin overview dashboard
-│   │   ├── users/page.tsx       # User management
-│   │   ├── codes/page.tsx       # Invite code management
-│   │   ├── groups/page.tsx      # Group assignment
-│   │   ├── meeting/page.tsx     # Meeting start/stop control
-│   │   └── export/page.tsx      # Conversation export
-│   └── auth/
-│       └── callback/
-│           └── route.ts         # Auth callback handler (if needed)
+│   │   ├── layout.tsx                           # Unchanged
+│   │   ├── page.tsx                             # MODIFIED: add meetings link
+│   │   ├── meetings/                            # NEW
+│   │   │   ├── page.tsx                         # Meeting list + create
+│   │   │   └── [meetingId]/
+│   │   │       ├── page.tsx                     # Meeting detail (stations, export, wordcloud)
+│   │   │       ├── groups/page.tsx              # Group builder for this meeting
+│   │   │       └── stations/page.tsx            # Station editor for this meeting
+│   │   ├── users/page.tsx                       # Unchanged
+│   │   ├── groups/page.tsx                      # DEPRECATED -> redirect to /admin/meetings
+│   │   └── wordcloud/page.tsx                   # DEPRECATED -> redirect to /admin/meetings
+│   └── api/
+│       └── export/route.ts                      # MODIFIED: accept meetingId query param
 ├── components/
-│   ├── ui/                      # Reusable primitives (Button, Card, Input, Badge)
-│   ├── auth/
-│   │   ├── LoginForm.tsx        # 'use client' - email/password form
-│   │   └── RegisterForm.tsx     # 'use client' - invite code + registration
+│   ├── ui/                                      # Unchanged
+│   ├── auth/                                    # Unchanged
+│   ├── directory/                               # NEW
+│   │   └── ContactDirectory.tsx
 │   ├── dashboard/
-│   │   ├── StationGrid.tsx      # 'use client' - 6 cards with Realtime status
-│   │   └── StationCard.tsx      # Station card with status badge
-│   ├── station/
-│   │   ├── ChatView.tsx         # 'use client' - main chat container
-│   │   ├── ChatMessage.tsx      # Single message bubble
-│   │   ├── ChatInput.tsx        # 'use client' - text input + send
-│   │   ├── QuestionPanel.tsx    # Collapsible questions + tip
-│   │   └── StationTimer.tsx     # 'use client' - countdown from started_at
+│   │   ├── MeetingCard.tsx                      # NEW: upcoming meeting summary
+│   │   ├── MeetingList.tsx                      # NEW: previous meetings list
+│   │   ├── AttendingToggle.tsx                  # MODIFIED: per-meeting attendance
+│   │   ├── RegisteredUsersOverview.tsx          # DEPRECATED
+│   │   └── ParentInviteBanner.tsx               # Unchanged
+│   ├── meeting/                                 # NEW
+│   │   ├── MeetingOverview.tsx                  # Meeting detail for history view
+│   │   └── StationSummary.tsx                   # Station discussion summary
+│   ├── station/                                 # Mostly unchanged
+│   │   ├── ChatRoom.tsx                         # Unchanged
+│   │   ├── StationSelector.tsx                  # Unchanged (already receives data as props)
+│   │   └── ...                                  # All other station components unchanged
 │   └── admin/
-│       ├── UserTable.tsx        # User list with role management
-│       ├── CodeManager.tsx      # Create/toggle invite codes
-│       ├── GroupBuilder.tsx     # Drag-drop or multi-select group assignment
-│       ├── MeetingControl.tsx   # Start/end meeting buttons
-│       └── ExportButton.tsx     # Trigger export + download .md
+│       ├── MeetingForm.tsx                      # NEW
+│       ├── StationEditor.tsx                    # NEW
+│       ├── AttendanceList.tsx                    # NEW
+│       ├── GroupBuilder.tsx                      # MODIFIED: per-meeting groups
+│       ├── WordCloud.tsx                         # MODIFIED: per-meeting filter
+│       └── ...
 ├── lib/
-│   ├── supabase/
-│   │   ├── client.ts            # createBrowserClient singleton
-│   │   ├── server.ts            # createServerClient factory (per-request)
-│   │   └── admin.ts             # Service role client (for Server Actions needing bypass)
-│   ├── types/
-│   │   └── database.ts          # Generated types from Supabase CLI (supabase gen types)
+│   ├── supabase/                                # Unchanged
 │   ├── actions/
-│   │   ├── auth.ts              # Server Actions: register, validate invite code
-│   │   ├── messages.ts          # Server Actions: send message
-│   │   ├── stations.ts          # Server Actions: start/end station session
-│   │   ├── groups.ts            # Server Actions: create/assign groups
-│   │   └── meeting.ts           # Server Actions: start/end meeting, export
-│   ├── hooks/
-│   │   ├── useRealtimeMessages.ts   # Chat subscription hook
-│   │   ├── useRealtimeSessions.ts   # Station session subscription hook
-│   │   ├── useMeetingStatus.ts      # Meeting status subscription hook
-│   │   └── useCountdown.ts          # Timer calculation hook
-│   └── utils.ts                 # Formatting, Norwegian locale helpers
-├── middleware.ts                 # Auth refresh + role-based redirects
+│   │   ├── auth.ts                              # Unchanged
+│   │   ├── station.ts                           # MODIFIED: meeting-aware group lookup
+│   │   ├── admin.ts                             # MODIFIED: meeting-scoped group CRUD
+│   │   ├── meetings.ts                          # NEW
+│   │   ├── meeting-stations.ts                  # NEW
+│   │   └── attendance.ts                        # NEW
+│   ├── hooks/                                   # Unchanged
+│   ├── export/
+│   │   └── build-markdown.ts                    # MODIFIED: accept meeting title in output
+│   └── ...
 └── supabase/
-    └── migrations/              # SQL migration files
-        ├── 001_schema.sql       # Tables + indexes
-        ├── 002_rls.sql          # RLS policies
-        ├── 003_functions.sql    # Database functions
-        └── 004_seed.sql         # 6 stations + initial meeting_status
+    └── migrations/
+        ├── 001-019 (existing)
+        └── 020_multi_meeting.sql                # The big migration
 ```
 
-### Structure Rationale
-
-- **`app/` route groups:** Dashboard and admin have separate `layout.tsx` files that act as auth guards. The dashboard layout verifies the user is authenticated; the admin layout additionally verifies `role = 'admin'`. This is defense-in-depth alongside middleware.
-- **`components/` by domain:** Auth, dashboard, station, admin mirrors the route structure. Each domain folder contains only the components used by that route group, keeping colocation tight.
-- **`lib/supabase/` three-client pattern:** Browser client (singleton, for Client Components), server client (per-request, for Server Components and Actions), and admin client (service role, for privileged operations). This is the officially recommended Supabase SSR pattern.
-- **`lib/actions/` for Server Actions:** All mutations centralized here. Client Components import and call these. This keeps mutation logic server-side, testable, and separate from UI.
-- **`lib/hooks/` for Realtime:** Custom hooks encapsulate subscription setup, cleanup, and state management. Reusable across components.
-- **`supabase/migrations/` for schema:** SQL files that can be applied via `supabase db push` or migration tooling. Keeps the database schema version-controlled.
-
-## Architectural Patterns
-
-### Pattern 1: Server Component Shell + Client Component Island
-
-**What:** Page-level Server Components fetch initial data, then pass it as props to Client Components that handle interactivity and Realtime subscriptions.
-**When to use:** Every page that needs both initial data and real-time updates (station chat, station selector, meeting status).
-**Trade-offs:** Maximizes server-side rendering benefits (fast initial load, SEO not relevant here but smaller JS bundle). Requires clear boundary between what's fetched server-side and what's subscribed client-side.
-
-**Example:**
-```typescript
-// app/dashboard/station/[stationId]/page.tsx (Server Component)
-import { createServerClient } from '@/lib/supabase/server'
-import { ChatView } from '@/components/station/ChatView'
-
-export default async function StationPage({ params }: { params: { stationId: string } }) {
-  const supabase = await createServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // Fetch initial data server-side
-  const { data: messages } = await supabase
-    .from('messages')
-    .select('*, profiles(full_name, role)')
-    .eq('station_id', params.stationId)
-    .eq('group_id', userGroupId)
-    .order('created_at', { ascending: true })
-
-  const { data: session } = await supabase
-    .from('station_sessions')
-    .select('*')
-    .eq('station_id', params.stationId)
-    .eq('group_id', userGroupId)
-    .single()
-
-  // Pass to Client Component for interactivity
-  return (
-    <ChatView
-      stationId={params.stationId}
-      groupId={userGroupId}
-      initialMessages={messages ?? []}
-      session={session}
-      currentUser={user}
-    />
-  )
-}
-```
-
-### Pattern 2: Realtime Subscription Hook with Cleanup
-
-**What:** Custom React hooks that manage Supabase Realtime channel subscription lifecycle — subscribe on mount, unsubscribe on unmount, merge incoming events with local state.
-**When to use:** Any component that needs live database updates (chat messages, station session status, meeting status).
-**Trade-offs:** Clean separation of subscription logic from UI. Must handle the single-filter limitation of Supabase Realtime (see critical note below).
-
-**Example:**
-```typescript
-// lib/hooks/useRealtimeMessages.ts
-'use client'
-import { useEffect, useState, useCallback } from 'react'
-import { createBrowserClient } from '@/lib/supabase/client'
-import type { Message } from '@/lib/types/database'
-
-export function useRealtimeMessages(
-  stationId: number,
-  groupId: string,
-  initialMessages: Message[]
-) {
-  const [messages, setMessages] = useState<Message[]>(initialMessages)
-  const supabase = createBrowserClient()
-
-  useEffect(() => {
-    const channel = supabase
-      .channel(`messages:${stationId}:${groupId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        // LIMITATION: Supabase Realtime only supports ONE filter.
-        // Filter by station_id, then client-filter by group_id.
-        filter: `station_id=eq.${stationId}`,
-      }, (payload) => {
-        const newMessage = payload.new as Message
-        // Client-side filter for group_id since Realtime
-        // does not support multi-column filters
-        if (newMessage.group_id === groupId) {
-          setMessages((prev) => [...prev, newMessage])
-        }
-      })
-      .subscribe()
-
-    // CRITICAL: Always cleanup on unmount
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [stationId, groupId, supabase])
-
-  return messages
-}
-```
-
-### Pattern 3: Optimistic UI for Chat Messages
-
-**What:** Show the user's own message immediately in the chat list before server confirmation, then reconcile when the Realtime event arrives.
-**When to use:** Sending chat messages. The latency between INSERT and Realtime callback is noticeable enough to feel sluggish without optimistic updates.
-**Trade-offs:** Requires deduplication logic (the optimistic message and the Realtime-delivered message are the same). Use a temporary client-side ID, then replace when the server-confirmed message arrives.
-
-**Example:**
-```typescript
-// Simplified optimistic send pattern
-const sendMessage = useCallback(async (content: string) => {
-  // 1. Create optimistic message with temp ID
-  const optimisticMsg = {
-    id: `temp-${Date.now()}`,
-    content,
-    profile_id: currentUser.id,
-    station_id: stationId,
-    group_id: groupId,
-    created_at: new Date().toISOString(),
-    _optimistic: true,  // Flag for UI styling (e.g., slightly faded)
-  }
-
-  // 2. Add to local state immediately
-  setMessages(prev => [...prev, optimisticMsg])
-
-  // 3. Server Action to persist
-  const result = await insertMessage({
-    content,
-    stationId,
-    groupId,
-  })
-
-  if (result.error) {
-    // 4. Remove optimistic message on failure
-    setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id))
-  }
-  // On success: Realtime subscription will deliver the real message.
-  // Dedup by checking if a non-optimistic message with same content
-  // and similar timestamp already exists, then remove the optimistic one.
-}, [currentUser, stationId, groupId])
-```
-
-### Pattern 4: Server-Timestamp Timer Sync
-
-**What:** Store `started_at` as a server-side `now()` timestamp in `station_sessions`. All clients compute remaining time as `900 - (Date.now()/1000 - started_at_epoch)`. No WebSocket timer push needed.
-**When to use:** The 15-minute countdown timer per station per group.
-**Trade-offs:** Relies on client clocks being reasonably accurate (within a few seconds is fine for a 15-minute soft deadline). Eliminates need for continuous server-side timer broadcasting. The PRD explicitly calls this a "soft deadline" so sub-second accuracy is unnecessary.
-
-**Example:**
-```typescript
-// lib/hooks/useCountdown.ts
-'use client'
-import { useState, useEffect } from 'react'
-
-const DURATION_SECONDS = 900 // 15 minutes
-
-export function useCountdown(startedAt: string | null) {
-  const [remaining, setRemaining] = useState<number>(DURATION_SECONDS)
-
-  useEffect(() => {
-    if (!startedAt) return
-
-    const startEpoch = new Date(startedAt).getTime() / 1000
-
-    const tick = () => {
-      const now = Date.now() / 1000
-      const elapsed = now - startEpoch
-      setRemaining(Math.max(0, DURATION_SECONDS - Math.floor(elapsed)))
-    }
-
-    tick() // immediate first calculation
-    const interval = setInterval(tick, 1000)
-
-    return () => clearInterval(interval)
-  }, [startedAt])
-
-  return remaining
-}
-```
-
-## Data Flow
-
-### Chat Message Flow (Core)
-
-```
-User types message → ChatInput.tsx
-    │
-    ├── 1. Optimistic: Add temp message to local state (instant UI)
-    │
-    ├── 2. Server Action: insertMessage()
-    │       │
-    │       ├── Validates auth (getClaims)
-    │       ├── Validates group membership
-    │       ├── Validates station is active (not completed)
-    │       ├── INSERT into messages table
-    │       └── Returns success/error
-    │
-    ├── 3. Supabase Realtime: postgres_changes INSERT on messages
-    │       │
-    │       ├── Broadcasted to all subscribers on channel
-    │       ├── RLS ensures only group members receive it
-    │       └── Each client's useRealtimeMessages hook receives payload
-    │
-    └── 4. All group members see message appear
-            (sender: dedups optimistic message)
-            (others: appends new message, auto-scrolls)
-```
-
-### Station Lifecycle Flow
-
-```
-Meeting not started → Admin clicks "Start Meeting"
-    │
-    ├── Server Action: updateMeetingStatus('active')
-    ├── Realtime: meeting_status UPDATE → all clients
-    └── Dashboard shows station selector grid
-            │
-            ├── First group member opens Station 3
-            │       │
-            │       ├── Server Action: startStationSession(stationId=3, groupId)
-            │       │     Uses SQL function with upsert + COALESCE
-            │       │     Sets started_at = now(), status = 'active'
-            │       │
-            │       ├── Realtime: station_sessions UPDATE → all group members
-            │       │     StationGrid updates card 3 status to "active"
-            │       │
-            │       └── ChatView opens: timer starts counting from started_at
-            │
-            ├── Other group members open Station 3
-            │       │
-            │       └── Server Action returns existing session (COALESCE preserves
-            │           original started_at). Timer synced across all clients.
-            │
-            ├── 15 minutes pass → Timer hits 0:00
-            │       └── Soft deadline: chat remains open, timer shows "Tiden er ute!"
-            │
-            └── Any member clicks "Avslutt stasjon"
-                    │
-                    ├── Confirmation dialog
-                    ├── Server Action: endStationSession(stationId=3, groupId)
-                    │     Sets ended_at = now(), status = 'completed'
-                    │
-                    ├── Realtime: station_sessions UPDATE → all group members
-                    │     All members redirected to dashboard
-                    │     Station 3 card shows completed (green checkmark)
-                    │
-                    └── Station 3 chat viewable in read-only mode
-```
-
-### Auth & Role-Based Routing Flow
-
-```
-Request hits Next.js
-    │
-    ├── middleware.ts runs:
-    │     ├── Creates server Supabase client with cookie access
-    │     ├── Calls supabase.auth.getUser() (refreshes token if expired)
-    │     ├── No user? → Redirect to /login (except public routes)
-    │     ├── Has user? → Check profile role:
-    │     │     ├── Admin at /dashboard → Allow (admin can do everything)
-    │     │     ├── Participant at /admin → Redirect to /dashboard
-    │     │     └── Otherwise → Allow
-    │     └── Pass refreshed cookies to response
-    │
-    ├── Layout auth guards (defense-in-depth):
-    │     ├── dashboard/layout.tsx: Verify authenticated
-    │     └── admin/layout.tsx: Verify role = 'admin'
-    │
-    └── Page renders with appropriate data
-```
-
-### Key Data Flows
-
-1. **Registration flow:** Landing -> Validate invite code (Server Action with DB function) -> Show form -> Create auth user (Supabase Auth) -> Create profile row (trigger or Server Action) -> Link parent-youth if parent role -> Redirect to dashboard
-2. **Group assignment flow:** Admin -> GroupBuilder loads all profiles -> Admin creates groups and assigns members -> Server Actions INSERT into groups + group_members -> Participants see their group on dashboard
-3. **Export flow:** Admin -> ExportButton triggers Server Action -> Calls `export_meeting_data()` SQL function -> Returns structured JSON -> Client-side transforms to Markdown -> Browser downloads .md file
-
-## Scaling Considerations
-
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| 0-80 users (this project) | Current architecture is more than sufficient. Single Supabase project, free tier handles this easily. All Realtime channels, RLS policies, and DB functions work fine at this scale. No optimization needed. |
-| 80-1k users | Still fine with current architecture. Consider adding indexes on frequently queried columns (already specified in PRD). Monitor Realtime channel count — each unique station+group combination creates a channel. |
-| 1k-10k users | RLS policy performance becomes relevant. The `is_admin()` function and group membership subqueries in RLS policies may need optimization. Consider materialized views for group membership lookups. Realtime subscription filtering becomes a bottleneck since each change is authorized per-user. |
-
-### Scaling Priorities
-
-1. **First bottleneck (unlikely for this project):** Realtime authorization overhead. Each postgres_change must be checked against RLS for every subscriber. With ~80 users in ~6 groups, this is negligible.
-2. **Second bottleneck (irrelevant at this scale):** Database connection limits on Supabase free tier. Not a concern for 80 concurrent users.
-
-**Honest assessment:** This is a single-event app for ~80 people. Scaling is not a real concern. The architecture should optimize for development speed and correctness, not horizontal scalability.
-
-## Anti-Patterns
-
-### Anti-Pattern 1: Fetching Data Client-Side When Server Components Suffice
-
-**What people do:** Using `useEffect` + `useState` to fetch initial data in Client Components when the page first loads.
-**Why it's wrong:** Causes a loading spinner on every page navigation. The browser must download JS, hydrate, then make a separate API call. Doubles the round trips.
-**Do this instead:** Fetch initial data in Server Components (which run on the server and stream HTML), then pass as props to Client Components that handle interactivity. Reserve `useEffect` fetching for data that updates in real-time via subscriptions.
-
-### Anti-Pattern 2: Using getSession() for Auth Checks on the Server
-
-**What people do:** Calling `supabase.auth.getSession()` in Server Components or middleware to verify the user.
-**Why it's wrong:** `getSession()` reads from cookies which can be spoofed. It does not validate the JWT signature. An attacker could modify the session cookie and bypass auth.
-**Do this instead:** Use `supabase.auth.getUser()` (or `supabase.auth.getClaims()` in newer versions) which validates the JWT against Supabase's signing key on every call.
-
-### Anti-Pattern 3: Creating Multiple Supabase Browser Clients
-
-**What people do:** Calling `createBrowserClient()` inside every component that needs Supabase access.
-**Why it's wrong:** Each call potentially creates a new client instance with a new Realtime connection. This wastes connections and can cause subscription duplication or missed events.
-**Do this instead:** Create a singleton browser client in `lib/supabase/client.ts` and import it wherever needed. The `@supabase/ssr` `createBrowserClient()` function already implements singleton behavior, but wrapping it in your own module makes the pattern explicit and testable.
-
-### Anti-Pattern 4: RLS-Only Mutations Without Server Validation
-
-**What people do:** Letting Client Components INSERT directly into tables, relying solely on RLS policies for validation.
-**Why it's wrong:** RLS only checks structural rules (correct user, correct group). It cannot validate business logic like "station must be active before sending a message" or "invite code must not be expired." Also, debugging RLS policy failures is painful.
-**Do this instead:** Route all mutations through Server Actions. Validate business logic in TypeScript, then insert using the server Supabase client. RLS still acts as a safety net for reads, but the primary mutation path goes through server-side code with proper error messages.
-
-### Anti-Pattern 5: Subscribing to Entire Tables Without Filters
-
-**What people do:** Subscribing to `postgres_changes` on the `messages` table without any filter, then filtering in the callback.
-**Why it's wrong:** Supabase must authorize every change event against every subscriber. Subscribing without filters means the server processes events for all groups and all stations for every connected client — O(users * messages) authorization checks.
-**Do this instead:** Always filter by at least one column. For this project, filter by `station_id` (the more selective dimension since there are only 6 stations vs potentially many groups). Then client-side filter by `group_id` (see Pattern 2 above).
-
-## Integration Points
-
-### External Services
-
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| **Supabase Auth** | `@supabase/ssr` with cookie-based session management | Use `getUser()` not `getSession()` for server-side auth checks. Middleware refreshes tokens on every request. |
-| **Supabase Database** | Direct queries via Supabase client (PostgREST under the hood) | All 8 tables specified in PRD. Use generated TypeScript types from `supabase gen types typescript`. |
-| **Supabase Realtime** | WebSocket channels via `supabase.channel()` | Enable Realtime on `messages`, `station_sessions`, `meeting_status` tables in Supabase dashboard. |
-| **Vercel** | Auto-deploy from Git, environment variables in Vercel dashboard | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` |
-
-### Internal Boundaries
-
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| Server Components -> Client Components | Props (initial data passed down) | Data flows one direction. Client Components never pass data back up to Server Components. |
-| Client Components -> Server Actions | Function calls (React Server Actions protocol) | Server Actions are imported and called like regular async functions. Next.js handles the POST request under the hood. |
-| Client Components -> Supabase Realtime | WebSocket subscription | Browser client connects directly to Supabase Realtime. No Next.js server involvement. |
-| Middleware -> Supabase Auth | HTTP (JWT refresh) | Runs on every request matching the route matcher. Transparent to application code. |
-| Database -> Realtime | PostgreSQL logical replication | Supabase internally streams WAL changes to Realtime service. Enabled per-table in dashboard. |
-
-## Critical Architecture Note: Supabase Realtime Single-Filter Limitation
-
-**Confidence: HIGH** (verified via [GitHub issue #97](https://github.com/supabase/realtime-js/issues/97), open since 2021, repository archived January 2026 without resolution)
-
-Supabase Realtime `postgres_changes` subscriptions support only ONE filter column per subscription. The PRD specifies filtering by both `station_id` AND `group_id`, but this is not possible at the subscription level.
-
-**Recommended workaround for this project:**
-
-1. Filter by `station_id` at the subscription level (since users are on one station page at a time, this is the natural filter)
-2. Client-side filter incoming events by `group_id` in the subscription callback
-3. RLS policies on the `messages` table already restrict what the server sends to group members, providing server-side data security regardless of client-side filter
-
-This is acceptable for this project's scale (~80 users, ~6 groups). The RLS policies prevent data leakage, and the client-side filter prevents rendering messages from other groups. The only cost is slightly more authorization work on the Supabase Realtime server, which is negligible at this scale.
-
-**Alternative considered:** Creating a composite column (`station_group_id = station_id || '_' || group_id`) to enable single-column filtering. Rejected because it adds schema complexity for minimal benefit at this scale, and RLS already provides the security boundary.
+---
 
 ## Build Order (Dependency-Driven)
 
-Based on component dependencies, the recommended build order is:
+The migration is the foundation -- everything depends on the new schema existing.
 
 ```
-Phase 1: Foundation (no dependencies)
-├── Supabase project setup + schema migration
-├── Three Supabase client utilities (browser, server, admin)
-├── Next.js middleware for auth token refresh
-├── TypeScript types generation
-└── Base UI components (Button, Card, Input, Badge)
+Phase 1: Schema + Migration (blocks everything else)
+├── Write migration 020: new tables, FK changes, data migration
+├── Update RLS policies for new tables
+├── Update realtime channel authorization policy
+├── Test migration on staging/branch database
+├── Verify v1.0 data preserved as "Fellesmote #1"
+└── Update TypeScript types (supabase gen types)
 
-Phase 2: Auth (depends on: Phase 1)
-├── Invite code validation (Server Action + DB function)
-├── Registration flow (youth, then parent with child-linking)
-├── Login flow
-└── Role-based redirect in middleware
+Phase 2: Meeting CRUD + Admin (blocks meeting-day features)
+├── Meeting list page (/admin/meetings)
+├── Create meeting form (title, date, time, location)
+├── Meeting detail page (/admin/meetings/[meetingId])
+├── Station editor (add/edit/remove/reorder stations for a meeting)
+├── Adapt group builder for per-meeting groups
+├── Meeting lifecycle controls (start/end meeting)
+└── Update export route with meetingId parameter
 
-Phase 3: Admin Panel (depends on: Phase 2)
-├── Admin layout guard
-├── User management (read profiles, change roles)
-├── Invite code management (CRUD)
-├── Group creation and member assignment
-├── Meeting status control (start/end)
-└── These can be built in any order within this phase
+Phase 3: Dashboard Redesign (can overlap with Phase 2)
+├── Contact directory component (searchable, two views)
+├── Upcoming meeting card with attendance toggle
+├── Previous meetings list
+├── Update dashboard page to compose these sections
+└── Update station page for meeting-aware group lookup
 
-Phase 4: Meeting-Day Core (depends on: Phase 2 + Phase 3 groups)
-├── Station selector dashboard with status grid
-├── Station chat view with Realtime messages
-├── Countdown timer component
-├── Collapsible question panel
-├── End-station flow with group-wide redirect
-└── Realtime subscriptions for sessions + meeting status
+Phase 4: Meeting History (depends on Phase 1 data migration)
+├── Meeting overview page (/meeting/[meetingId])
+├── Read-only station discussions per group
+├── Reuse existing ChatRoom component with readOnly=true
+└── Navigation between meetings
 
-Phase 5: Export & Polish (depends on: Phase 4)
-├── Markdown export (Server Action + DB function)
-├── Read-only mode for completed stations
-├── Mobile responsive polish
-└── Error handling and edge cases
+Phase 5: Polish + Cleanup (after core works)
+├── Remove deprecated routes (/admin/groups, /admin/wordcloud)
+├── Update admin hub links
+├── Per-meeting word cloud
+├── Per-meeting attendance summary
+├── Mobile polish on new pages
+└── Drop old tables if not done in migration
 ```
 
-**Rationale:** Auth must come first because every subsequent feature depends on knowing who the user is and what group they belong to. Admin panel comes before meeting-day features because groups must be assigned before the chat experience works. The export and polish phase comes last because it only adds value after the core meeting flow exists.
+**Phase ordering rationale:**
+- Phase 1 must be first: every query, RLS policy, and component change depends on the new schema
+- Phase 2 before Phase 3: admin must be able to create meetings before the dashboard can show them
+- Phase 3 can overlap with Phase 2 for the directory (which is independent of meetings)
+- Phase 4 after Phase 1: needs migrated v1.0 data to test against
+- Phase 5 last: cleanup only after all features work
+
+---
+
+## Key Integration Points
+
+### What Stays the Same
+
+| Subsystem | Why Unchanged |
+|-----------|---------------|
+| Supabase Auth | User authentication is global, not meeting-scoped |
+| Middleware (`src/middleware.ts`) | Auth token refresh and public/private route logic unchanged |
+| Realtime Broadcast channels | Still scoped to `station:{sessionId}` -- sessionId is already unique per meeting |
+| `useRealtimeChat` hook | Operates on sessionId, which is inherently meeting-scoped |
+| `CountdownTimer` component | Receives endTimestamp as prop -- source doesn't matter |
+| `ChatRoom` component | Receives all data as props from Server Component |
+| Message persistence pattern | Messages -> session_id -> station_sessions, chain unchanged |
+| Three Supabase client pattern | browser/server/admin clients unchanged |
+
+### What Changes
+
+| Subsystem | What Changes | Impact |
+|-----------|-------------|--------|
+| Dashboard data fetching | Must query upcoming meeting + meeting-scoped stations/groups | Server Component rewrite |
+| Admin group builder | Must accept meetingId, query meeting_groups | Moderate refactor |
+| Station server actions | Group lookup changes from `group_members` to `meeting_group_members` | Small change |
+| Export route | Must filter by meetingId's stations | Small change |
+| Word cloud page | Must filter messages by meetingId's stations | Small change |
+| URL routing | New route segments for /meeting/[id] and /admin/meetings/[id] | New pages |
+| RLS policies | Group membership checks reference new table | SQL migration |
+
+### Potential Breaking Points
+
+1. **The realtime channel policy is the riskiest change.** If the updated policy on `realtime.messages` has a bug, ALL real-time chat breaks with no fallback. Test this thoroughly before deploying.
+
+2. **The migration preserving UUIDs is critical.** If station or group UUIDs change during migration, all existing station_sessions and messages become orphaned. The migration script MUST use `INSERT INTO meeting_stations (id, ...) SELECT s.id, ...` to preserve IDs.
+
+3. **The "one upcoming meeting" constraint.** The partial unique index prevents admin from accidentally creating two upcoming meetings. But the admin UI must also enforce this (disable "create" when one exists, or auto-set previous upcoming to completed).
+
+---
+
+## Anti-Patterns to Avoid
+
+### Anti-Pattern 1: Adding meetingId to Every URL
+
+**What it looks like:** `/dashboard/meeting/[meetingId]/station/[sessionId]`
+**Why wrong:** The sessionId already encodes the meeting via FK chain. Adding meetingId to the URL is redundant and creates sync bugs (what if the URL says meeting A but the session belongs to meeting B?).
+**Do instead:** Keep `/dashboard/station/[sessionId]`. Derive meeting context from the session when needed.
+
+### Anti-Pattern 2: Keeping Old Tables as "Fallbacks"
+
+**What it looks like:** Keeping `groups` table alongside `meeting_groups` "just in case"
+**Why wrong:** Two sources of truth for group membership. Code must check both. Bugs guaranteed.
+**Do instead:** Clean migration with UUID preservation. Drop old tables in the same transaction.
+
+### Anti-Pattern 3: Global State for Meeting Context
+
+**What it looks like:** React context or Zustand store holding "current meeting" globally
+**Why wrong:** The dashboard shows multiple meetings simultaneously (upcoming + history list). A global "current meeting" creates bugs when navigating between them.
+**Do instead:** Pass meetingId as props through Server Components. Each page knows its meeting from the URL params.
+
+### Anti-Pattern 4: Soft-Deleting Stations Instead of Scoping Per-Meeting
+
+**What it looks like:** Adding `meeting_id` to the existing `stations` table and keeping old rows
+**Why wrong:** The existing `stations` table has constraints and seed data that assume global stations. Adding a nullable FK creates ambiguity -- which stations are "global templates" vs "meeting-specific"?
+**Do instead:** Clean separation: `meeting_stations` is the only stations table. No templates, no inheritance. Admin writes fresh stations for each meeting (per PROJECT.md: "admin writes stations fresh").
+
+---
 
 ## Sources
 
-- [Supabase: Setting up Server-Side Auth for Next.js](https://supabase.com/docs/guides/auth/server-side/nextjs) -- HIGH confidence (official docs)
-- [Supabase: Using Realtime with Next.js](https://supabase.com/docs/guides/realtime/realtime-with-nextjs) -- HIGH confidence (official docs)
-- [Supabase: Postgres Changes](https://supabase.com/docs/guides/realtime/postgres-changes) -- HIGH confidence (official docs, filter API verified)
-- [Supabase: Creating a Supabase client for SSR](https://supabase.com/docs/guides/auth/server-side/creating-a-client) -- HIGH confidence (official docs)
-- [GitHub Issue #97: Multi-column filter not supported](https://github.com/supabase/realtime-js/issues/97) -- HIGH confidence (official repo, confirmed limitation)
-- [Makerkit: API Routes vs Server Actions](https://makerkit.dev/docs/next-supabase/how-to/api/api-routes-vs-server-actions) -- MEDIUM confidence (well-maintained third-party guide)
-- [catjam.fi: Next.js + Supabase in production lessons](https://catjam.fi/articles/next-supabase-what-do-differently) -- MEDIUM confidence (production experience report, multiple corroborating sources)
-- [React docs: useOptimistic](https://react.dev/reference/react/useOptimistic) -- HIGH confidence (official React docs)
-- [Medium: Syncing Countdown Timers Across Multiple Clients](https://medium.com/@flowersayo/syncing-countdown-timers-across-multiple-clients-a-subtle-but-critical-challenge-384ba5fbef9a) -- MEDIUM confidence (corroborates the timestamp-based approach used in PRD)
+- Direct codebase analysis of all 19 migration files, 4 Postgres functions, 5 server actions, 4 custom hooks, and complete route structure (HIGH confidence)
+- PROJECT.md requirements and constraints (HIGH confidence -- primary source of truth)
+- Supabase RLS documentation patterns (HIGH confidence -- consistent with existing v1.0 implementation)
+- Supabase partial unique index syntax verified against PostgreSQL 15 docs (HIGH confidence)
 
 ---
-*Architecture research for: Real-time group discussion webapp (Buss 2028 Fellesmote-appen)*
-*Researched: 2026-02-19*
+*Architecture research for: v1.1 Multi-Meeting Platform Integration*
+*Researched: 2026-02-25*
