@@ -112,3 +112,198 @@ export async function deleteMeeting(
   revalidatePath('/admin/meetings')
   return {}
 }
+
+// ---------- addStation ----------
+// Adds a new station to an upcoming meeting.
+// Auto-assigns the next sequential station number.
+
+export async function addStation(
+  meetingId: string,
+  data: { title: string; questions: string; tip?: string }
+): Promise<{ error?: string; station?: { id: string; number: number } }> {
+  const auth = await verifyAdmin()
+  if ('error' in auth) return { error: auth.error }
+
+  const admin = createAdminClient()
+
+  // Check meeting is upcoming
+  const { data: meeting } = await admin
+    .from('meetings')
+    .select('status')
+    .eq('id', meetingId)
+    .single()
+
+  if (!meeting || meeting.status !== 'upcoming') {
+    return { error: 'Kan bare redigere stasjoner for kommende møter' }
+  }
+
+  // Get next station number
+  const { data: maxRow } = await admin
+    .from('stations')
+    .select('number')
+    .eq('meeting_id', meetingId)
+    .order('number', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const nextNumber = (maxRow?.number ?? 0) + 1
+
+  // Parse questions from newline-separated text
+  const questionsArray = data.questions
+    .split('\n')
+    .map((q: string) => q.trim())
+    .filter(Boolean)
+
+  const { data: station, error } = await admin
+    .from('stations')
+    .insert({
+      meeting_id: meetingId,
+      number: nextNumber,
+      title: data.title.trim(),
+      questions: questionsArray,
+      tip: data.tip?.trim() || null,
+      description: null,
+    })
+    .select('id, number')
+    .single()
+
+  if (error) return { error: 'Kunne ikke opprette stasjonen' }
+
+  revalidatePath(`/admin/meetings/${meetingId}`)
+  return { station: { id: station.id, number: station.number } }
+}
+
+// ---------- updateStation ----------
+// Updates an existing station's title, questions, and tip.
+
+export async function updateStation(
+  stationId: string,
+  meetingId: string,
+  data: { title: string; questions: string; tip?: string }
+): Promise<{ error?: string }> {
+  const auth = await verifyAdmin()
+  if ('error' in auth) return { error: auth.error }
+
+  const admin = createAdminClient()
+
+  // Check meeting is upcoming
+  const { data: meeting } = await admin
+    .from('meetings')
+    .select('status')
+    .eq('id', meetingId)
+    .single()
+
+  if (!meeting || meeting.status !== 'upcoming') {
+    return { error: 'Kan bare redigere stasjoner for kommende møter' }
+  }
+
+  // Parse questions from newline-separated text
+  const questionsArray = data.questions
+    .split('\n')
+    .map((q: string) => q.trim())
+    .filter(Boolean)
+
+  const { error } = await admin
+    .from('stations')
+    .update({
+      title: data.title.trim(),
+      questions: questionsArray,
+      tip: data.tip?.trim() || null,
+    })
+    .eq('id', stationId)
+    .eq('meeting_id', meetingId)
+
+  if (error) return { error: 'Kunne ikke oppdatere stasjonen' }
+
+  revalidatePath(`/admin/meetings/${meetingId}`)
+  return {}
+}
+
+// ---------- deleteStation ----------
+// Deletes a station and re-numbers remaining stations sequentially.
+
+export async function deleteStation(
+  stationId: string,
+  meetingId: string
+): Promise<{ error?: string }> {
+  const auth = await verifyAdmin()
+  if ('error' in auth) return { error: auth.error }
+
+  const admin = createAdminClient()
+
+  // Check meeting is upcoming
+  const { data: meeting } = await admin
+    .from('meetings')
+    .select('status')
+    .eq('id', meetingId)
+    .single()
+
+  if (!meeting || meeting.status !== 'upcoming') {
+    return { error: 'Kan bare redigere stasjoner for kommende møter' }
+  }
+
+  const { error } = await admin
+    .from('stations')
+    .delete()
+    .eq('id', stationId)
+    .eq('meeting_id', meetingId)
+
+  if (error) return { error: 'Kunne ikke slette stasjonen' }
+
+  // Re-number remaining stations sequentially
+  const { data: remaining } = await admin
+    .from('stations')
+    .select('id')
+    .eq('meeting_id', meetingId)
+    .order('number')
+
+  if (remaining) {
+    for (let i = 0; i < remaining.length; i++) {
+      await admin
+        .from('stations')
+        .update({ number: i + 1 })
+        .eq('id', remaining[i].id)
+        .eq('meeting_id', meetingId)
+    }
+  }
+
+  revalidatePath(`/admin/meetings/${meetingId}`)
+  return {}
+}
+
+// ---------- reorderStations ----------
+// Reorders stations by updating their number to match the new order.
+
+export async function reorderStations(
+  meetingId: string,
+  orderedIds: string[]
+): Promise<{ error?: string }> {
+  const auth = await verifyAdmin()
+  if ('error' in auth) return { error: auth.error }
+
+  const admin = createAdminClient()
+
+  // Check meeting is upcoming
+  const { data: meeting } = await admin
+    .from('meetings')
+    .select('status')
+    .eq('id', meetingId)
+    .single()
+
+  if (!meeting || meeting.status !== 'upcoming') {
+    return { error: 'Kan bare redigere stasjoner for kommende møter' }
+  }
+
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await admin
+      .from('stations')
+      .update({ number: i + 1 })
+      .eq('id', orderedIds[i])
+      .eq('meeting_id', meetingId)
+
+    if (error) return { error: 'Kunne ikke endre rekkefølgen' }
+  }
+
+  revalidatePath(`/admin/meetings/${meetingId}`)
+  return {}
+}
