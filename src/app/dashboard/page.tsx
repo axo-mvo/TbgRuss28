@@ -41,7 +41,7 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .maybeSingle()
 
-  // Fetch all 6 stations
+  // Fetch all stations
   const { data: stations } = await supabase
     .from('stations')
     .select('id, number, title, description')
@@ -50,12 +50,21 @@ export default async function DashboardPage() {
   // Fetch station sessions for user's group (if they have a group)
   const group = membership?.group as unknown as { id: string; name: string; locked: boolean } | null
   let sessions: Array<{ station_id: string; id: string; status: string; end_timestamp: string | null }> = []
+  let groupMembers: Array<{ full_name: string; role: string }> = []
   if (group?.id) {
     const { data } = await supabase
       .from('station_sessions')
       .select('station_id, id, status, end_timestamp')
       .eq('group_id', group.id)
     sessions = data || []
+
+    const { data: members } = await supabase
+      .from('group_members')
+      .select('profile:profiles!inner(full_name, role)')
+      .eq('group_id', group.id)
+    groupMembers = (members ?? []).map(
+      (m) => (m.profile as unknown as { full_name: string; role: string })
+    )
   }
 
   // Fetch all youth with their linked parents (admin client bypasses RLS)
@@ -152,9 +161,22 @@ export default async function DashboardPage() {
           <div className="mb-6 p-5 rounded-xl border-2 border-teal-primary/30 bg-teal-primary/5">
             <p className="text-sm text-text-muted mb-1">Din gruppe</p>
             <p className="text-xl font-bold text-text-primary">{group.name}</p>
-            <p className="text-sm text-text-muted mt-2">
-              Du er tildelt denne gruppen for fellesmøte-diskusjonene
-            </p>
+            {groupMembers.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {groupMembers.map((m) => (
+                  <span
+                    key={m.full_name}
+                    className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                      m.role === 'youth'
+                        ? 'bg-teal-primary/10 text-teal-primary'
+                        : 'bg-coral/10 text-coral'
+                    }`}
+                  >
+                    {m.full_name.split(' ')[0]}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -179,6 +201,22 @@ export default async function DashboardPage() {
               <div className="mb-4 p-4 rounded-xl border border-teal-primary/20 bg-teal-primary/5">
                 <p className="text-sm text-text-muted mb-1">Din gruppe</p>
                 <p className="text-lg font-semibold text-text-primary">{group.name}</p>
+                {groupMembers.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {groupMembers.map((m) => (
+                      <span
+                        key={m.full_name}
+                        className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                          m.role === 'youth'
+                            ? 'bg-teal-primary/10 text-teal-primary'
+                            : 'bg-coral/10 text-coral'
+                        }`}
+                      >
+                        {m.full_name.split(' ')[0]}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : null}
             <RegisteredUsersOverview

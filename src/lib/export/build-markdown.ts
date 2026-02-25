@@ -26,7 +26,7 @@ const PRESENTATION_PROMPT = `> **Create a PowerPoint presentation from the attac
 > **Layout – group slide:**
 > - Light background (\`F4F6FA\`), full-width header bar in the group's accent color
 > - Group name in header (white, bold, 20pt)
-> - One card per station in a 2-column grid (3 rows for 6 stations)
+> - One card per station in a 2-column grid
 > - Each card: thin colored top accent (same as header color), bold station label (13pt), 2–3 sentence summary (11.5pt)
 > - Cards have white background, light border (\`E0E6F0\`), subtle drop shadow
 > - Assign each group a distinct accent color (cycle through: \`2D7DD2\`, \`E85D4A\`, \`2CA58D\`, \`F0A500\`, \`7B5EA7\`, \`C94040\`)

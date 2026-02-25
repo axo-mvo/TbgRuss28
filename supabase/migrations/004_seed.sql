@@ -1,37 +1,32 @@
 -- 004_seed.sql
--- Seed data: 6 discussion stations, 2 invite codes, 1 meeting status row
+-- Seed data: 5 discussion stations, 2 invite codes, 1 meeting status row
 
--- 6 Stations with Norwegian titles, descriptions, questions, and tips
+-- 5 Stations with Norwegian titles, descriptions, questions, and tips
 INSERT INTO stations (number, title, description, questions, tip) VALUES
-(1, 'Fellesskap og Samhold',
- 'Diskuter hvordan vi kan styrke fellesskapet og samholdet i russegruppen.',
- '["Hva betyr fellesskap for deg i russetiden?", "Hvordan kan vi sikre at alle foler seg inkludert?", "Hvilke aktiviteter kan styrke samholdet i gruppen?", "Hvordan handterer vi konflikter pa en god mate?"]',
- 'Tenk pa konkrete eksempler fra egne erfaringer med gruppesamarbeid.'
+(1, 'Fellesskap og inkludering',
+ 'Diskuter hvordan vi kan sikre at alle føler seg inkludert og som en del av gruppen.',
+ '["Hva skal til for at alle 25 på bussen føler seg som én gjeng – ikke bare de som kjenner hverandre best fra før?", "Hvordan påvirker buss-prosjektet skolehverdagen – i lunsj, friminutt og på sosiale medier? Hva kan dere gjøre for at ingen føler seg utenfor?", "Dagens kontrakt sier at den som trekker seg mister alle innbetalte penger og må betale 10 000 kr i utmeldingsgebyr. Er det rettferdig – og hva bør gjelde i den nye kontrakten?", "Foreldrene signerer kontrakten, men har i dag verken innsyn i økonomien eller stemmerett. Hva bør foreldrenes rolle være – støttespillere med innsyn, eller bare underskrift?"]',
+ 'Tenk på konkrete situasjoner der noen kan falle utenfor – og hva dere kan gjøre for å forebygge det.'
 ),
-(2, 'Inkludering',
- 'Snakk om hvordan vi kan skape en inkluderende russetid for alle.',
- '["Hva kan vi gjore for at ingen faller utenfor?", "Hvordan kan vi vare oppmerksomme pa de som er stille eller trekker seg tilbake?", "Hvilke regler bor vi ha for a sikre inkludering?", "Hvordan kan foreldre bidra til en mer inkluderende russetid?"]',
- 'Husk at inkludering handler om mer enn bare a invitere -- det handler om a fa alle til a fole seg velkomne.'
+(2, 'Rus og narkotika',
+ 'Diskuter holdninger til rus, nulltoleranse og hvordan dere passer på hverandre.',
+ '["Kontrakten har nulltoleranse for narkotika med umiddelbar eksklusjon. Er regelen tydelig nok – og er den realistisk å håndheve?", "Én av fire russ har brukt narkotika det siste året. Hva gjør dere konkret om noen på bussen bryter regelen?", "Hvordan passer dere på hverandre når det gjelder alkohol – uten at det blir «politi»-stemning?", "Foreldre: Hva trenger dere å vite for å føle dere trygge? Ungdom: Hva trenger dere fra foreldrene for at det ikke skal bli kleint?"]',
+ 'Vær ærlige og respektfulle. Det finnes ingen dumme svar her.'
 ),
-(3, 'Rus og Forebygging',
- 'Diskuter holdninger til rus og hvordan vi kan forebygge negative opplevelser.',
- '["Hvilke forventninger har dere til rusbruk i russetiden?", "Hvordan kan vi passe pa hverandre nar det gjelder alkohol og rus?", "Hva bor vi gjore hvis noen havner i en vanskelig situasjon?", "Hvordan kan foreldre og ungdom samarbeide om trygge rammer?"]',
- 'Var arlige og respektfulle. Det finnes ingen dumme svar her.'
-),
-(4, 'Budsjett og Okonomi',
- 'Ga gjennom budsjettet og diskuter okonomiske prioriteringer.',
- '["Hva er de storste kostnadene ved russetiden?", "Hvordan kan vi holde kostnadene nede uten a ga pa kompromiss med opplevelsen?", "Bor alle bidra likt okonomisk, eller bor det vare fleksibelt?", "Hvilke utgifter er viktigst a prioritere?"]',
+(3, 'Økonomi og finansiering',
+ 'Gå gjennom budsjettet og diskuter økonomiske prioriteringer og innsyn.',
+ '["Hva er viktigst å bruke penger på – buss, lyd, lys, klær, eller felles opplevelser? Og hva kan dere klare dere uten?", "Gutta presenterer budsjettet sitt. Er det realistisk? Dekker det alt som trengs – og er det rom for uforutsette utgifter? Hva bør maks totalbeløp per person være i den nye kontrakten?", "Bør hver person spare på egen konto, eller er felles innbetaling best? Hvem skal ha innsyn i økonomien – og hvordan sikrer vi at alle kan se hva pengene brukes til?", "Hva bør gjelde ved forsinket betaling? Dagens kontrakt har gebyr fra dag én uten tak. Er det rettferdig – og hva er et bedre alternativ?"]',
  'Ha gjerne konkrete tall klare. Et realistisk budsjett gir bedre planlegging.'
 ),
-(5, 'Finansiering',
- 'Diskuter muligheter for a finansiere russetiden og skaffe inntekter.',
- '["Hvilke dugnader eller inntektskilder kan vi bruke?", "Har noen erfaring med sponsorer eller samarbeidspartnere?", "Hvordan fordeler vi inntektene rettferdig?", "Hva er realistiske mal for innsamling?"]',
- 'Tenk kreativt, men vurder ogsa hvor mye tid og innsats hver aktivitet krever.'
+(4, 'Spillereglene – den nye kontrakten',
+ 'Diskuter hvilke regler som bør gjelde i den nye kontrakten.',
+ '["Kontrakten skal skrives på nytt og signeres i fellesskap. Hvilke regler er aller viktigst for at gruppen fungerer over to år?", "Dagens kontrakt har bøter på 10 000 kr for å dele konsept eller dekknavn. Er det rimelig – og hva er et bedre alternativ?", "Bussjefene tar mange beslutninger på vegne av gruppa. Hvordan sikrer vi at de har tillit – og hva bør skje om tilliten svikter?", "Dagens kontrakt tillater varig eksklusjon ved 70 % flertall – uten rett til å forsvare seg, uten klagerett, og uten krav på innbetalte penger. Hva bør prosessen være – og hvilke rettigheter bør den det gjelder ha?"]',
+ 'Tenk på hva som skaper trygghet og rettferdighet for alle i gruppen.'
 ),
-(6, 'Nye Regler for Russebuss',
- 'Diskuter de nye reglene for russebuss og hvordan de pavirker planleggingen.',
- '["Hvilke nye regler er dere kjent med?", "Hvordan pavirker reglene planene vare?", "Hva er de storste utfordringene med de nye reglene?", "Hvordan kan vi tilpasse oss og fortsatt ha en bra russetid?"]',
- 'Sjekk oppdatert informasjon fra kommunen og relevante myndigheter for a vare sikre pa gjeldende regler.'
+(5, 'Russetiden i 7 dager?',
+ 'Diskuter konsekvensene av en mulig kortere russetid og hva det betyr for prosjektet.',
+ '["Myndighetene ønsker å begrense russetiden til ca. 7 dager etter eksamen. Hva tenker dere om det – og hvordan påvirker det prosjektet?", "Hvis russetiden blir kortere, endrer det hva det er verdt å bruke penger på?", "Påvirker en kortere russetid valget mellom å kjøpe og leie buss – og bør vi ta høyde for dette allerede nå?", "Hva vil dere savne mest med en kortere feiring – og hva kan dere leve uten?"]',
+ 'Tenk på hva som er viktigst å bevare uansett lengde på feiringen.'
 )
 ON CONFLICT (number) DO NOTHING;
 

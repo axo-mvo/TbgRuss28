@@ -1,5 +1,5 @@
 /**
- * Seed script: Simulates discussions in all 6 stations for all 6 groups.
+ * Seed script: Simulates discussions in all 5 stations for all 6 groups.
  * Creates fake users, assigns to groups, creates sessions, and inserts messages.
  *
  * Run: npx tsx scripts/seed-discussions.ts
@@ -76,106 +76,89 @@ const FAKE_USERS: { name: string; role: "youth" | "parent" }[][] = [
 
 const DISCUSSIONS: Record<number, string[]> = {
   1: [
-    // Fellesskap og Samhold
-    "For meg handler fellesskap om at alle føler seg trygge og inkludert, uansett bakgrunn.",
-    "Jeg tenker vi bør ha faste samlinger der alle kan bli bedre kjent med hverandre.",
-    "Det viktigste er at vi respekterer hverandre og står opp for de som trenger det.",
-    "Vi hadde en veldig god opplevelse med teambuilding på skolen, kanskje vi kan gjøre noe lignende?",
-    "Enig! Kanskje en hyttetur tidlig i planleggingen kan hjelpe oss å bli bedre sammensveiset.",
-    "Jeg synes vi bør lage noen felles regler som alle er enige om fra starten.",
-    "Konflikter bør tas opp med en gang, ikke la ting bygge seg opp over tid.",
-    "Som forelder synes jeg det er flott at dere tenker på dette allerede nå.",
-    "Vi kan ha en kontaktperson i hver gruppe som folk kan snakke med hvis noe er vanskelig.",
-    "Det handler om å skape minner sammen, ikke bare feste. Turer, aktiviteter, dugnad - alt teller!",
-    "Jeg er enig i at vi trenger felles regler. Kanskje vi kan stemme over dem sammen?",
-    "Samhold betyr at vi tar vare på hverandre, også når ting er vanskelig.",
-    "Bra poeng med kontaktperson! Da har folk en trygg person å gå til.",
-    "Vi bør også feire de små tingene sammen, ikke bare de store begivenhetene.",
-  ],
-  2: [
-    // Inkludering
-    "Vi må være bevisste på hvem som kanskje ikke tør å si ifra selv.",
-    "Inkludering handler ikke bare om å invitere alle - det handler om at alle føler seg velkomne.",
-    "Jeg kjenner noen som ble holdt utenfor i fjor, og det var veldig vondt for dem.",
-    "Vi bør ha en regel om at ingen snakker negativt om andre bak ryggen.",
-    "Foreldre kan bidra ved å være oppmerksomme og støttende uten å blande seg for mye.",
-    "Kanskje vi kan ha aktiviteter der man må samarbeide med folk man ikke kjenner så godt?",
-    "Det er viktig å huske at alle har noe å bidra med, selv om de er stille.",
+    // Fellesskap og inkludering
+    "Alle 25 må føle seg som én gjeng, ikke bare de som kjenner hverandre best fra før.",
+    "Buss-prosjektet påvirker skolehverdagen – i lunsj, friminutt og på sosiale medier.",
+    "Vi må passe på at ingen føler seg utenfor, heller ikke de som er stille.",
+    "Kontrakten sier at den som trekker seg mister alle innbetalte penger og må betale 10 000 kr. Er det rettferdig?",
+    "Foreldrene signerer kontrakten, men har i dag verken innsyn i økonomien eller stemmerett.",
+    "Jeg synes foreldrene bør ha innsyn, men ikke nødvendigvis stemmerett i alt.",
+    "Vi bør ha faste samlinger der alle kan bli bedre kjent med hverandre.",
     "Sosiale medier kan gjøre inkludering vanskeligere. Lukka grupper kan føles ekskluderende.",
-    "Enig med at sosiale medier er en utfordring. Vi bør tenke på det når vi lager grupper.",
-    "Kanskje vi kan ha en felles chat der alle er med, ikke bare de nærmeste vennene?",
-    "Vi bør aktivt oppsøke de som virker ensomme eller trekker seg tilbake.",
-    "Som forelder vil jeg si at dere gjør en flott jobb med å tenke på dette!",
+    "Det handler om å skape minner sammen, ikke bare feste. Turer, aktiviteter, dugnad - alt teller!",
+    "Kanskje vi kan ha aktiviteter der man må samarbeide med folk man ikke kjenner så godt?",
     "Noen ganger handler inkludering om å bare sette seg ned ved siden av noen og spørre hvordan det går.",
+    "Vi bør aktivt oppsøke de som virker ensomme eller trekker seg tilbake.",
+    "Som forelder synes jeg det er flott at dere tenker på dette allerede nå.",
     "Vi kan rotere på grupper i noen aktiviteter, slik at alle blir kjent med alle.",
   ],
-  3: [
-    // Rus og Forebygging
-    "Jeg synes det er viktig at ingen føler press til å drikke.",
-    "Vi bør ha en klar avtale om at vi passer på hverandre hvis noen drikker for mye.",
-    "Foreldre og ungdom bør kunne snakke åpent om dette uten at det blir kleint.",
-    "Kanskje vi kan ha alkoholfrie arrangementer også, slik at det ikke alltid handler om festing?",
+  2: [
+    // Rus og narkotika
+    "Nulltoleranse for narkotika med umiddelbar eksklusjon – er regelen tydelig nok?",
+    "Én av fire russ har brukt narkotika det siste året. Hva gjør vi konkret om noen bryter regelen?",
+    "Vi bør passe på hverandre med alkohol uten at det blir «politi»-stemning.",
+    "Foreldre trenger å vite nok til å føle seg trygge, uten at det blir kleint for ungdommene.",
     "Kompiskontrakten er en god idé - at man avtaler grenser på forhånd.",
     "Det er viktig å vite hva man gjør hvis noen blir dårlige. Førstehjelp er viktig!",
     "Som forelder er jeg lettet over at dere tar dette så seriøst.",
     "Vi bør alle ha ICE-nummeret til foreldrene våre lett tilgjengelig.",
-    "Russetiden kan være gøy uten at alt handler om alkohol. Det finnes så mye annet å gjøre!",
-    "Enig! Vi kan ha konserter, turer, og spill som er morsomme uten alkohol.",
-    "Hvis noen havner i trøbbel, er det viktigste at de tør å ringe for hjelp.",
-    "Vi bør ha en buddy-ordning der man alltid har noen som passer på en.",
     "Det er helt ok å si nei. Ingen bør bli dømt for det.",
+    "Vi bør ha en buddy-ordning der man alltid har noen som passer på en.",
+    "Hvis noen havner i trøbbel, er det viktigste at de tør å ringe for hjelp.",
     "Foreldrene bør være tilgjengelige om natten i russetiden, det gir trygghet.",
+    "Russetiden kan være gøy uten at alt handler om alkohol.",
+    "Vi trenger en tydelig prosess for hva som skjer om noen bryter narkotika-regelen.",
   ],
-  4: [
-    // Budsjett og Økonomi
-    "De største kostnadene er nok russeklær, buss-leie, og felles arrangementer.",
+  3: [
+    // Økonomi og finansiering
+    "Hva er viktigst å bruke penger på – buss, lyd, lys, klær, eller felles opplevelser?",
     "Vi bør lage et detaljert budsjett tidlig, slik at alle vet hva de går til.",
     "Ikke alle har like mye penger. Vi må finne løsninger som fungerer for alle.",
-    "Kanskje vi kan ha et grunnbeløp som alle betaler, og så valgfrie tillegg?",
-    "Det er viktig å holde rede på pengene og ha en kasserer som alle stoler på.",
-    "Vi bør bruke et felles regnskap, kanskje en enkel app eller regneark?",
-    "Russeklærne koster ofte 2-3000 kr. Bussen kan bli mye dyrere.",
+    "Er det rom for uforutsette utgifter i budsjettet? Hva bør maks totalbeløp per person være?",
+    "Bør hver person spare på egen konto, eller er felles innbetaling best?",
+    "Alle bør ha innsyn i økonomien – vi trenger et åpent regnskap.",
+    "Dagens kontrakt har gebyr fra dag én uten tak ved forsinket betaling. Er det rettferdig?",
     "Sponsorer kan hjelpe med å dekke noen kostnader, men det krever innsats.",
-    "Som forelder synes jeg et budsjett på maks 5000 kr per person er rimelig.",
+    "Som forelder synes jeg et realistisk budsjett med buffer er viktigst.",
     "Vi bør prioritere opplevelser over dyre ting. Det handler om minner, ikke merker.",
-    "Enig! Et realistisk budsjett der alle bidrar likt er den faireste løsningen.",
-    "Vi kan spare penger på transport ved å samkjøre og planlegge litt bedre.",
     "Kanskje vi kan ha dugnad for å tjene inn litt av det vi trenger?",
     "Det er lurt å ha en buffer i budsjettet for uforutsette utgifter.",
+    "Vi kan spare penger på transport ved å samkjøre og planlegge litt bedre.",
+    "Det viktigste er at alle bidrar med sin tid, ikke bare penger.",
+  ],
+  4: [
+    // Spillereglene – den nye kontrakten
+    "Kontrakten skal skrives på nytt og signeres i fellesskap. Hvilke regler er viktigst?",
+    "Dagens kontrakt har bøter på 10 000 kr for å dele konsept eller dekknavn. Er det rimelig?",
+    "Bussjefene tar mange beslutninger. Hvordan sikrer vi at de har tillit?",
+    "Hva bør skje om tilliten til bussjefene svikter? Vi trenger en prosess for det.",
+    "Dagens kontrakt tillater varig eksklusjon ved 70 % flertall – uten rett til å forsvare seg.",
+    "Den som ekskluderes bør ha rett til å forsvare seg og krav på innbetalte penger.",
+    "Vi bør ha en klagerett og en rettferdig prosess for konflikter.",
+    "Det er viktig at reglene er tydelige fra starten, slik at alle vet hva som gjelder.",
+    "Kanskje vi kan ha en uavhengig tredjepart som kan mekle ved konflikter?",
+    "Reglene bør beskytte både gruppen og individet. Balanse er nøkkelen.",
+    "Vi bør stemme over de viktigste reglene, slik at alle føler eierskap.",
+    "Bøter bør stå i forhold til alvoret. 10 000 kr for å dele et navn er for mye.",
+    "En god kontrakt beskytter alle – ikke bare de som har makt.",
+    "Som forelder ønsker jeg at kontrakten er rettferdig og gjennomtenkt.",
   ],
   5: [
-    // Finansiering
-    "Vaffeldugnad er en klassiker, men kanskje vi kan tenke litt mer kreativt?",
-    "Bilvask-dugnad har fungert bra for andre russegrupper.",
-    "Noen bedrifter er villige til å sponse russeklær mot at logoen deres er med.",
-    "Vi bør undersøke om det finnes noen lokale tilskudd eller stipender vi kan søke på.",
-    "Loppemarkeder kan gi overraskende bra inntjening hvis vi organiserer det skikkelig.",
-    "Kanskje vi kan tilby tjenester som hagearbeid eller snømåking i nabolaget?",
-    "En russerevy eller konsert kan både være gøy og gi inntekter.",
-    "Vi bør fordele inntektene etter hvor mye hver person faktisk har bidratt.",
-    "Det er viktig å ha en realistisk plan. 50 000 kr fra dugnad krever mye innsats.",
-    "Kanskje vi kan selge russekort eller lignende for å finansiere felles aktiviteter?",
-    "Som forelder kan jeg hjelpe med å ta kontakt med bedrifter for sponsoravtaler.",
-    "Vi kan også ha en nettbutikk med russerelaterte produkter som vi designer selv.",
-    "Det viktigste er at alle bidrar med sin tid, ikke bare penger.",
-    "Vi bør starte innsamlingen tidlig, kanskje allerede nå i vinter.",
-  ],
-  6: [
-    // Nye Regler for Russebuss
-    "De nye reglene sier vel at bussen må ha faste parkeringsplasser og ikke blokkere trafikken.",
-    "Lydnivået er strengere regulert nå. Vi må passe på desibelgrensene.",
-    "Det er viktig at vi setter oss inn i reglene tidlig, slik at vi slipper bøter.",
-    "Kommunen har nye krav om søknad for russebuss. Vi bør søke i god tid.",
-    "Kanskje vi egentlig ikke trenger en buss? Det finnes andre måter å ha det gøy på.",
-    "Hvis vi leier buss, må vi ha en ansvarlig voksen som sjåfør. Det er nytt.",
-    "De nye reglene handler mest om sikkerhet, og det er jo positivt egentlig.",
-    "Vi bør kontakte kommunen direkte for å få oversikt over alle gjeldende regler.",
-    "Forsikring for russebuss er blitt dyrere. Det påvirker budsjettet vårt.",
-    "Kanskje vi kan dele buss med en annen gruppe for å spare kostnader?",
-    "Som forelder er jeg glad for strengere sikkerhetskrav. Det gir mer trygghet.",
-    "Vi bør lage en sjekkliste over alle krav og regler vi må oppfylle.",
-    "Det er mulig å søke om unntak for noen av lydreglene under russefeiringen.",
-    "Vi bør ha en voksen kontaktperson som har ansvar for at reglene følges.",
+    // Russetiden i 7 dager?
+    "Myndighetene ønsker å begrense russetiden til ca. 7 dager etter eksamen. Hva tenker dere?",
+    "Hvis russetiden blir kortere, endrer det hva det er verdt å bruke penger på.",
+    "Påvirker en kortere russetid valget mellom å kjøpe og leie buss?",
+    "Vi bør ta høyde for mulige endringer allerede nå i planleggingen.",
+    "Hva vil dere savne mest med en kortere feiring – og hva kan dere leve uten?",
+    "Kanskje en kortere russetid gjør at vi må prioritere hardere?",
+    "Hvis det bare blir 7 dager, er det enda viktigere at vi planlegger godt.",
+    "En kortere feiring kan faktisk gjøre den mer intens og minneverdig.",
+    "Vi bør uansett sørge for at vi får mest mulig ut av tiden vi har.",
+    "Som forelder er jeg egentlig positiv til en kortere russetid.",
+    "Det viktigste er fellesskapet, ikke hvor mange dager det varer.",
+    "Kanskje vi kan ha noen arrangementer før selve russetiden også?",
+    "Leie av buss gir mer mening om russetiden blir kort – slipper å eie noe vi bruker 7 dager.",
+    "Vi bør ikke bruke for mye penger på noe som kanskje bare varer en uke.",
   ],
 };
 
@@ -207,7 +190,7 @@ async function main() {
   const { data: existingSessions } = await sb.from("station_sessions").select("id, station_id, group_id, status");
 
   if (!groups || groups.length < 6) throw new Error(`Expected 6 groups, found ${groups?.length}`);
-  if (!stations || stations.length < 6) throw new Error(`Expected 6 stations, found ${stations?.length}`);
+  if (!stations || stations.length < 5) throw new Error(`Expected 5 stations, found ${stations?.length}`);
 
   // Sort groups to match FAKE_USERS order: Teten, TURBC, Bægg1, Fangsten, Sublime, Verket
   const groupOrder = ["Teten", "The Underground Rebel Bingo Club", "Bægg1", "Fangsten", "Sublime", "Verket"];
@@ -382,7 +365,7 @@ async function main() {
     }
   }
 
-  console.log(`\n=== Done! Inserted ${totalMessages} messages across 36 sessions ===`);
+  console.log(`\n=== Done! Inserted ${totalMessages} messages across 30 sessions ===`);
 }
 
 main().catch(console.error);

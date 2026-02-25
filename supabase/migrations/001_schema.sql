@@ -47,7 +47,7 @@ CREATE TABLE group_members (
   UNIQUE(group_id, user_id)
 );
 
--- Stations (6 fixed discussion stations)
+-- Stations (5 fixed discussion stations)
 CREATE TABLE stations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   number INT UNIQUE NOT NULL,
