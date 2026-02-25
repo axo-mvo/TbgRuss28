@@ -2,154 +2,56 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-19)
+See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** Groups can have real-time discussions at stations with a visible timer and see each other's messages instantly
-**Current focus:** Phase 5 complete -- ALL PHASES DONE
+**Current focus:** Milestone v1.1 — Multi-Meeting Platform
 
 ## Current Position
 
-Phase: 5 of 5 (Export) -- COMPLETE
-Plan: 1 of 1 in current phase (1 complete)
-Status: ALL PHASES COMPLETE
-Last activity: 2026-02-21 - Completed quick task 18: Add participant summary counts and attendance indicators
-
-Progress: [##########] 100%
-
-## Performance Metrics
-
-**Velocity:**
-- Total plans completed: 10
-- Average duration: 4.3min
-- Total execution time: 0.65 hours
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 01 | 2 | 11min | 5.5min |
-| 02 | 3 | 14min | 4.7min |
-| 03 | 2 | 7min | 3.5min |
-| 04 | 2 | 5min | 2.5min |
-| 05 | 1 | 2min | 2.0min |
-
-**Recent Trend:**
-- Last 5 plans: 03-01 (3min), 03-02 (4min), 04-01 (3min), 04-02 (2min), 05-01 (2min)
-- Trend: stable/improving
-
-*Updated after each plan completion*
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-25 — Milestone v1.1 started
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
+Key decisions from v1.0 affecting v1.1:
 
 - [Roadmap]: Use Next.js 15 (not 14) per research -- v14 reached EOL Oct 2025
 - [Roadmap]: Supabase Broadcast for real-time chat delivery, direct DB inserts for persistence (two-path approach)
 - [Roadmap]: Server-timestamp timer sync (store end_timestamp, clients compute remaining)
 - [Roadmap]: Auth middleware must use getUser() not getSession()
 - [01-01]: Pinned Next.js to v15.5 (create-next-app defaults to v16)
-- [01-01]: getClaims() with getUser() fallback in middleware (runtime version check)
-- [01-01]: Rewrote ESLint config for Next.js 15 compatibility
-- [01-02]: validateInviteCode is read-only; atomic increment happens during register() only
-- [01-02]: redirect() outside try/catch per Next.js pattern (throws internally)
-- [01-02]: Parent-youth linking is non-fatal during registration
-- [01-02]: Admin guard in layout queries profiles table (defense-in-depth)
-- [02-ctx]: Parents and their linked youth must NEVER be in same group (overrides roadmap "parent-follows-child" wording)
+- [02-ctx]: Parents and their linked youth must NEVER be in same group
 - [02-ctx]: Group names from predefined list of famous russ group names, randomly assigned
-- [02-01]: Extracted verifyAdmin() helper to DRY admin auth checks across all 7 server actions
-- [02-01]: toggleGroupsLock uses .neq() filter to match all rows (Supabase requires a WHERE clause)
-- [02-01]: saveGroupMembers clears all members per group before re-inserting, with per-member separation check
-- [02-02]: Custom role-change dialog using native <dialog> (Dialog component lacks children/body slot for radio selection)
-- [02-02]: ParentYouthLink.youth typed as union to handle Supabase PostgREST inference variability
-- [02-03]: Used useDroppable for containers and useSortable for items (dnd-kit/react multi-container pattern)
-- [02-03]: Mobile uses BottomSheet tap-to-assign instead of drag-and-drop for cleaner phone UX
-- [02-03]: Conflict check on drag-end reverts user to unassigned pool if parent-child violation detected
-- [03-01]: open_station uses SECURITY DEFINER Postgres function with FOR UPDATE row lock for atomicity
-- [03-01]: COALESCE on started_at/end_timestamp preserves first opener's timestamp in concurrent upserts
-- [03-01]: useRealtimeChat exposes setMessages for merging initial history from loadMessages
-- [03-01]: ChatMessage includes status field (sent/pending/error) for optimistic UI tracking
-- [03-02]: CountdownTimer calls useCountdownTimer independently (self-contained, not prop-drilled from ChatRoom)
-- [03-02]: Station context card (questions/tip) at top of message area for discussion guidance
-- [03-02]: MessageBubble uses existing Badge component for role display with Norwegian labels
-- [04-01]: Idempotent completion: already-completed sessions return success, not error (prevents second-clicker seeing error toast)
-- [04-01]: onStationEnded stored in ref to avoid re-triggering useEffect on callback identity changes
-- [04-01]: channelRef exposed from useRealtimeChat so ChatRoom can broadcast station-ended directly after endStation action
-- [04-02]: ConnectionStatus hidden when connected -- clean UI default, only shows on degradation
-- [04-02]: Online event sets reconnecting (not connected) -- waits for heartbeat confirmation before showing healthy
-- [05-01]: Used <a> tag with download attribute instead of Link component for file download
-- [05-01]: Admin auth in Route Handler mirrors verifyAdmin() but returns HTTP responses
-- [05-01]: Markdown builder as pure function for testability and separation of concerns
-- [quick-4]: Removed profiles join from export query since author data no longer needed by simplified format
-- [quick-5]: Server component (no 'use client') for details/summary -- native HTML handles interactivity without JS
-- [quick-5]: Admin client (createAdminClient) to bypass RLS for cross-user profile visibility on dashboard
-- [quick-6]: VOKSEN### is a virtual code -- maps to FORELDER2028 for atomic invite code validation
-- [quick-6]: validateInviteCode also updated for VOKSEN### (frontend calls it before register)
-- [quick-7]: localReadOnly state (not prop) so ChatRoom transitions from completed to active without page reload
-- [quick-7]: Pass localReadOnly to useRealtimeChat so subscription activates automatically on reopen
-- [quick-7]: Inline button (not Button component) for Reopen in footer to avoid full-width min-height styling
-- [quick-8]: Fixed 3 additional files (layout.tsx, MessageList.tsx, build-markdown.ts) not in plan that had same ASCII approximation issue
-- [quick-9]: Admin card placed between role text and group card; gear icon for admin panel card
-- [quick-10]: Used .in('role', ['youth', 'parent', 'admin']) instead of removing filter entirely -- defensive against accidentally including future roles
-- [quick-11]: text-base (16px) on chat input to prevent iOS Safari auto-zoom; maximumScale=1 viewport meta as belt-and-suspenders
-- [quick-12]: CSS flexbox word cloud instead of canvas/SVG library -- zero dependencies, mobile-friendly
-- [quick-12]: Record<string, unknown> casts for PostgREST join data -- defensive handling of array-or-object variability
-- [quick-13]: Phone column nullable TEXT with no DB constraint -- validation is client+server side, existing users unaffected
-- [quick-14]: Nullable boolean (null = not yet answered) rather than default false, so admins can distinguish not responded from declined
-- [quick-14]: Explicit Ja/Nei buttons instead of toggle switch for clearer mobile UX and ternary state visibility
-- [quick-14]: Opacity-50 with colored dot indicators (red for declined, gray for unanswered) in group assignment view
-- [quick-15]: Extracted isParentLike() helper function outside component for DRY role checks instead of inline || at each location
-- [quick-16]: Raw fetch to Twilio REST API instead of twilio npm package -- avoids dependency bloat for single API call
-- [quick-16]: Console fallback when Twilio env vars missing -- dev/testing works without SMS credentials
-- [quick-16]: Admin sees the generated code in success dialog as backup if SMS doesn't arrive (can read aloud)
-- [quick-16]: generateLink + verifyOtp for code-based login -- establishes real Supabase session without user's password
-- [quick-17]: Native sms: URI instead of Twilio -- admin taps "Åpne SMS" button to open phone's messaging app with pre-filled code message (zero server-side SMS dependency)
-- [quick-16]: Raw fetch to Twilio REST API instead of twilio npm package -- avoids dependency bloat
-- [quick-16]: Console fallback when Twilio env vars missing -- dev flow works without SMS credentials
-- [quick-16]: Magic link OTP verification (generateLink + verifyOtp) for code-based login
-- [quick-16]: Admin sees generated code in UI as backup in case SMS does not arrive
-- [quick-17]: Native sms: URI replaces server-side Twilio SMS -- zero cost, works on all mobile devices
-- [quick-17]: Custom <dialog> for SMS result because Dialog component lacks JSX children support for <a> tag
-- [quick-17]: Phone normalization (+47 prefix) moved client-side since twilio.ts deleted
-- [quick-18]: Fetch all profiles in single query for summary counts (simpler, accounts for parentless admins)
-- [quick-18]: AttendanceIndicator as local helper function since only used in RegisteredUsersOverview
+- [02-03]: dnd-kit/react for drag-and-drop; BottomSheet tap-to-assign on mobile
+- [03-01]: open_station uses SECURITY DEFINER Postgres function with FOR UPDATE row lock
+- [03-01]: useRealtimeChat exposes setMessages for merging initial history
+- [04-01]: channelRef exposed from useRealtimeChat for broadcast
+- [05-01]: Markdown builder as pure function for testability
+- [quick-5]: createAdminClient to bypass RLS for cross-user profile visibility
+- [quick-12]: CSS flexbox word cloud -- zero dependencies, mobile-friendly
+- [quick-14]: Nullable boolean for attendance (null = unanswered, true = yes, false = no)
+- [quick-15]: isParentLike() helper function for DRY role checks
+- [quick-17]: Native sms: URI for SMS -- zero server-side dependency
 
 ### Pending Todos
 
 None yet.
 
-### Quick Tasks Completed
-
-| # | Description | Date | Commit | Directory |
-|---|-------------|------|--------|-----------|
-| 1 | Realtime dashboard station status and explicit start button | 2026-02-19 | 7482864 | [1-realtime-dashboard-station-status-and-ex](./quick/1-realtime-dashboard-station-status-and-ex/) |
-| 2 | Fix chat messages not appearing - add optimistic message before broadcast | 2026-02-19 | 0a2abbd | [2-fix-chat-messages-not-appearing-add-opti](./quick/2-fix-chat-messages-not-appearing-add-opti/) |
-| 3 | Dashboard realtime station state updates (setAuth fix) | 2026-02-19 | ec24245 | [3-dashboard-realtime-station-state-updates](./quick/3-dashboard-realtime-station-state-updates/) |
-| 4 | Simplify MD export format (remove author/timestamp) | 2026-02-19 | 3120cc4 | [4-simplify-md-export-format-remove-author-](./quick/4-simplify-md-export-format-remove-author-/) |
-| 5 | Replace youth waiting page with registered users overview | 2026-02-19 | 4a0f915 | [5-replace-youth-waiting-page-with-register](./quick/5-replace-youth-waiting-page-with-register/) |
-| 6 | Youth parent invite code with auto-match | 2026-02-19 | 5649a24 | [6-youth-parent-invite-code-with-auto-match](./quick/6-youth-parent-invite-code-with-auto-match/) |
-| 7 | Reopen closed station with added time selection | 2026-02-19 | 030c2d5 | [7-reopen-closed-station-with-added-time-se](./quick/7-reopen-closed-station-with-added-time-se/) |
-| 8 | Fix missing Norwegian special characters | 2026-02-19 | 5351364 | [8-fix-missing-norwegian-special-characters](./quick/8-fix-missing-norwegian-special-characters/) |
-| 9 | Admin panel navigation (dashboard <-> admin) | 2026-02-19 | 73df4ed | [9-the-admin-role-is-also-a-parent-role-the](./quick/9-the-admin-role-is-also-a-parent-role-the/) |
-| 10 | Include admin users in group assignment | 2026-02-20 | b025897 | [10-it-s-not-possible-to-assign-admins-that-](./quick/10-it-s-not-possible-to-assign-admins-that-/) |
-| 11 | Fix mobile chat input zoom/scroll issue | 2026-02-21 | 8bf948b | [11-fix-mobile-chat-input-zoom-scroll-issue-](./quick/11-fix-mobile-chat-input-zoom-scroll-issue-/) |
-| 12 | Create word cloud feature filterable by group/station | 2026-02-21 | d72fc52 | [12-create-word-cloud-feature-filterable-by-](./quick/12-create-word-cloud-feature-filterable-by-/) |
-| 13 | Add phone number field to registration | 2026-02-21 | 4728c1a | [13-add-phone-number-field-to-registration-8](./quick/13-add-phone-number-field-to-registration-8/) |
-| 14 | Add participation toggle for Wednesday meeting | 2026-02-21 | 235f02e | [14-add-participation-toggle-for-wednesday-m](./quick/14-add-participation-toggle-for-wednesday-m/) |
-| 15 | Fix admin youth assignment in user panel | 2026-02-21 | 2974b41 | [15-it-s-not-possible-to-assign-youth-to-the](./quick/15-it-s-not-possible-to-assign-youth-to-the/) |
-| 16 | Admin SMS temporary access code for members | 2026-02-21 | f242db4 | [16-admin-sms-temporary-access-code-for-memb](./quick/16-admin-sms-temporary-access-code-for-memb/) |
-| 17 | Replace Twilio SMS with native sms: URI | 2026-02-21 | 2facbb6 | [17-replace-twilio-sms-with-native-sms-uri-f](./quick/17-replace-twilio-sms-with-native-sms-uri-f/) |
-| 18 | Add participant summary counts and attendance indicators | 2026-02-21 | a3b42a5 | [18-add-participant-summary-counts-and-respo](./quick/18-add-participant-summary-counts-and-respo/) |
-
 ### Blockers/Concerns
 
-- Supabase free tier Realtime limit is 200 concurrent connections; ~80 users with 2-3 subscriptions each could hit ~240. Consider Pro tier ($25/mo) as insurance before the event.
-- Broadcast authorization is channel-level, not row-level. Group isolation enforced via `station:{sessionId}` naming + RLS on realtime.messages (resolved in 03-01).
+- Supabase free tier Realtime limit is 200 concurrent connections; ~80 users with 2-3 subscriptions each could hit ~240. Consider Pro tier ($25/mo) as insurance before events.
+
+## v1.0 Summary
+
+All 5 phases complete (10 plans, 0.65 hours total execution). 31/31 requirements delivered. 18 quick tasks completed. See MILESTONES.md for archive.
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Completed quick task 18: Add participant summary counts and attendance indicators
-Resume file: .planning/quick/18-add-participant-summary-counts-and-respo/18-SUMMARY.md
+Last session: 2026-02-25
+Stopped at: Starting milestone v1.1 — defining requirements
