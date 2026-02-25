@@ -102,7 +102,7 @@ Plans:
 
 **Milestone Goal:** Evolve from a single-meeting app to a meeting-series platform with admin-configurable meetings, a contact directory, and browsable meeting history.
 
-- [ ] **Phase 6: Schema Migration** - Migrate database to meeting-scoped structure, preserving v1.0 data as the first previous meeting
+- [x] **Phase 6: Schema Migration** - Migrate database to meeting-scoped structure, preserving v1.0 data as the first previous meeting (completed 2026-02-26)
 - [ ] **Phase 7: Admin Meeting Management** - Admin can create meetings with custom stations, manage per-meeting groups, and control meeting lifecycle
 - [ ] **Phase 8: Contact Directory and Dashboard** - Searchable contact directory as permanent dashboard, meeting-state-aware UI, per-meeting attendance
 - [ ] **Phase 9: Meeting History** - Browse previous meetings with read-only discussions, per-meeting word cloud, consolidated admin detail view
@@ -123,7 +123,7 @@ Plans:
 
 Plans:
 - [x] 06-01-PLAN.md -- Migration SQL file: meetings table, FK columns, backfill, constraints, RLS policies
-- [ ] 06-02-PLAN.md -- Apply migration to Supabase and verify zero regressions
+- [x] 06-02-PLAN.md -- Apply migration to Supabase and verify zero regressions
 
 ### Phase 7: Admin Meeting Management
 **Goal**: Admin can create and fully configure meetings with custom stations, per-meeting groups, and lifecycle control
@@ -185,11 +185,11 @@ Phases execute in numeric order: 6 -> 7 -> 8 -> 9
 | 3. Station Chat and Timer | v1.0 | 2/2 | Complete | 2026-02-19 |
 | 4. Station Flow and Resilience | v1.0 | 2/2 | Complete | 2026-02-19 |
 | 5. Export | v1.0 | 1/1 | Complete | 2026-02-19 |
-| 6. Schema Migration | v1.1 | 0/2 | Planned | - |
+| 6. Schema Migration | v1.1 | 2/2 | Complete | 2026-02-26 |
 | 7. Admin Meeting Management | v1.1 | 0/? | Not started | - |
 | 8. Contact Directory and Dashboard | v1.1 | 0/? | Not started | - |
 | 9. Meeting History | v1.1 | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-02-19*
-*Last updated: 2026-02-25 -- v1.1 milestone added*
+*Last updated: 2026-02-26 -- phase 6 complete*
