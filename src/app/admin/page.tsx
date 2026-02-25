@@ -21,6 +21,23 @@ export default function AdminPage() {
 
         <div className="flex flex-col gap-4 mb-8">
           <Link
+            href="/admin/meetings"
+            className="block rounded-xl border border-gray-200 bg-white p-5 shadow-sm
+              hover:border-teal-primary hover:shadow-md transition-all"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <svg className="h-6 w-6 text-teal-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+              </svg>
+              <h2 className="text-lg font-semibold text-text-primary">{`M\u00f8ter`}</h2>
+            </div>
+            <p className="text-sm text-text-muted">
+              {`Opprett m\u00f8ter, konfigurer stasjoner og grupper`}
+            </p>
+          </Link>
+
+          <Link
             href="/admin/users"
             className="block rounded-xl border border-gray-200 bg-white p-5 shadow-sm
               hover:border-teal-primary hover:shadow-md transition-all"
@@ -36,58 +53,6 @@ export default function AdminPage() {
               Administrer brukere, roller og forelder-barn-koblinger
             </p>
           </Link>
-
-          <Link
-            href="/admin/groups"
-            className="block rounded-xl border border-gray-200 bg-white p-5 shadow-sm
-              hover:border-teal-primary hover:shadow-md transition-all"
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <svg className="h-6 w-6 text-teal-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-              </svg>
-              <h2 className="text-lg font-semibold text-text-primary">Grupper</h2>
-            </div>
-            <p className="text-sm text-text-muted">
-              Opprett grupper, tildel medlemmer og lås gruppene
-            </p>
-          </Link>
-
-          <Link
-            href="/admin/wordcloud"
-            className="block rounded-xl border border-gray-200 bg-white p-5 shadow-sm
-              hover:border-teal-primary hover:shadow-md transition-all"
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <svg className="h-6 w-6 text-teal-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zm0-10v2h14V7H7z" />
-              </svg>
-              <h2 className="text-lg font-semibold text-text-primary">Ordsky</h2>
-            </div>
-            <p className="text-sm text-text-muted">
-              Visualiser de mest brukte ordene fra diskusjonene
-            </p>
-          </Link>
-
-          <a
-            href="/api/export"
-            download
-            className="block rounded-xl border border-gray-200 bg-white p-5 shadow-sm
-              hover:border-teal-primary hover:shadow-md transition-all"
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <svg className="h-6 w-6 text-teal-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <h2 className="text-lg font-semibold text-text-primary">Eksporter samtaler</h2>
-            </div>
-            <p className="text-sm text-text-muted">
-              Last ned alle diskusjoner som Markdown-fil
-            </p>
-          </a>
         </div>
 
         <form action={logout}>
