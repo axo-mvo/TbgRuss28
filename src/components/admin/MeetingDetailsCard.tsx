@@ -13,6 +13,11 @@ const statusLabels: Record<string, string> = {
   completed: 'Fullfort',
 }
 
+const audienceBadges: Record<string, { label: string; className: string }> = {
+  youth: { label: 'Ungdom', className: 'bg-teal-primary/10 text-teal-primary' },
+  parent: { label: 'Foreldre', className: 'bg-coral/10 text-coral' },
+}
+
 function formatDate(date: string | null): string {
   if (!date) return 'Ikke satt'
   return new Date(date).toLocaleDateString('nb-NO', {
@@ -35,11 +40,14 @@ interface MeetingDetailsCardProps {
     date: string | null
     time: string | null
     venue: string | null
+    audience?: string
   }
+  adminRole?: string
 }
 
-export default function MeetingDetailsCard({ meeting }: MeetingDetailsCardProps) {
+export default function MeetingDetailsCard({ meeting, adminRole = 'youth' }: MeetingDetailsCardProps) {
   const [editing, setEditing] = useState(false)
+  const [editAudience, setEditAudience] = useState(meeting.audience || 'everyone')
   const boundAction = updateMeeting.bind(null, meeting.id)
   const [state, action, pending] = useActionState(boundAction, null)
 
@@ -125,6 +133,50 @@ export default function MeetingDetailsCard({ meeting }: MeetingDetailsCardProps)
               defaultValue={meeting.venue ?? ''}
             />
 
+            <div>
+              <Label htmlFor="audience">{`M\u00e5lgruppe`}</Label>
+              <input type="hidden" name="audience" value={editAudience} />
+              <div className="flex gap-2 mt-1">
+                <button
+                  type="button"
+                  onClick={() => setEditAudience('everyone')}
+                  className={`flex-1 min-h-[44px] rounded-lg border text-sm font-medium transition-colors ${
+                    editAudience === 'everyone'
+                      ? 'bg-teal-primary/10 border-teal-primary text-teal-primary'
+                      : 'border-gray-300 text-text-muted hover:border-gray-400'
+                  }`}
+                >
+                  Alle
+                </button>
+                {adminRole === 'youth' && (
+                  <button
+                    type="button"
+                    onClick={() => setEditAudience('youth')}
+                    className={`flex-1 min-h-[44px] rounded-lg border text-sm font-medium transition-colors ${
+                      editAudience === 'youth'
+                        ? 'bg-teal-primary/10 border-teal-primary text-teal-primary'
+                        : 'border-gray-300 text-text-muted hover:border-gray-400'
+                    }`}
+                  >
+                    Kun ungdom
+                  </button>
+                )}
+                {adminRole === 'parent' && (
+                  <button
+                    type="button"
+                    onClick={() => setEditAudience('parent')}
+                    className={`flex-1 min-h-[44px] rounded-lg border text-sm font-medium transition-colors ${
+                      editAudience === 'parent'
+                        ? 'bg-coral/10 border-coral text-coral'
+                        : 'border-gray-300 text-text-muted hover:border-gray-400'
+                    }`}
+                  >
+                    Kun foreldre
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="flex gap-3 pt-2">
               <Button type="submit" disabled={pending} className="flex-1">
                 {pending ? 'Lagrer...' : 'Lagre'}
@@ -155,6 +207,11 @@ export default function MeetingDetailsCard({ meeting }: MeetingDetailsCardProps)
         <Badge variant={badgeVariant}>
           {statusLabels[meeting.status] ?? meeting.status}
         </Badge>
+        {meeting.audience && audienceBadges[meeting.audience] && (
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${audienceBadges[meeting.audience].className}`}>
+            {audienceBadges[meeting.audience].label}
+          </span>
+        )}
         {canEdit && (
           <button
             type="button"

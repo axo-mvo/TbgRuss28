@@ -2,6 +2,11 @@
 
 import Link from 'next/link'
 
+const audienceBadges: Record<string, { label: string; className: string }> = {
+  youth: { label: 'Ungdom', className: 'bg-teal-primary/10 text-teal-primary' },
+  parent: { label: 'Foreldre', className: 'bg-coral/10 text-coral' },
+}
+
 interface Meeting {
   id: string
   title: string
@@ -10,6 +15,7 @@ interface Meeting {
   time: string | null
   venue: string | null
   created_at: string
+  audience?: string
 }
 
 interface MeetingCardProps {
@@ -40,9 +46,16 @@ export default function MeetingCard({ meeting, variant }: MeetingCardProps) {
         className="block rounded-xl border-2 border-teal-primary bg-white p-5 shadow-sm
           hover:shadow-md transition-all"
       >
-        <h3 className="text-lg font-semibold text-text-primary mb-3">
-          {meeting.title}
-        </h3>
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-lg font-semibold text-text-primary">
+            {meeting.title}
+          </h3>
+          {meeting.audience && audienceBadges[meeting.audience] && (
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${audienceBadges[meeting.audience].className}`}>
+              {audienceBadges[meeting.audience].label}
+            </span>
+          )}
+        </div>
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 text-sm text-text-muted">
             <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,9 +95,16 @@ export default function MeetingCard({ meeting, variant }: MeetingCardProps) {
     >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-text-primary truncate">
-            {meeting.title}
-          </h3>
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-sm font-semibold text-text-primary truncate">
+              {meeting.title}
+            </h3>
+            {meeting.audience && audienceBadges[meeting.audience] && (
+              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium shrink-0 ${audienceBadges[meeting.audience].className}`}>
+                {audienceBadges[meeting.audience].label}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-text-muted mt-0.5">
             {formatDate(meeting.date)}
             {meeting.venue ? ` \u00b7 ${meeting.venue}` : ''}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useState, useActionState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createMeeting } from '@/lib/actions/meeting'
@@ -10,10 +10,12 @@ import Button from '@/components/ui/Button'
 
 interface NewMeetingFormProps {
   defaultTitle: string
+  adminRole: string
 }
 
-export default function NewMeetingForm({ defaultTitle }: NewMeetingFormProps) {
+export default function NewMeetingForm({ defaultTitle, adminRole }: NewMeetingFormProps) {
   const router = useRouter()
+  const [audience, setAudience] = useState('everyone')
   const [state, action, pending] = useActionState(createMeeting, null)
 
   useEffect(() => {
@@ -87,6 +89,50 @@ export default function NewMeetingForm({ defaultTitle }: NewMeetingFormProps) {
             required
             placeholder="F.eks. Samfunnshuset"
           />
+
+          <div>
+            <Label htmlFor="audience">{`M\u00e5lgruppe`}</Label>
+            <input type="hidden" name="audience" value={audience} />
+            <div className="flex gap-2 mt-1">
+              <button
+                type="button"
+                onClick={() => setAudience('everyone')}
+                className={`flex-1 min-h-[44px] rounded-lg border text-sm font-medium transition-colors ${
+                  audience === 'everyone'
+                    ? 'bg-teal-primary/10 border-teal-primary text-teal-primary'
+                    : 'border-gray-300 text-text-muted hover:border-gray-400'
+                }`}
+              >
+                Alle
+              </button>
+              {adminRole === 'youth' && (
+                <button
+                  type="button"
+                  onClick={() => setAudience('youth')}
+                  className={`flex-1 min-h-[44px] rounded-lg border text-sm font-medium transition-colors ${
+                    audience === 'youth'
+                      ? 'bg-teal-primary/10 border-teal-primary text-teal-primary'
+                      : 'border-gray-300 text-text-muted hover:border-gray-400'
+                  }`}
+                >
+                  Kun ungdom
+                </button>
+              )}
+              {adminRole === 'parent' && (
+                <button
+                  type="button"
+                  onClick={() => setAudience('parent')}
+                  className={`flex-1 min-h-[44px] rounded-lg border text-sm font-medium transition-colors ${
+                    audience === 'parent'
+                      ? 'bg-coral/10 border-coral text-coral'
+                      : 'border-gray-300 text-text-muted hover:border-gray-400'
+                  }`}
+                >
+                  Kun foreldre
+                </button>
+              )}
+            </div>
+          </div>
 
           <Button type="submit" disabled={pending}>
             {pending ? 'Oppretter...' : `Opprett m\u00f8te`}

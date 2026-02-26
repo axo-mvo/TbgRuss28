@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import MeetingDetailsCard from '@/components/admin/MeetingDetailsCard'
 import MeetingTabs from '@/components/admin/MeetingTabs'
@@ -13,6 +14,12 @@ export default async function MeetingDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
+
+  // Fetch admin's role for audience filtering
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: adminProfile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+  const adminRole = adminProfile?.role ?? 'youth'
 
   const admin = createAdminClient()
 
@@ -65,6 +72,11 @@ export default async function MeetingDetailPage({
   }
 
   const meeting = meetingResult.data
+
+  // Role-based access check: block access to meetings not targeting admin's role
+  if (meeting.audience !== 'everyone' && meeting.audience !== adminRole) {
+    notFound()
+  }
   const stations = stationsResult.data ?? []
   const allGroups = groupsDataResult.data ?? []
   const allUsersRaw = usersResult.data ?? []
@@ -166,7 +178,7 @@ export default async function MeetingDetailPage({
           {`\u2190 Tilbake til m\u00f8ter`}
         </Link>
 
-        <MeetingDetailsCard meeting={meeting} />
+        <MeetingDetailsCard meeting={meeting} adminRole={adminRole} />
 
         <MeetingTabs
           meeting={meeting}
