@@ -113,6 +113,134 @@ export async function deleteMeeting(
   return {}
 }
 
+// ---------- activateMeeting ----------
+// Transitions a meeting from upcoming -> active after prerequisite checks.
+
+export async function activateMeeting(
+  meetingId: string
+): Promise<{ error?: string }> {
+  const auth = await verifyAdmin()
+  if ('error' in auth) return { error: auth.error }
+
+  const admin = createAdminClient()
+
+  // Fetch meeting and verify status
+  const { data: meeting, error: fetchError } = await admin
+    .from('meetings')
+    .select('status')
+    .eq('id', meetingId)
+    .single()
+
+  if (fetchError || !meeting) return { error: 'Motet ble ikke funnet' }
+  if (meeting.status !== 'upcoming') return { error: 'Kun kommende moter kan startes' }
+
+  // Check prerequisites: >= 1 station, >= 1 group
+  const [stationsResult, groupsResult] = await Promise.all([
+    admin
+      .from('stations')
+      .select('*', { count: 'exact', head: true })
+      .eq('meeting_id', meetingId),
+    admin
+      .from('groups')
+      .select('*', { count: 'exact', head: true })
+      .eq('meeting_id', meetingId),
+  ])
+
+  const stationCount = stationsResult.count ?? 0
+  const groupCount = groupsResult.count ?? 0
+
+  if (stationCount < 1) return { error: 'Minst 1 stasjon kreves' }
+  if (groupCount < 1) return { error: 'Minst 1 gruppe kreves' }
+
+  // Transition to active
+  const { error } = await admin
+    .from('meetings')
+    .update({ status: 'active', updated_at: new Date().toISOString() })
+    .eq('id', meetingId)
+
+  if (error) return { error: 'Kunne ikke starte motet' }
+
+  revalidatePath('/admin/meetings')
+  revalidatePath(`/admin/meetings/${meetingId}`)
+  revalidatePath('/dashboard')
+  return {}
+}
+
+// ---------- completeMeeting ----------
+// Transitions a meeting from active -> completed, force-closing any active sessions.
+
+export async function completeMeeting(
+  meetingId: string
+): Promise<{ error?: string; forceClosedCount?: number }> {
+  const auth = await verifyAdmin()
+  if ('error' in auth) return { error: auth.error }
+
+  const admin = createAdminClient()
+
+  // Fetch meeting and verify status
+  const { data: meeting, error: fetchError } = await admin
+    .from('meetings')
+    .select('status')
+    .eq('id', meetingId)
+    .single()
+
+  if (fetchError || !meeting) return { error: 'Motet ble ikke funnet' }
+  if (meeting.status !== 'active') return { error: 'Kun aktive moter kan avsluttes' }
+
+  // Find active station_sessions for this meeting (via groups FK)
+  const { data: activeSessions } = await admin
+    .from('station_sessions')
+    .select('id, groups!inner(meeting_id)')
+    .eq('status', 'active')
+    .eq('groups.meeting_id', meetingId)
+
+  const sessionIds = (activeSessions ?? []).map((s) => s.id)
+  const forceClosedCount = sessionIds.length
+
+  // Force-close active sessions
+  if (sessionIds.length > 0) {
+    const { error: closeError } = await admin
+      .from('station_sessions')
+      .update({ status: 'completed', completed_at: new Date().toISOString() })
+      .in('id', sessionIds)
+
+    if (closeError) return { error: 'Kunne ikke avslutte aktive sesjoner' }
+  }
+
+  // Transition to completed
+  const { error } = await admin
+    .from('meetings')
+    .update({ status: 'completed', updated_at: new Date().toISOString() })
+    .eq('id', meetingId)
+
+  if (error) return { error: 'Kunne ikke avslutte motet' }
+
+  revalidatePath('/admin/meetings')
+  revalidatePath(`/admin/meetings/${meetingId}`)
+  revalidatePath('/dashboard')
+  return { forceClosedCount }
+}
+
+// ---------- getActiveSessionCount ----------
+// Returns count of active sessions for a meeting (used by lifecycle controls).
+
+export async function getActiveSessionCount(
+  meetingId: string
+): Promise<number> {
+  const auth = await verifyAdmin()
+  if ('error' in auth) return 0
+
+  const admin = createAdminClient()
+
+  const { data } = await admin
+    .from('station_sessions')
+    .select('id, groups!inner(meeting_id)')
+    .eq('status', 'active')
+    .eq('groups.meeting_id', meetingId)
+
+  return (data ?? []).length
+}
+
 // ---------- addStation ----------
 // Adds a new station to an upcoming meeting.
 // Auto-assigns the next sequential station number.

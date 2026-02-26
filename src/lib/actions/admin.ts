@@ -113,8 +113,9 @@ export async function updateParentYouthLink(
 
 // ---------- createGroup ----------
 // Creates a new group with a random available name from the predefined list.
+// If meetingId is provided, scopes the name check and insert to that meeting.
 
-export async function createGroup(): Promise<{
+export async function createGroup(meetingId?: string): Promise<{
   error?: string
   group?: { id: string; name: string }
 }> {
@@ -123,10 +124,11 @@ export async function createGroup(): Promise<{
 
   const admin = createAdminClient()
 
-  // Get existing group names to find available ones
-  const { data: existingGroups } = await admin
-    .from('groups')
-    .select('name')
+  // Get existing group names to find available ones (scoped to meeting if provided)
+  const query = admin.from('groups').select('name')
+  if (meetingId) query.eq('meeting_id', meetingId)
+
+  const { data: existingGroups } = await query
 
   const usedNames = new Set(existingGroups?.map((g) => g.name) || [])
   const availableNames = RUSS_GROUP_NAMES.filter((n) => !usedNames.has(n))
@@ -138,15 +140,18 @@ export async function createGroup(): Promise<{
   // Pick a random available name
   const randomName = availableNames[Math.floor(Math.random() * availableNames.length)]
 
+  const insertData: Record<string, unknown> = { name: randomName }
+  if (meetingId) insertData.meeting_id = meetingId
+
   const { data, error } = await admin
     .from('groups')
-    .insert({ name: randomName })
+    .insert(insertData)
     .select()
     .single()
 
   if (error) return { error: 'Kunne ikke opprette gruppe' }
 
-  revalidatePath('/admin/groups')
+  revalidatePath(meetingId ? `/admin/meetings/${meetingId}` : '/admin/groups')
   return { group: { id: data.id, name: data.name } }
 }
 
@@ -154,7 +159,8 @@ export async function createGroup(): Promise<{
 // Deletes a group. group_members cascade-deleted via FK.
 
 export async function deleteGroup(
-  groupId: string
+  groupId: string,
+  meetingId?: string
 ): Promise<{ error?: string }> {
   const auth = await verifyAdmin()
   if ('error' in auth) return { error: auth.error }
@@ -167,7 +173,7 @@ export async function deleteGroup(
 
   if (error) return { error: 'Kunne ikke slette gruppen' }
 
-  revalidatePath('/admin/groups')
+  revalidatePath(meetingId ? `/admin/meetings/${meetingId}` : '/admin/groups')
   return {}
 }
 
@@ -176,7 +182,8 @@ export async function deleteGroup(
 // Clears all groups first, then re-inserts. Aborts on any conflict.
 
 export async function saveGroupMembers(
-  assignments: { groupId: string; userIds: string[] }[]
+  assignments: { groupId: string; userIds: string[] }[],
+  meetingId?: string
 ): Promise<{ error?: string }> {
   const auth = await verifyAdmin()
   if ('error' in auth) return { error: auth.error }
@@ -225,28 +232,34 @@ export async function saveGroupMembers(
     }
   }
 
-  revalidatePath('/admin/groups')
+  revalidatePath(meetingId ? `/admin/meetings/${meetingId}` : '/admin/groups')
   return {}
 }
 
 // ---------- toggleGroupsLock ----------
-// Locks or unlocks ALL groups at once.
+// Locks or unlocks groups. If meetingId provided, only affects that meeting's groups.
 
 export async function toggleGroupsLock(
-  locked: boolean
+  locked: boolean,
+  meetingId?: string
 ): Promise<{ error?: string }> {
   const auth = await verifyAdmin()
   if ('error' in auth) return { error: auth.error }
 
   const admin = createAdminClient()
-  const { error } = await admin
-    .from('groups')
-    .update({ locked })
-    .neq('id', '00000000-0000-0000-0000-000000000000') // Match all rows (Supabase requires a filter)
+
+  const query = admin.from('groups').update({ locked })
+  if (meetingId) {
+    query.eq('meeting_id', meetingId)
+  } else {
+    query.neq('id', '00000000-0000-0000-0000-000000000000') // Match all rows (Supabase requires a filter)
+  }
+
+  const { error } = await query
 
   if (error) return { error: locked ? 'Kunne ikke låse gruppene' : 'Kunne ikke låse opp gruppene' }
 
-  revalidatePath('/admin/groups')
+  revalidatePath(meetingId ? `/admin/meetings/${meetingId}` : '/admin/groups')
   revalidatePath('/dashboard')
   return {}
 }
