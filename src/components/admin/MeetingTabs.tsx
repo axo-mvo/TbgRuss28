@@ -2,6 +2,10 @@
 
 import { useState } from 'react'
 import StationList from '@/components/admin/StationList'
+import GroupBuilder from '@/components/admin/GroupBuilder'
+import MeetingLifecycleControls from '@/components/admin/MeetingLifecycleControls'
+import MeetingResultsTab from '@/components/admin/MeetingResultsTab'
+import type { WordCloudMessage } from '@/components/admin/WordCloud'
 
 interface Meeting {
   id: string
@@ -25,6 +29,13 @@ interface Station {
   created_at: string
 }
 
+interface UserData {
+  id: string
+  full_name: string
+  role: string
+  attending?: boolean | null
+}
+
 type TabKey = 'stasjoner' | 'grupper' | 'resultat'
 
 const tabs: { key: TabKey; label: string }[] = [
@@ -36,18 +47,45 @@ const tabs: { key: TabKey; label: string }[] = [
 interface MeetingTabsProps {
   meeting: Meeting
   stations: Station[]
+  // Grupper tab data
+  initialGroups: Record<string, string[]>
+  users: UserData[]
+  parentChildLinks: { parent_id: string; youth_id: string }[]
+  groupNames: Record<string, string>
+  groupsLocked: boolean
   groupCount: number
+  stationCount: number
+  // Resultat tab data
+  messages: WordCloudMessage[]
+  wordcloudGroups: { id: string; name: string }[]
+  wordcloudStations: { id: string; number: number; title: string }[]
 }
 
 export default function MeetingTabs({
   meeting,
   stations,
+  initialGroups,
+  users,
+  parentChildLinks,
+  groupNames,
+  groupsLocked,
   groupCount,
+  stationCount,
+  messages,
+  wordcloudGroups,
+  wordcloudStations,
 }: MeetingTabsProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('stasjoner')
 
   return (
     <div>
+      {/* Lifecycle controls -- visible on all tabs */}
+      <MeetingLifecycleControls
+        meeting={meeting}
+        stationCount={stationCount}
+        groupCount={groupCount}
+      />
+
       {/* Tab bar */}
       <div className="flex border-b border-gray-200 mb-4">
         {tabs.map((tab) => (
@@ -71,15 +109,24 @@ export default function MeetingTabs({
       )}
 
       {activeTab === 'grupper' && (
-        <p className="text-text-muted text-sm p-4">
-          Grupper kommer i neste plan
-        </p>
+        <GroupBuilder
+          meetingId={meeting.id}
+          initialGroups={initialGroups}
+          users={users}
+          parentChildLinks={parentChildLinks}
+          groupNames={groupNames}
+          initialLocked={groupsLocked}
+          readOnly={meeting.status === 'completed'}
+        />
       )}
 
       {activeTab === 'resultat' && (
-        <p className="text-text-muted text-sm p-4">
-          Resultat kommer i neste plan
-        </p>
+        <MeetingResultsTab
+          meeting={meeting}
+          messages={messages}
+          groups={wordcloudGroups}
+          stations={wordcloudStations}
+        />
       )}
     </div>
   )

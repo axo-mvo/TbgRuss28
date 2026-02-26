@@ -30,6 +30,8 @@ interface GroupBuilderProps {
   parentChildLinks: { parent_id: string; youth_id: string }[]
   groupNames: Record<string, string>
   initialLocked: boolean
+  meetingId?: string
+  readOnly?: boolean
 }
 
 export default function GroupBuilder({
@@ -38,6 +40,8 @@ export default function GroupBuilder({
   parentChildLinks,
   groupNames: initialGroupNames,
   initialLocked,
+  meetingId,
+  readOnly = false,
 }: GroupBuilderProps) {
   const [groups, setGroups] = useState<Record<string, string[]>>(initialGroups)
   const [groupNames, setGroupNames] = useState<Record<string, string>>(initialGroupNames)
@@ -85,7 +89,7 @@ export default function GroupBuilder({
   async function handleCreateGroup() {
     setCreating(true)
     setError(null)
-    const result = await createGroup()
+    const result = await createGroup(meetingId)
     if (result.error) {
       setError(result.error)
     } else if (result.group) {
@@ -97,7 +101,7 @@ export default function GroupBuilder({
 
   async function handleDeleteGroup(groupId: string) {
     setError(null)
-    const result = await deleteGroup(groupId)
+    const result = await deleteGroup(groupId, meetingId)
     if (result.error) {
       setError(result.error)
     } else {
@@ -124,7 +128,7 @@ export default function GroupBuilder({
       userIds: groups[groupId] || [],
     }))
 
-    const result = await saveGroupMembers(assignments)
+    const result = await saveGroupMembers(assignments, meetingId)
     if (result.error) {
       setError(result.error)
     }
@@ -135,7 +139,7 @@ export default function GroupBuilder({
     setLocking(true)
     setError(null)
     const newLocked = !locked
-    const result = await toggleGroupsLock(newLocked)
+    const result = await toggleGroupsLock(newLocked, meetingId)
     if (result.error) {
       setError(result.error)
     } else {
@@ -213,43 +217,53 @@ export default function GroupBuilder({
       )}
 
       {/* Top action bar */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        {!locked && (
-          <>
-            <Button
-              variant="primary"
-              onClick={handleCreateGroup}
-              disabled={creating}
-              className="w-auto"
-            >
-              {creating ? 'Oppretter...' : 'Opprett gruppe'}
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={handleSave}
-              disabled={saving}
-              className="w-auto"
-            >
-              {saving ? 'Lagrer...' : 'Lagre endringer'}
-            </Button>
-          </>
-        )}
+      {!readOnly && (
+        <div className="flex flex-wrap items-center gap-3 mb-6">
+          {!locked && (
+            <>
+              <Button
+                variant="primary"
+                onClick={handleCreateGroup}
+                disabled={creating}
+                className="w-auto"
+              >
+                {creating ? 'Oppretter...' : 'Opprett gruppe'}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={handleSave}
+                disabled={saving}
+                className="w-auto"
+              >
+                {saving ? 'Lagrer...' : 'Lagre endringer'}
+              </Button>
+            </>
+          )}
 
-        <Button
-          variant={locked ? 'secondary' : 'primary'}
-          onClick={() => setShowLockDialog(true)}
-          disabled={locking}
-          className="w-auto"
-        >
-          {locked ? 'Lås opp grupper' : 'Lås grupper'}
-        </Button>
+          <Button
+            variant={locked ? 'secondary' : 'primary'}
+            onClick={() => setShowLockDialog(true)}
+            disabled={locking}
+            className="w-auto"
+          >
+            {locked ? 'Lås opp grupper' : 'Lås grupper'}
+          </Button>
 
-        {locked && (
+          {locked && (
+            <Badge variant="admin" className="bg-success/10 text-success">
+              Grupper er låst
+            </Badge>
+          )}
+        </div>
+      )}
+
+      {readOnly && (
+        <div className="mb-6">
           <Badge variant="admin" className="bg-success/10 text-success">
-            Grupper er låst
+            Grupper er låst (motet er avsluttet)
           </Badge>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Desktop layout: drag-and-drop */}
       <div className="hidden md:block">
@@ -306,7 +320,7 @@ export default function GroupBuilder({
             id="unassigned"
             userIds={groups.unassigned || []}
             users={usersMap}
-            locked={locked}
+            locked={locked || readOnly}
           />
 
           {/* Group grid */}
@@ -321,7 +335,7 @@ export default function GroupBuilder({
                   users={usersMap}
                   parentChildMap={parentChildMap}
                   onDelete={() => setShowDeleteGroupDialog(groupId)}
-                  locked={locked}
+                  locked={locked || readOnly}
                 />
               ))}
             </div>
@@ -336,7 +350,7 @@ export default function GroupBuilder({
           id="unassigned"
           userIds={groups.unassigned || []}
           users={usersMap}
-          locked={locked}
+          locked={locked || readOnly}
           isMobile
           onAssignUser={(userId) => setMobileAssignUser(userId)}
         />
@@ -353,7 +367,7 @@ export default function GroupBuilder({
                 users={usersMap}
                 parentChildMap={parentChildMap}
                 onDelete={() => setShowDeleteGroupDialog(groupId)}
-                locked={locked}
+                locked={locked || readOnly}
                 isMobile
                 onAssignUser={(userId) => setMobileAssignUser(userId)}
               />

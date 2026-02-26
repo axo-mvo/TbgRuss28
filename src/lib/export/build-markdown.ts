@@ -65,8 +65,30 @@ const PRESENTATION_PROMPT = `> **Create a PowerPoint presentation from the attac
 >
 > **Output:** A \`.pptx\` file using PptxGenJS.`
 
-export function buildExportMarkdown(messages: ExportMessage[]): string {
-  let md = '# Fellesmøte - Eksport\n\n'
+export function buildExportMarkdown(
+  messages: ExportMessage[],
+  meetingInfo?: { title: string; date: string | null; venue: string | null }
+): string {
+  let md = ''
+
+  if (meetingInfo) {
+    md += `# ${meetingInfo.title} - Eksport\n\n`
+    if (meetingInfo.date) {
+      const dateStr = new Date(meetingInfo.date).toLocaleDateString('nb-NO', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+      md += `Dato: ${dateStr}\n`
+    }
+    if (meetingInfo.venue) {
+      md += `Sted: ${meetingInfo.venue}\n`
+    }
+    md += '\n'
+  } else {
+    md += '# Fellesmøte - Eksport\n\n'
+  }
+
   md += `Eksportert: ${new Date().toLocaleString('nb-NO')}\n\n`
   md += PRESENTATION_PROMPT + '\n\n'
   md += '---\n\n'

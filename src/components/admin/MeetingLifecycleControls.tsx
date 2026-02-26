@@ -1,0 +1,146 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Button from '@/components/ui/Button'
+import Badge from '@/components/ui/Badge'
+import Dialog from '@/components/ui/Dialog'
+import {
+  activateMeeting,
+  completeMeeting,
+  getActiveSessionCount,
+} from '@/lib/actions/meeting'
+
+interface Meeting {
+  id: string
+  title: string
+  status: 'upcoming' | 'active' | 'completed'
+}
+
+interface MeetingLifecycleControlsProps {
+  meeting: Meeting
+  stationCount: number
+  groupCount: number
+}
+
+export default function MeetingLifecycleControls({
+  meeting,
+  stationCount,
+  groupCount,
+}: MeetingLifecycleControlsProps) {
+  const router = useRouter()
+  const [showStartDialog, setShowStartDialog] = useState(false)
+  const [showEndDialog, setShowEndDialog] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [activeSessionCount, setActiveSessionCount] = useState(0)
+
+  const canStart = stationCount >= 1 && groupCount >= 1
+
+  async function handleStart() {
+    setLoading(true)
+    setError(null)
+    const result = await activateMeeting(meeting.id)
+    if (result.error) {
+      setError(result.error)
+    } else {
+      router.refresh()
+    }
+    setLoading(false)
+    setShowStartDialog(false)
+  }
+
+  async function handleOpenEndDialog() {
+    setError(null)
+    const count = await getActiveSessionCount(meeting.id)
+    setActiveSessionCount(count)
+    setShowEndDialog(true)
+  }
+
+  async function handleEnd() {
+    setLoading(true)
+    setError(null)
+    const result = await completeMeeting(meeting.id)
+    if (result.error) {
+      setError(result.error)
+    } else {
+      router.refresh()
+    }
+    setLoading(false)
+    setShowEndDialog(false)
+  }
+
+  return (
+    <div className="mb-6">
+      {meeting.status === 'upcoming' && (
+        <div className="flex flex-col gap-3">
+          {canStart ? (
+            <Button
+              variant="primary"
+              onClick={() => setShowStartDialog(true)}
+              className="w-full"
+            >
+              Start mote
+            </Button>
+          ) : (
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <p className="text-sm text-text-muted">
+                Legg til minst 1 stasjon og 1 gruppe for a starte motet
+              </p>
+              <p className="text-xs text-text-muted mt-1">
+                {stationCount} stasjon{stationCount !== 1 ? 'er' : ''}, {groupCount} gruppe{groupCount !== 1 ? 'r' : ''}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {meeting.status === 'active' && (
+        <Button
+          variant="danger"
+          onClick={handleOpenEndDialog}
+          className="w-full"
+        >
+          Avslutt mote
+        </Button>
+      )}
+
+      {meeting.status === 'completed' && (
+        <Badge variant="completed">
+          Motet er avsluttet
+        </Badge>
+      )}
+
+      {error && (
+        <p className="mt-2 text-sm text-danger">{error}</p>
+      )}
+
+      {/* Start meeting confirmation dialog */}
+      <Dialog
+        open={showStartDialog}
+        onClose={() => setShowStartDialog(false)}
+        onConfirm={handleStart}
+        title="Start mote?"
+        description={`${stationCount} stasjon${stationCount !== 1 ? 'er' : ''} og ${groupCount} gruppe${groupCount !== 1 ? 'r' : ''} er klare. Stasjoner og grupper kan ikke endres etter at motet er startet.`}
+        confirmLabel="Start mote"
+        loading={loading}
+      />
+
+      {/* End meeting confirmation dialog */}
+      <Dialog
+        open={showEndDialog}
+        onClose={() => setShowEndDialog(false)}
+        onConfirm={handleEnd}
+        title="Avslutt mote?"
+        description={
+          activeSessionCount > 0
+            ? `${activeSessionCount} gruppe${activeSessionCount !== 1 ? 'r' : ''} er fortsatt aktive. Alle aktive sesjoner vil bli avsluttet. Avslutt likevel?`
+            : 'Er du sikker pa at du vil avslutte motet? Denne handlingen kan ikke angres.'
+        }
+        confirmLabel="Avslutt mote"
+        confirmVariant="danger"
+        loading={loading}
+      />
+    </div>
+  )
+}
