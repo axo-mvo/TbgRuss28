@@ -12,19 +12,13 @@ Read config.json for planning behavior settings.
 <process>
 
 <step name="init_context" priority="first">
-Load execution context (uses `init execute-phase` for full context, including file contents):
+Load execution context (paths only to minimize orchestrator context):
 
 ```bash
-INIT=$(node ./.claude/get-shit-done/bin/gsd-tools.cjs init execute-phase "${PHASE}" --include state,config)
+INIT=$(node ./.claude/get-shit-done/bin/gsd-tools.cjs init execute-phase "${PHASE}")
 ```
 
-Extract from init JSON: `executor_model`, `commit_docs`, `phase_dir`, `phase_number`, `plans`, `summaries`, `incomplete_plans`.
-
-**File contents (from --include):** `state_content`, `config_content`. Access with:
-```bash
-STATE_CONTENT=$(echo "$INIT" | jq -r '.state_content // empty')
-CONFIG_CONTENT=$(echo "$INIT" | jq -r '.config_content // empty')
-```
+Extract from init JSON: `executor_model`, `commit_docs`, `phase_dir`, `phase_number`, `plans`, `summaries`, `incomplete_plans`, `state_path`, `config_path`.
 
 If `.planning/` missing: error.
 </step>
@@ -40,7 +34,7 @@ Find first PLAN without matching SUMMARY. Decimal phases supported (`01.1-hotfix
 
 ```bash
 PHASE=$(echo "$PLAN_PATH" | grep -oE '[0-9]+(\.[0-9]+)?-[0-9]+')
-# config_content already loaded via --include config in init_context
+# config settings can be fetched via gsd-tools config-get if needed
 ```
 
 <if mode="yolo">
@@ -124,6 +118,8 @@ Pattern B only (verify-only checkpoints). Skip for A/C.
 cat .planning/phases/XX-name/{phase}-{plan}-PLAN.md
 ```
 This IS the execution instructions. Follow exactly. If plan references CONTEXT.md: honor user's vision throughout.
+
+**If plan contains `<interfaces>` block:** These are pre-extracted type definitions and contracts. Use them directly — do NOT re-read the source files to discover types. The planner already extracted what you need.
 </step>
 
 <step name="previous_phase_check">
@@ -355,11 +351,12 @@ From SUMMARY: Extract decisions and add to STATE.md:
 
 ```bash
 # Add each decision from SUMMARY key-decisions
+# Prefer file inputs for shell-safe text (preserves `$`, `*`, etc. exactly)
 node ./.claude/get-shit-done/bin/gsd-tools.cjs state add-decision \
-  --phase "${PHASE}" --summary "${DECISION_TEXT}" --rationale "${RATIONALE}"
+  --phase "${PHASE}" --summary-file "${DECISION_TEXT_FILE}" --rationale-file "${RATIONALE_FILE}"
 
 # Add blockers if any found
-node ./.claude/get-shit-done/bin/gsd-tools.cjs state add-blocker "Blocker description"
+node ./.claude/get-shit-done/bin/gsd-tools.cjs state add-blocker --text-file "${BLOCKER_TEXT_FILE}"
 ```
 </step>
 
