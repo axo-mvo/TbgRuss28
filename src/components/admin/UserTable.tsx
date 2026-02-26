@@ -6,7 +6,7 @@ import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Dialog from '@/components/ui/Dialog'
 import EmptyState from '@/components/ui/EmptyState'
-import { updateUserRole, deleteUser, sendTempAccessCode } from '@/lib/actions/admin'
+import { updateUserRole, deleteUser, sendTempAccessCode, toggleAdminAccess } from '@/lib/actions/admin'
 import ParentLinkSheet from '@/components/admin/ParentLinkSheet'
 
 // Types matching the Supabase relational query result
@@ -26,14 +26,15 @@ type UserWithLinks = {
   email: string
   phone: string | null
   role: 'youth' | 'parent' | 'admin'
+  is_admin: boolean
   attending: boolean | null
   created_at: string
   parent_youth_links: ParentYouthLink[]
 }
 
-type RoleOption = 'youth' | 'parent' | 'admin'
+type RoleOption = 'youth' | 'parent'
 
-const roleLabels: Record<RoleOption, string> = {
+const roleLabels: Record<string, string> = {
   youth: 'Ungdom',
   parent: 'Forelder',
   admin: 'Admin',
@@ -44,9 +45,9 @@ interface UserTableProps {
   allYouth: { id: string; full_name: string }[]
 }
 
-// Admin users are also parents (decision [quick-9]) — treat them identically for youth linking
+// Parent users can link to youth
 function isParentLike(role: string): boolean {
-  return role === 'parent' || role === 'admin'
+  return role === 'parent'
 }
 
 // Normalize Norwegian phone numbers: prepend +47 if 8 digits without prefix
@@ -62,7 +63,7 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
   const [editRoleUser, setEditRoleUser] = useState<{
     id: string
     name: string
-    currentRole: RoleOption
+    currentRole: string
   } | null>(null)
   const [selectedRole, setSelectedRole] = useState<RoleOption>('youth')
   const [deleteUserTarget, setDeleteUserTarget] = useState<{
@@ -95,7 +96,7 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
   // Manage role dialog open/close
   useEffect(() => {
     if (editRoleUser) {
-      setSelectedRole(editRoleUser.currentRole)
+      setSelectedRole((editRoleUser.currentRole === 'parent' ? 'parent' : 'youth') as RoleOption)
       setError(null)
       roleDialogRef.current?.showModal()
     } else {
@@ -184,6 +185,18 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
       setError(result.error)
     } else {
       setDeleteUserTarget(null)
+    }
+  }
+
+  // Handle admin toggle
+  async function handleToggleAdmin(e: React.MouseEvent, userId: string, currentIsAdmin: boolean) {
+    e.stopPropagation()
+    setLoading(true)
+    setError(null)
+    const result = await toggleAdminAccess(userId, !currentIsAdmin)
+    setLoading(false)
+    if (result.error) {
+      setError(result.error)
     }
   }
 
@@ -282,12 +295,15 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
                   }`}
                   onClick={isParent ? () => openParentLink(user) : undefined}
                 >
-                  {/* Top row: name + role badge */}
+                  {/* Top row: name + role badge + admin badge */}
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <span className="font-medium text-text-primary">
                       {user.full_name}
                     </span>
-                    <Badge variant={user.role}>{roleLabels[user.role]}</Badge>
+                    <div className="flex gap-1">
+                      <Badge variant={user.role}>{roleLabels[user.role]}</Badge>
+                      {user.is_admin && <Badge variant="admin">Admin</Badge>}
+                    </div>
                   </div>
 
                   {/* Email */}
@@ -333,13 +349,24 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
                   )}
 
                   {/* Action buttons */}
-                  <div className="flex gap-2 mt-2">
+                  <div className="flex flex-wrap gap-2 mt-2">
                     <button
                       onClick={(e) => openRoleEdit(e, user)}
                       className="flex-1 min-h-[36px] px-3 py-1.5 rounded-lg text-sm font-medium
                         text-teal-primary border border-teal-primary hover:bg-teal-primary/5 transition-colors"
                     >
                       Endre rolle
+                    </button>
+                    <button
+                      onClick={(e) => handleToggleAdmin(e, user.id, user.is_admin)}
+                      disabled={loading}
+                      className={`flex-1 min-h-[36px] px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                        user.is_admin
+                          ? 'text-danger border-danger hover:bg-danger/5'
+                          : 'text-teal-primary border-teal-primary hover:bg-teal-primary/5'
+                      }`}
+                    >
+                      {user.is_admin ? 'Fjern admin' : 'Gi admin'}
                     </button>
                     {user.phone && (
                       <button
@@ -426,21 +453,35 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
                         <AttendanceBadge attending={user.attending} />
                       </td>
                       <td className="py-4 pr-4 align-top">
-                        <Badge variant={user.role}>
-                          {roleLabels[user.role]}
-                        </Badge>
+                        <div className="flex gap-1">
+                          <Badge variant={user.role}>
+                            {roleLabels[user.role]}
+                          </Badge>
+                          {user.is_admin && <Badge variant="admin">Admin</Badge>}
+                        </div>
                       </td>
                       <td className="py-3 pr-4 text-sm text-text-muted">
                         {formatDate(user.created_at)}
                       </td>
                       <td className="py-4 text-right align-top">
-                        <div className="flex gap-2 justify-end">
+                        <div className="flex gap-2 justify-end flex-wrap">
                           <button
                             onClick={(e) => openRoleEdit(e, user)}
                             className="min-h-[36px] px-3 py-1.5 rounded-lg text-sm font-medium
                               text-teal-primary border border-teal-primary hover:bg-teal-primary/5 transition-colors"
                           >
                             Endre rolle
+                          </button>
+                          <button
+                            onClick={(e) => handleToggleAdmin(e, user.id, user.is_admin)}
+                            disabled={loading}
+                            className={`min-h-[36px] px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                              user.is_admin
+                                ? 'text-danger border-danger hover:bg-danger/5'
+                                : 'text-teal-primary border-teal-primary hover:bg-teal-primary/5'
+                            }`}
+                          >
+                            {user.is_admin ? 'Fjern admin' : 'Gi admin'}
                           </button>
                           {user.phone && (
                             <button
@@ -488,7 +529,7 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
 
           {/* Role selection */}
           <div className="flex flex-col gap-2 mb-6">
-            {(['youth', 'parent', 'admin'] as RoleOption[]).map((role) => (
+            {(['youth', 'parent'] as RoleOption[]).map((role) => (
               <label
                 key={role}
                 className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${

@@ -11,7 +11,7 @@ export default async function UsersPage() {
   const { data: users } = await supabase
     .from('profiles')
     .select(`
-      id, full_name, email, phone, role, created_at,
+      id, full_name, email, phone, role, is_admin, created_at,
       parent_youth_links!parent_youth_links_parent_id_fkey(
         id,
         youth:profiles!parent_youth_links_youth_id_fkey(id, full_name)
@@ -36,7 +36,7 @@ export default async function UsersPage() {
     .maybeSingle()
 
   // Build meeting-scoped attendance map
-  let attendanceMap = new Map<string, boolean>()
+  const attendanceMap = new Map<string, boolean>()
   if (currentMeeting) {
     const { data: attendanceRows } = await admin
       .from('meeting_attendance')

@@ -250,7 +250,7 @@ export async function login(formData: FormData): Promise<{ error?: string }> {
       return { error: 'Feil e-post eller passord' }
     }
 
-    // Query profile role for routing
+    // Query profile for routing
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -258,11 +258,11 @@ export async function login(formData: FormData): Promise<{ error?: string }> {
     if (user) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, is_admin')
         .eq('id', user.id)
         .single()
 
-      redirectPath = profile?.role === 'admin' ? '/admin' : '/dashboard'
+      redirectPath = profile?.is_admin ? '/admin' : '/dashboard'
     } else {
       redirectPath = '/dashboard'
     }

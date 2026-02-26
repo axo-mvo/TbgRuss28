@@ -14,11 +14,11 @@ async function verifyAdmin(): Promise<{ userId: string } | { error: string }> {
 
   const { data: callerProfile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('is_admin')
     .eq('id', user.id)
     .single()
 
-  if (callerProfile?.role !== 'admin') return { error: 'Ikke autorisert' }
+  if (!callerProfile?.is_admin) return { error: 'Ikke autorisert' }
 
   return { userId: user.id }
 }

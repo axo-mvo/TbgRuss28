@@ -40,13 +40,13 @@ export default async function DashboardPage() {
     allLinksResult,
     allMembersResult,
   ] = await Promise.all([
-    supabase.from('profiles').select('full_name, role, parent_invite_code').eq('id', user.id).single(),
+    supabase.from('profiles').select('full_name, role, parent_invite_code, is_admin').eq('id', user.id).single(),
     supabase.from('meetings').select('id, title, date, time, venue').eq('status', 'upcoming').maybeSingle(),
     supabase.from('meetings').select('id, title').eq('status', 'active').maybeSingle(),
     supabase.from('meetings').select('id, title, date, venue').eq('status', 'completed').order('date', { ascending: false }),
     adminClient.from('profiles').select('id, full_name, phone, email').eq('role', 'youth').order('full_name'),
     adminClient.from('parent_youth_links').select('youth_id, parent:profiles!parent_youth_links_parent_id_fkey(id, full_name, phone, email)'),
-    adminClient.from('profiles').select('id, full_name, role, phone, email').in('role', ['youth', 'parent']).order('full_name'),
+    adminClient.from('profiles').select('id, full_name, role, phone, email').in('role', ['youth', 'parent', 'admin']).order('full_name'),
   ])
 
   const profile = profileResult.data
@@ -103,7 +103,7 @@ export default async function DashboardPage() {
     const { count } = await adminClient
       .from('profiles')
       .select('*', { count: 'exact', head: true })
-      .in('role', ['youth', 'parent'])
+      .in('role', ['youth', 'parent', 'admin'])
     totalMembers = count ?? 0
   }
 
@@ -136,6 +136,7 @@ export default async function DashboardPage() {
 
   const fullName = profile?.full_name || 'Bruker'
   const role = profile?.role || 'youth'
+  const isAdmin = profile?.is_admin === true
   const badgeVariant = (role === 'youth' || role === 'parent' || role === 'admin')
     ? role as 'youth' | 'parent' | 'admin'
     : 'youth'
@@ -149,14 +150,15 @@ export default async function DashboardPage() {
             Velkommen, {fullName}!
           </h1>
           <Badge variant={badgeVariant}>{roleLabels[role] || role}</Badge>
+          {isAdmin && <Badge variant="admin">Admin</Badge>}
         </div>
 
         <p className="text-text-muted mb-4">
-          Du er logget inn som {roleLabels[role]?.toLowerCase() || role}.
+          Du er logget inn som {roleLabels[role]?.toLowerCase() || role}{isAdmin ? ' (admin)' : ''}.
         </p>
 
         {/* Admin panel link */}
-        {role === 'admin' && (
+        {isAdmin && (
           <Link
             href="/admin"
             className="block mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm

@@ -16,11 +16,11 @@ export async function GET(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('is_admin')
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'admin') {
+  if (!profile?.is_admin) {
     return new Response('Ikke autorisert', { status: 403 })
   }
 

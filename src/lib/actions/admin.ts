@@ -15,11 +15,11 @@ async function verifyAdmin(): Promise<{ userId: string } | { error: string }> {
 
   const { data: callerProfile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('is_admin')
     .eq('id', user.id)
     .single()
 
-  if (callerProfile?.role !== 'admin') return { error: 'Ikke autorisert' }
+  if (!callerProfile?.is_admin) return { error: 'Ikke autorisert' }
 
   return { userId: user.id }
 }
@@ -29,7 +29,7 @@ async function verifyAdmin(): Promise<{ userId: string } | { error: string }> {
 
 export async function updateUserRole(
   userId: string,
-  newRole: 'youth' | 'parent' | 'admin'
+  newRole: 'youth' | 'parent'
 ): Promise<{ error?: string }> {
   const auth = await verifyAdmin()
   if ('error' in auth) return { error: auth.error }
@@ -316,4 +316,30 @@ export async function sendTempAccessCode(
   }
 
   return { code, phone: profile.phone }
+}
+
+// ---------- toggleAdminAccess ----------
+// Grants or revokes admin access for a user. Prevents self-modification.
+
+export async function toggleAdminAccess(
+  userId: string,
+  isAdmin: boolean
+): Promise<{ error?: string }> {
+  const auth = await verifyAdmin()
+  if ('error' in auth) return { error: auth.error }
+
+  if (userId === auth.userId) {
+    return { error: 'Du kan ikke endre din egen admintilgang' }
+  }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('profiles')
+    .update({ is_admin: isAdmin })
+    .eq('id', userId)
+
+  if (error) return { error: 'Kunne ikke oppdatere admintilgang' }
+
+  revalidatePath('/admin/users')
+  return {}
 }
