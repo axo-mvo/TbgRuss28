@@ -8,6 +8,7 @@ import Dialog from '@/components/ui/Dialog'
 import {
   activateMeeting,
   completeMeeting,
+  deleteMeeting,
   getActiveSessionCount,
 } from '@/lib/actions/meeting'
 
@@ -31,6 +32,7 @@ export default function MeetingLifecycleControls({
   const router = useRouter()
   const [showStartDialog, setShowStartDialog] = useState(false)
   const [showEndDialog, setShowEndDialog] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeSessionCount, setActiveSessionCount] = useState(0)
@@ -70,6 +72,19 @@ export default function MeetingLifecycleControls({
     setShowEndDialog(false)
   }
 
+  async function handleDelete() {
+    setLoading(true)
+    setError(null)
+    const result = await deleteMeeting(meeting.id)
+    if (result.error) {
+      setError(result.error)
+    } else {
+      router.push('/admin/meetings')
+    }
+    setLoading(false)
+    setShowDeleteDialog(false)
+  }
+
   return (
     <div className="mb-6">
       {meeting.status === 'upcoming' && (
@@ -92,6 +107,13 @@ export default function MeetingLifecycleControls({
               </p>
             </div>
           )}
+          <Button
+            variant="danger"
+            onClick={() => setShowDeleteDialog(true)}
+            className="w-full"
+          >
+            Slett møte
+          </Button>
         </div>
       )}
 
@@ -138,6 +160,18 @@ export default function MeetingLifecycleControls({
             : 'Er du sikker på at du vil avslutte møtet? Denne handlingen kan ikke angres.'
         }
         confirmLabel="Avslutt møte"
+        confirmVariant="danger"
+        loading={loading}
+      />
+
+      {/* Delete meeting confirmation dialog */}
+      <Dialog
+        open={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={handleDelete}
+        title="Slett møte?"
+        description={`Er du sikker på at du vil slette «${meeting.title}»? Alle stasjoner, grupper og påmeldinger knyttet til møtet vil bli slettet. Denne handlingen kan ikke angres.`}
+        confirmLabel="Slett møte"
         confirmVariant="danger"
         loading={loading}
       />

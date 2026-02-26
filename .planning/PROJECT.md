@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A meeting-series webapp for the Buss 2028 project. Admin creates meetings with date, time, place, and custom discussion stations. Participants (youth and parents) rotate through stations in groups with real-time chat and countdown timers. Between meetings, the app serves as a contact directory for all members. Previous meetings and their discussions are browsable in read-only mode.
+A meeting-series webapp for the Buss 2028 project. Admin creates meetings with date, time, place, and custom discussion stations. Participants (youth and parents) rotate through stations in groups with real-time chat and countdown timers. Between meetings, the app serves as a searchable contact directory for all members. Previous meetings and their discussions are browsable in read-only mode. Admin manages meeting lifecycle, per-meeting groups, attendance tracking, and exports.
 
 ## Core Value
 
@@ -18,22 +18,23 @@ Groups can have real-time discussions at stations with a visible timer and see e
 - ✓ Station lifecycle: end station, group redirect, read-only completed — v1.0
 - ✓ Markdown export of all conversations — v1.0
 - ✓ Mobile-first Norwegian UI with dark teal / coral / warm white palette — v1.0
+- ✓ Meeting entity with date, time, place — admin creates meetings — v1.1
+- ✓ Admin-configurable stations per meeting (title + questions + optional tip) — v1.1
+- ✓ One upcoming meeting at a time (later relaxed: multiple upcoming with audience targeting) — v1.1
+- ✓ Attendance list per meeting (who's coming / not coming) — v1.1
+- ✓ Groups created fresh per meeting — v1.1
+- ✓ All meeting-day features (chat, timer, station flow) scoped to a meeting — v1.1
+- ✓ Previous meetings browsable with read-only discussion history — v1.1
+- ✓ Searchable contact directory as main dashboard view — v1.1
+- ✓ Two directory views: youth-centered (expand to see parents) and full everyone list — v1.1
+- ✓ Contact info: name, phone, email with tap-to-call/email — v1.1
+- ✓ Word cloud and export moved inside each meeting — v1.1
+- ✓ Group admin and export moved under each meeting in admin section — v1.1
+- ✓ No upcoming meeting state: directory + previous meetings — v1.1
 
 ### Active
 
-- [ ] Meeting entity with date, time, place — admin creates meetings
-- [ ] Admin-configurable stations per meeting (title + questions + optional tip)
-- [ ] One upcoming meeting at a time, unlimited previous meetings
-- [ ] Attendance list per meeting (who's coming / not coming)
-- [ ] Groups created fresh per meeting
-- [ ] All meeting-day features (chat, timer, station flow) scoped to a meeting
-- [ ] Previous meetings browsable with read-only discussion history
-- [ ] Searchable contact directory as main dashboard view
-- [ ] Two directory views: youth-centered (expand to see parents) and full everyone list
-- [ ] Contact info: name, phone, email
-- [ ] Word cloud moved inside each meeting
-- [ ] Group admin and export moved under each meeting in admin section
-- [ ] No upcoming meeting state: directory + previous meetings
+(None — all current requirements shipped. Define new requirements via `/gsd:new-milestone`.)
 
 ### Out of Scope
 
@@ -45,8 +46,8 @@ Groups can have real-time discussions at stations with a visible timer and see e
 - OAuth/social login — email/password via Supabase Auth is sufficient
 - PDF export — Markdown ideal for downstream processing with Claude
 - Recurring meeting templates — admin creates each meeting manually
-- Multiple concurrent upcoming meetings — one next meeting at a time
 - Station reuse from templates — admin writes stations fresh (simple title + questions)
+- User-to-user messaging — directory exposes phone/email; Telegram for group chat
 
 ## Context
 
@@ -54,20 +55,22 @@ Groups can have real-time discussions at stations with a visible timer and see e
 
 **Scale:** ~25 youth + ~30-50 parents + 1-3 admins. Small-scale, multi-meeting use. Meetings happen in-person — the app supplements face-to-face discussion and serves as contact directory between meetings.
 
-**Existing code:** Full v1.0 app built with Next.js 15, Supabase, Tailwind CSS. All 5 phases + 18 quick tasks completed. Currently single-meeting model with hardcoded stations.
+**Current state:** Full v1.1 app shipped. 10,944 LOC TypeScript across 50+ files. 9 phases + 9 quick tasks completed. Meeting-series platform with admin-configurable meetings, contact directory, attendance tracking, and meeting history.
 
-**PRD:** Original PRD at `Buss2028_Fellesmote_App_PRD.md` — covers v1.0 schema. v1.1 requires schema evolution (meeting entity, per-meeting stations/groups/sessions).
+**Tech stack:** Next.js 15 (App Router), React 19, Supabase (Auth + Database + Realtime), Tailwind CSS v4, TypeScript. Deployed on Vercel.
 
-**Current stations:** 6 hardcoded stations seeded in DB. v1.1 makes stations admin-configurable per meeting.
+**Database:** Meeting-scoped schema with meetings, stations, groups, station_sessions, messages tables. FK chains ensure all data is scoped to a meeting. Supabase Broadcast for real-time chat. Postgres RPC functions for station lifecycle.
+
+**Quick tasks shipped (v1.1):** Nordic character fixes, editable meeting details, desktop layout improvements, youth expansion card redesign, attendance bug fix, is_admin flag, profile page with avatar, audience targeting for meetings.
 
 ## Constraints
 
-- **Tech stack**: Next.js 15 (App Router), Supabase (Auth + Database + Realtime), Tailwind CSS, TypeScript
+- **Tech stack**: Next.js 15 (App Router), Supabase (Auth + Database + Realtime), Tailwind CSS v4, TypeScript
 - **Deployment**: Vercel (auto-deploy from git), Supabase free tier
 - **Language**: All UI text in Norwegian (bokmal)
-- **Database**: Evolving from v1.0 schema — must migrate existing data (stations, groups, sessions, messages) into meeting-scoped structure
-- **Design**: Existing color palette and responsive design preserved
-- **Backwards compatibility**: Existing v1.0 meeting data should be preserved as the first "previous meeting"
+- **Design**: Mobile-first, dark teal / coral / warm white palette
+- **Database**: Meeting-scoped schema — all new features must respect FK chains
+- **Realtime**: Supabase free tier limit of 200 concurrent connections
 
 ## Key Decisions
 
@@ -79,19 +82,18 @@ Groups can have real-time discussions at stations with a visible timer and see e
 | Markdown export (not PDF) | Downstream processing with Claude for meeting summaries | ✓ Good |
 | No message edit/delete | Preserves complete discussion history for export | ✓ Good |
 | Mobile-first design | Most participants will use phones during the meeting | ✓ Good |
-| Hardcoded 6 stations | Fixed content, seed data sufficient, no CMS needed | ⚠️ Revisit — v1.1 makes stations admin-configurable per meeting |
 | Fresh build over existing code | Clean start aligned with comprehensive PRD | ✓ Good |
 | Next.js 15 over 14 | v14 EOL Oct 2025, pinned to v15.5 | ✓ Good |
-
-## Current Milestone: v1.1 Multi-Meeting Platform
-
-**Goal:** Evolve from a single-meeting app to a meeting-series platform with admin-configurable meetings, a contact directory, and browsable meeting history.
-
-**Target features:**
-- Meeting entity with date, time, place, and admin-configurable stations
-- Per-meeting containers for attendance, groups, discussions, word cloud, export
-- Searchable contact directory as the permanent dashboard
-- Previous meetings browsable in read-only mode
+| Admin-configurable stations per meeting | Replaces hardcoded 6 stations from v1.0 | ✓ Good |
+| Meeting-scoped schema migration | Nullable-then-backfill-then-NOT-NULL for safe FK migration | ✓ Good |
+| UUID preservation during migration | All existing FK references remain valid | ✓ Good |
+| Groups per-meeting (new UUIDs each time) | Eliminates Realtime compound filter limitation | ✓ Good |
+| Zero new npm dependencies for v1.1 | Existing stack covers all v1.1 features | ✓ Good |
+| @dnd-kit/react for station reordering | Consistent DnD UX matching group builder | ✓ Good |
+| Inline MessageList for meeting history | Avoids h-dvh layout conflict with full ChatRoom | ✓ Good |
+| URL-driven station/group picker state | Browser navigation support for meeting history | ✓ Good |
+| is_admin boolean flag | Decouples admin access from role column | ✓ Good |
+| Audience targeting on meetings | Allows youth-only and parent-only meetings | ✓ Good |
 
 ---
-*Last updated: 2026-02-25 after v1.1 milestone start*
+*Last updated: 2026-02-26 after v1.1 milestone*
