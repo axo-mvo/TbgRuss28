@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 interface PreviousMeetingsListProps {
   meetings: Array<{ id: string; title: string; date: string; venue: string | null }>
 }
@@ -24,9 +26,10 @@ export default function PreviousMeetingsList({ meetings }: PreviousMeetingsListP
       </h2>
       <div className="space-y-2">
         {meetings.map((meeting) => (
-          <div
+          <Link
+            href={`/dashboard/meeting/${meeting.id}`}
             key={meeting.id}
-            className="p-3 rounded-lg border border-gray-200 bg-white"
+            className="block p-3 rounded-lg border border-gray-200 bg-white hover:border-teal-primary hover:shadow-sm transition-all"
           >
             <p className="font-medium text-text-primary text-sm">
               {meeting.title}
@@ -35,7 +38,8 @@ export default function PreviousMeetingsList({ meetings }: PreviousMeetingsListP
               {formatDate(meeting.date)}
               {meeting.venue ? ` \u2014 ${meeting.venue}` : ''}
             </p>
-          </div>
+            <span className="text-xs text-teal-primary mt-1 block">Se diskusjoner &rarr;</span>
+          </Link>
         ))}
       </div>
     </section>

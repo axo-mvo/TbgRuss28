@@ -26,6 +26,7 @@ interface ChatRoomProps {
   readOnly?: boolean
   isStarted?: boolean
   stationId?: string
+  hideReopen?: boolean
 }
 
 export default function ChatRoom({
@@ -42,6 +43,7 @@ export default function ChatRoom({
   readOnly = false,
   isStarted = true,
   stationId,
+  hideReopen = false,
 }: ChatRoomProps) {
   const router = useRouter()
   const [started, setStarted] = useState(isStarted)
@@ -263,13 +265,15 @@ export default function ChatRoom({
       {localReadOnly ? (
         <div className="px-4 py-3 bg-text-muted/10 border-t border-text-muted/10 flex items-center justify-between">
           <span className="text-sm text-text-muted">Diskusjonen er avsluttet</span>
-          <button
-            type="button"
-            onClick={() => setShowReopenDialog(true)}
-            className="text-xs px-3 py-1.5 rounded-lg font-medium bg-teal-primary text-white hover:bg-teal-secondary transition-colors"
-          >
-            Gjenåpne
-          </button>
+          {!hideReopen && (
+            <button
+              type="button"
+              onClick={() => setShowReopenDialog(true)}
+              className="text-xs px-3 py-1.5 rounded-lg font-medium bg-teal-primary text-white hover:bg-teal-secondary transition-colors"
+            >
+              Gjenåpne
+            </button>
+          )}
         </div>
       ) : (
         <ChatInput onSend={handleSend} disabled={!connected} />
