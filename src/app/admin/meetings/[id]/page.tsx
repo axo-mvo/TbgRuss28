@@ -5,6 +5,8 @@ import MeetingDetailsCard from '@/components/admin/MeetingDetailsCard'
 import MeetingTabs from '@/components/admin/MeetingTabs'
 import type { WordCloudMessage } from '@/components/admin/WordCloud'
 
+export const dynamic = 'force-dynamic'
+
 export default async function MeetingDetailPage({
   params,
 }: {
