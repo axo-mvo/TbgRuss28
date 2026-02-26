@@ -32,6 +32,27 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
+  // Fetch the upcoming or active meeting for attendance toggle
+  const { data: currentMeeting } = await supabase
+    .from('meetings')
+    .select('id, title, date, time, venue, status')
+    .in('status', ['upcoming', 'active'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  // Fetch per-meeting attendance for current user (if a meeting exists)
+  let meetingAttending: boolean | null = null
+  if (currentMeeting) {
+    const { data: attendanceRow } = await supabase
+      .from('meeting_attendance')
+      .select('attending')
+      .eq('meeting_id', currentMeeting.id)
+      .eq('user_id', user.id)
+      .maybeSingle()
+    meetingAttending = attendanceRow?.attending ?? null
+  }
+
   // Query group membership with group details
   const { data: membership } = await supabase
     .from('group_members')
@@ -133,7 +154,16 @@ export default async function DashboardPage() {
           Du er logget inn som {roleLabels[role]?.toLowerCase() || role}.
         </p>
 
-        <AttendingToggle initialAttending={profile?.attending ?? null} />
+        {currentMeeting && (
+          <AttendingToggle
+            meetingId={currentMeeting.id}
+            meetingTitle={currentMeeting.title}
+            meetingDate={currentMeeting.date}
+            meetingTime={currentMeeting.time ?? '18:00'}
+            meetingVenue={currentMeeting.venue ?? 'Ikke angitt'}
+            initialAttending={meetingAttending}
+          />
+        )}
 
         {role === 'admin' && (
           <Link

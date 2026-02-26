@@ -1,13 +1,36 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { updateAttending } from '@/lib/actions/auth'
+import { updateMeetingAttendance } from '@/lib/actions/attendance'
 
 interface AttendingToggleProps {
+  meetingId: string
+  meetingTitle: string
+  meetingDate: string    // ISO date string
+  meetingTime: string    // HH:MM string
+  meetingVenue: string
   initialAttending: boolean | null
 }
 
-export default function AttendingToggle({ initialAttending }: AttendingToggleProps) {
+function formatDate(isoDate: string): string {
+  const date = new Date(isoDate + 'T00:00:00')
+  const formatted = date.toLocaleDateString('nb-NO', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+  // Capitalize first letter
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1)
+}
+
+export default function AttendingToggle({
+  meetingId,
+  meetingTitle,
+  meetingDate,
+  meetingTime,
+  meetingVenue,
+  initialAttending,
+}: AttendingToggleProps) {
   const [attending, setAttending] = useState<boolean | null>(initialAttending)
   const [isPending, startTransition] = useTransition()
 
@@ -15,7 +38,7 @@ export default function AttendingToggle({ initialAttending }: AttendingTogglePro
     // Optimistic update
     setAttending(value)
     startTransition(async () => {
-      const result = await updateAttending(value)
+      const result = await updateMeetingAttendance(meetingId, value)
       if (result.error) {
         // Revert on error
         setAttending(initialAttending)
@@ -26,13 +49,16 @@ export default function AttendingToggle({ initialAttending }: AttendingTogglePro
   return (
     <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
       <h3 className="text-base font-semibold text-text-primary mb-0.5">
-        Fellesm&#248;te onsdag kl. 18:00 - Greveskogen VGS
+        {meetingTitle}
       </h3>
+      <p className="text-sm text-text-muted mb-1">
+        {formatDate(meetingDate)} kl. {meetingTime} &mdash; {meetingVenue}
+      </p>
       <p className="text-sm text-text-muted mb-3">Kommer du?</p>
 
       {attending === null && (
         <p className="text-xs text-text-muted mb-3 italic">
-          Du har ikke svart enn&#229;
+          Du har ikke svart enn&aring;
         </p>
       )}
 
