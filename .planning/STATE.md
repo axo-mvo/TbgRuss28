@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 Phase: 9 of 9 (Meeting History)
 Plan: 1 of 1 in current phase (COMPLETE)
 Status: Phase 09 complete, participant-facing meeting history with station/group picker and inline read-only messages
-Last activity: 2026-02-26 - Completed quick task 26: Profile page, admin user editing, Avatar component
+Last activity: 2026-02-26 - Completed quick task 27: Audience targeting for meetings
 
 Progress: [####################] 100% (phase 09: 1/1 plans complete, ALL PHASES COMPLETE)
 
@@ -102,6 +102,7 @@ Key decisions affecting v1.1:
 - [Phase 09]: [09-01]: URL-driven station/group picker state via searchParams for browser navigation support
 - [Quick-25]: is_admin boolean flag decouples admin access from role column; existing admins migrated to role=youth + is_admin=true
 - [Quick-26]: Reusable Avatar component with role-colored initials fallback; profile self-service via /dashboard/profil; admin edit-info dialog
+- [Quick-27]: audience column on meetings (everyone/youth/parent); dropped single-upcoming index; admin audience toggle filtered by role; dashboard batch attendance fetch; non-targeted meetings greyed-out
 
 ### Pending Todos
 
@@ -119,15 +120,16 @@ None yet.
 | 24 | Fix meeting attendance showing previous meeting data | 2026-02-26 | 998543a | [24-fix-meeting-attendance-showing-previous-](./quick/24-fix-meeting-attendance-showing-previous-/) |
 | 25 | Allow youth members to also be admins (is_admin flag) | 2026-02-26 | f0905bc | [25-allow-youth-members-to-also-be-admins-wh](./quick/25-allow-youth-members-to-also-be-admins-wh/) |
 | 26 | Profile page, admin user editing, Avatar component | 2026-02-26 | ae1a537 | [26-profile-page-admin-user-editing-profile-](./quick/26-profile-page-admin-user-editing-profile-/) |
+| 27 | Audience targeting for meetings (everyone/youth/parent) | 2026-02-26 | 8001d4d | [27-add-audience-targeting-to-meetings-with-](./quick/27-add-audience-targeting-to-meetings-with-/) |
 
 ### Blockers/Concerns
 
 - Supabase free tier Realtime limit (200 concurrent) may be tight for ~80 users with 2-3 subscriptions each
-- "One upcoming meeting" enforcement: resolved in 07-01 -- button hidden when upcoming exists, action returns error as fallback
+- "One upcoming meeting" enforcement: resolved in 07-01 -- button hidden when upcoming exists, action returns error as fallback. SUPERSEDED in quick-27: single-upcoming constraint dropped, multiple upcoming meetings now allowed.
 - Station ordering UI decision needed in Phase 7 (drag-and-drop vs arrow buttons) -- RESOLVED in 07-02: drag-and-drop using @dnd-kit/react
 
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed quick-26 (profile page, admin user editing, Avatar component)
+Stopped at: Completed quick-27 (audience targeting for meetings)
 Resume file: None
