@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 Phase: 9 of 9 (Meeting History)
 Plan: 1 of 1 in current phase (COMPLETE)
 Status: Phase 09 complete, participant-facing meeting history with station/group picker and inline read-only messages
-Last activity: 2026-02-26 - Completed quick task 24: Fix meeting attendance showing previous meeting data
+Last activity: 2026-02-26 - Completed quick task 25: Allow youth members to also be admins (is_admin flag)
 
 Progress: [####################] 100% (phase 09: 1/1 plans complete, ALL PHASES COMPLETE)
 
@@ -100,6 +100,7 @@ Key decisions affecting v1.1:
 - [Phase 09]: [09-01]: Inline MessageList rendering instead of full ChatRoom to avoid h-dvh layout conflict
 - [Phase 09]: [09-01]: DASH-04 verified as already complete from Phase 7 admin meeting detail page
 - [Phase 09]: [09-01]: URL-driven station/group picker state via searchParams for browser navigation support
+- [Quick-25]: is_admin boolean flag decouples admin access from role column; existing admins migrated to role=youth + is_admin=true
 
 ### Pending Todos
 
@@ -115,6 +116,7 @@ None yet.
 | 22 | Improve desktop layout for meeting pages | 2026-02-26 | 340ee79 | [22-improve-desktop-layout-for-meeting-page-](./quick/22-improve-desktop-layout-for-meeting-page-/) |
 | 23 | Redesign youth expansion card for better visual hierarchy | 2026-02-26 | b0a689b | [23-redesign-youth-expansion-card-better-vis](./quick/23-redesign-youth-expansion-card-better-vis/) |
 | 24 | Fix meeting attendance showing previous meeting data | 2026-02-26 | 998543a | [24-fix-meeting-attendance-showing-previous-](./quick/24-fix-meeting-attendance-showing-previous-/) |
+| 25 | Allow youth members to also be admins (is_admin flag) | 2026-02-26 | f0905bc | [25-allow-youth-members-to-also-be-admins-wh](./quick/25-allow-youth-members-to-also-be-admins-wh/) |
 
 ### Blockers/Concerns
 
@@ -125,5 +127,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed quick-24 (fix meeting attendance showing previous meeting data)
+Stopped at: Completed quick-25 (allow youth members to also be admins via is_admin flag)
 Resume file: None
