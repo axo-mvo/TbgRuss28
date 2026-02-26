@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 Phase: 9 of 9 (Meeting History)
 Plan: 1 of 1 in current phase (COMPLETE)
 Status: Phase 09 complete, participant-facing meeting history with station/group picker and inline read-only messages
-Last activity: 2026-02-26 -- completed 09-01 (meeting history browsing)
+Last activity: 2026-02-26 - Completed quick task 19: Fix Nordic characters, improve group builder spacing, admin user table, anonymous meeting history, compact contact directory
 
 Progress: [####################] 100% (phase 09: 1/1 plans complete, ALL PHASES COMPLETE)
 
@@ -104,6 +104,12 @@ Key decisions affecting v1.1:
 ### Pending Todos
 
 None yet.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 19 | Fix Nordic characters, improve group builder spacing, admin user table, anonymous meeting history, compact contact directory | 2026-02-26 | ee3fb54 | [19-fix-nordic-characters-improve-group-buil](./quick/19-fix-nordic-characters-improve-group-buil/) |
 
 ### Blockers/Concerns
 
