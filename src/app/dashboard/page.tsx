@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { logout } from '@/lib/actions/auth'
+import Avatar from '@/components/ui/Avatar'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import StationSelector from '@/components/station/StationSelector'
@@ -40,7 +41,7 @@ export default async function DashboardPage() {
     allLinksResult,
     allMembersResult,
   ] = await Promise.all([
-    supabase.from('profiles').select('full_name, role, parent_invite_code, is_admin').eq('id', user.id).single(),
+    supabase.from('profiles').select('full_name, role, parent_invite_code, is_admin, avatar_url').eq('id', user.id).single(),
     supabase.from('meetings').select('id, title, date, time, venue').eq('status', 'upcoming').maybeSingle(),
     supabase.from('meetings').select('id, title').eq('status', 'active').maybeSingle(),
     supabase.from('meetings').select('id, title, date, venue').eq('status', 'completed').order('date', { ascending: false }),
@@ -137,6 +138,7 @@ export default async function DashboardPage() {
   const fullName = profile?.full_name || 'Bruker'
   const role = profile?.role || 'youth'
   const isAdmin = profile?.is_admin === true
+  const avatarUrl = profile?.avatar_url ?? null
   const badgeVariant = (role === 'youth' || role === 'parent' || role === 'admin')
     ? role as 'youth' | 'parent' | 'admin'
     : 'youth'
@@ -145,12 +147,17 @@ export default async function DashboardPage() {
     <div className="min-h-dvh p-4">
       <div className="max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto pt-8">
         {/* Welcome header */}
-        <div className="flex items-center gap-3 mb-6">
-          <h1 className="text-2xl font-bold text-text-primary">
-            Velkommen, {fullName}!
-          </h1>
-          <Badge variant={badgeVariant}>{roleLabels[role] || role}</Badge>
-          {isAdmin && <Badge variant="admin">Admin</Badge>}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-text-primary">
+              Velkommen, {fullName}!
+            </h1>
+            <Badge variant={badgeVariant}>{roleLabels[role] || role}</Badge>
+            {isAdmin && <Badge variant="admin">Admin</Badge>}
+          </div>
+          <Link href="/dashboard/profil" aria-label="Min profil">
+            <Avatar name={fullName} avatarUrl={avatarUrl} size="sm" role={role as 'youth' | 'parent'} />
+          </Link>
         </div>
 
         <p className="text-text-muted mb-4">
