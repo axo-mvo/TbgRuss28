@@ -71,6 +71,18 @@ export default async function MeetingHistoryPage({
   const stations = stationsResult.data ?? []
   const groups = groupsResult.data ?? []
 
+  // Check if current user was in the selected group
+  let userWasInGroup = false
+  if (groupParam) {
+    const { data: membership } = await admin
+      .from('group_members')
+      .select('id')
+      .eq('group_id', groupParam)
+      .eq('user_id', user.id)
+      .maybeSingle()
+    userWasInGroup = !!membership
+  }
+
   // If station and group selected, load discussion messages
   let messages: ChatMessage[] = []
   let noSession = false
@@ -100,15 +112,19 @@ export default async function MeetingHistoryPage({
         .eq('session_id', session.id)
         .order('created_at', { ascending: true })
 
+      const roleLabels: Record<string, string> = { youth: 'Ungdom', parent: 'Forelder' }
       messages = (messagesData ?? []).map((msg) => {
         const profileData = Array.isArray(msg.profiles)
           ? msg.profiles[0]
           : msg.profiles
+        const role = ((profileData as { role: string } | null)?.role ?? 'youth') as 'youth' | 'parent'
         return {
           id: msg.id,
           userId: msg.user_id,
-          fullName: (profileData as { full_name: string } | null)?.full_name ?? 'Ukjent',
-          role: ((profileData as { role: string } | null)?.role ?? 'youth') as 'youth' | 'parent',
+          fullName: userWasInGroup
+            ? (profileData as { full_name: string } | null)?.full_name ?? 'Ukjent'
+            : roleLabels[role] || 'Ukjent',
+          role,
           content: msg.content,
           createdAt: msg.created_at,
           status: 'sent' as const,
@@ -135,7 +151,7 @@ export default async function MeetingHistoryPage({
           <h1 className="text-2xl font-bold text-text-primary">
             {meeting.title}
           </h1>
-          <Badge variant="completed">Fullfort</Badge>
+          <Badge variant="completed">Fullført</Badge>
         </div>
 
         {/* Meeting info card */}
@@ -246,7 +262,7 @@ export default async function MeetingHistoryPage({
                   </div>
                 ) : (
                   <div className="rounded-xl border border-gray-200 bg-white p-3 max-h-[60vh] overflow-y-auto">
-                    <MessageList messages={messages} currentUserId={user.id} />
+                    <MessageList messages={messages} currentUserId={user.id} anonymous={!userWasInGroup} />
                   </div>
                 )}
 

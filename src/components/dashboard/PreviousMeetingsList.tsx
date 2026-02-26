@@ -22,7 +22,7 @@ export default function PreviousMeetingsList({ meetings }: PreviousMeetingsListP
   return (
     <section className="mt-6">
       <h2 className="text-lg font-semibold text-text-primary mb-3">
-        Tidligere moter
+        Tidligere møter
       </h2>
       <div className="space-y-2">
         {meetings.map((meeting) => (

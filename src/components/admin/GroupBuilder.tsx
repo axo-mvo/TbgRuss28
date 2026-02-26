@@ -260,7 +260,7 @@ export default function GroupBuilder({
       {readOnly && (
         <div className="mb-6">
           <Badge variant="admin" className="bg-success/10 text-success">
-            Grupper er låst (motet er avsluttet)
+            Grupper er låst (møtet er avsluttet)
           </Badge>
         </div>
       )}

@@ -274,7 +274,7 @@ export default async function DashboardPage() {
         {/* Not assigned to group yet (active meeting) */}
         {activeMeeting && !group && (
           <p className="text-text-muted mb-4">
-            Du er ikke tildelt gruppe enna. Tildelingen skjer for motet.
+            Du er ikke tildelt gruppe ennå. Tildelingen skjer før møtet.
           </p>
         )}
 

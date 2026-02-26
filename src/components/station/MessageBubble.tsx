@@ -6,6 +6,7 @@ interface MessageBubbleProps {
   content: string
   createdAt: string
   isOwn: boolean
+  anonymous?: boolean
 }
 
 const roleLabels: Record<'youth' | 'parent', string> = {
@@ -19,6 +20,7 @@ export default function MessageBubble({
   content,
   createdAt,
   isOwn,
+  anonymous,
 }: MessageBubbleProps) {
   const time = new Date(createdAt).toLocaleTimeString('nb-NO', {
     hour: '2-digit',
@@ -33,7 +35,7 @@ export default function MessageBubble({
     >
       {!isOwn && (
         <div className="flex items-center gap-1.5 mb-0.5 px-1">
-          <span className="text-xs font-medium text-text-muted">{fullName}</span>
+          <span className="text-xs font-medium text-text-muted">{anonymous ? roleLabels[role] : fullName}</span>
           <Badge variant={role} className="!text-[9px] !px-1.5 !py-0">
             {roleLabels[role]}
           </Badge>

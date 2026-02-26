@@ -42,7 +42,7 @@ export default function MeetingResultsTab({
           </svg>
         </div>
         <p className="text-text-muted text-sm">
-          Ingen samtaler enna for dette motet
+          Ingen samtaler ennå for dette møtet
         </p>
       </div>
     )

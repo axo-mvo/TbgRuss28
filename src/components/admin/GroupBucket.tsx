@@ -69,7 +69,7 @@ export default function GroupBucket({
 
       {userIds.length === 0 ? (
         <p className="text-sm text-text-muted text-center py-4">
-          {locked ? 'Ingen medlemmer' : 'Dra brukere hit for a tildele dem'}
+          {locked ? 'Ingen medlemmer' : 'Dra brukere hit for å tildele dem'}
         </p>
       ) : (
         <div className="flex flex-col gap-2">

@@ -94,11 +94,11 @@ export default function MeetingStationPicker({
             })}
           </div>
           {!selectedGroup && (
-            <p className="text-xs text-text-muted mt-2">Velg en gruppe for a lese diskusjonen</p>
+            <p className="text-xs text-text-muted mt-2">Velg en gruppe for å lese diskusjonen</p>
           )}
         </div>
       ) : (
-        <p className="text-xs text-text-muted">Velg en stasjon for a se diskusjoner</p>
+        <p className="text-xs text-text-muted">Velg en stasjon for å se diskusjoner</p>
       )}
     </div>
   )

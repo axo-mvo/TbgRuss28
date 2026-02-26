@@ -80,12 +80,12 @@ export default function MeetingLifecycleControls({
               onClick={() => setShowStartDialog(true)}
               className="w-full"
             >
-              Start mote
+              Start møte
             </Button>
           ) : (
             <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
               <p className="text-sm text-text-muted">
-                Legg til minst 1 stasjon og 1 gruppe for a starte motet
+                Legg til minst 1 stasjon og 1 gruppe for å starte møtet
               </p>
               <p className="text-xs text-text-muted mt-1">
                 {stationCount} stasjon{stationCount !== 1 ? 'er' : ''}, {groupCount} gruppe{groupCount !== 1 ? 'r' : ''}
@@ -101,13 +101,13 @@ export default function MeetingLifecycleControls({
           onClick={handleOpenEndDialog}
           className="w-full"
         >
-          Avslutt mote
+          Avslutt møte
         </Button>
       )}
 
       {meeting.status === 'completed' && (
         <Badge variant="completed">
-          Motet er avsluttet
+          Møtet er avsluttet
         </Badge>
       )}
 
@@ -120,9 +120,9 @@ export default function MeetingLifecycleControls({
         open={showStartDialog}
         onClose={() => setShowStartDialog(false)}
         onConfirm={handleStart}
-        title="Start mote?"
-        description={`${stationCount} stasjon${stationCount !== 1 ? 'er' : ''} og ${groupCount} gruppe${groupCount !== 1 ? 'r' : ''} er klare. Stasjoner og grupper kan ikke endres etter at motet er startet.`}
-        confirmLabel="Start mote"
+        title="Start møte?"
+        description={`${stationCount} stasjon${stationCount !== 1 ? 'er' : ''} og ${groupCount} gruppe${groupCount !== 1 ? 'r' : ''} er klare. Stasjoner og grupper kan ikke endres etter at møtet er startet.`}
+        confirmLabel="Start møte"
         loading={loading}
       />
 
@@ -131,13 +131,13 @@ export default function MeetingLifecycleControls({
         open={showEndDialog}
         onClose={() => setShowEndDialog(false)}
         onConfirm={handleEnd}
-        title="Avslutt mote?"
+        title="Avslutt møte?"
         description={
           activeSessionCount > 0
             ? `${activeSessionCount} gruppe${activeSessionCount !== 1 ? 'r' : ''} er fortsatt aktive. Alle aktive sesjoner vil bli avsluttet. Avslutt likevel?`
-            : 'Er du sikker pa at du vil avslutte motet? Denne handlingen kan ikke angres.'
+            : 'Er du sikker på at du vil avslutte møtet? Denne handlingen kan ikke angres.'
         }
-        confirmLabel="Avslutt mote"
+        confirmLabel="Avslutt møte"
         confirmVariant="danger"
         loading={loading}
       />

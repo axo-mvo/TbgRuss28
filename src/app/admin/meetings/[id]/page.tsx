@@ -8,7 +8,7 @@ import type { WordCloudMessage } from '@/components/admin/WordCloud'
 const statusLabels: Record<string, string> = {
   upcoming: 'Kommende',
   active: 'Aktivt',
-  completed: 'Fullfort',
+  completed: 'Fullført',
 }
 
 function formatDate(date: string | null): string {

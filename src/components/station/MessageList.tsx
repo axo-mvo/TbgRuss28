@@ -4,9 +4,10 @@ import MessageBubble from './MessageBubble'
 interface MessageListProps {
   messages: ChatMessage[]
   currentUserId: string
+  anonymous?: boolean
 }
 
-export default function MessageList({ messages, currentUserId }: MessageListProps) {
+export default function MessageList({ messages, currentUserId, anonymous }: MessageListProps) {
   if (messages.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -25,6 +26,7 @@ export default function MessageList({ messages, currentUserId }: MessageListProp
           content={msg.content}
           createdAt={msg.createdAt}
           isOwn={msg.userId === currentUserId}
+          anonymous={anonymous}
         />
       ))}
     </div>
