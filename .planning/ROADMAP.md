@@ -183,11 +183,10 @@ Plans:
   1. Previous meetings are listed on the dashboard with date, venue, and summary info, and users can tap into any past meeting
   2. Past meeting discussions are viewable in read-only mode per station per group, reusing the existing ChatRoom component
   3. Admin meeting detail view consolidates stations config, groups, word cloud, and export for each meeting in one place
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 09-01: TBD
-- [ ] 09-02: TBD
+- [ ] 09-01-PLAN.md -- Participant meeting history page with station/group picker, inline read-only discussions, and tappable PreviousMeetingsList links
 
 ## Progress
 
@@ -205,8 +204,8 @@ Phases execute in numeric order: 6 -> 7 -> 8 -> 9
 | 7. Admin Meeting Management | v1.1 | 3/3 | Complete | 2026-02-26 |
 | 7.1 Fix Phase 7 Integration Bugs | v1.1 | 0/? | Not started | - |
 | 8. Contact Directory and Dashboard | v1.1 | 0/? | Not started | - |
-| 9. Meeting History | v1.1 | 0/? | Not started | - |
+| 9. Meeting History | v1.1 | 0/1 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-19*
-*Last updated: 2026-02-26 -- phase 7.1 gap closure added*
+*Last updated: 2026-02-26 -- phase 9 planned (1 plan)*
