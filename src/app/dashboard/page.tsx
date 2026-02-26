@@ -19,6 +19,11 @@ const roleLabels: Record<string, string> = {
   admin: 'Admin',
 }
 
+const audienceLabels: Record<string, string> = {
+  youth: 'Kun for ungdom',
+  parent: 'Kun for foreldre',
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const {
@@ -42,26 +47,40 @@ export default async function DashboardPage() {
     allMembersResult,
   ] = await Promise.all([
     supabase.from('profiles').select('full_name, role, parent_invite_code, is_admin, avatar_url').eq('id', user.id).single(),
-    supabase.from('meetings').select('id, title, date, time, venue').eq('status', 'upcoming').maybeSingle(),
-    supabase.from('meetings').select('id, title').eq('status', 'active').maybeSingle(),
-    supabase.from('meetings').select('id, title, date, venue').eq('status', 'completed').order('date', { ascending: false }),
+    supabase.from('meetings').select('id, title, date, time, venue, audience').eq('status', 'upcoming').order('date', { ascending: true }),
+    supabase.from('meetings').select('id, title, audience').eq('status', 'active').maybeSingle(),
+    supabase.from('meetings').select('id, title, date, venue, audience').eq('status', 'completed').order('date', { ascending: false }),
     adminClient.from('profiles').select('id, full_name, phone, email').eq('role', 'youth').order('full_name'),
     adminClient.from('parent_youth_links').select('youth_id, parent:profiles!parent_youth_links_parent_id_fkey(id, full_name, phone, email)'),
     adminClient.from('profiles').select('id, full_name, role, phone, email').in('role', ['youth', 'parent', 'admin']).order('full_name'),
   ])
 
   const profile = profileResult.data
-  const upcomingMeeting = upcomingResult.data
+  const upcomingMeetings = upcomingResult.data ?? []
   const activeMeeting = activeResult.data
   const previousMeetings = previousResult.data ?? []
 
-  // Meeting-scoped group membership and stations (conditional on active meeting)
+  const fullName = profile?.full_name || 'Bruker'
+  const role = profile?.role || 'youth'
+  const isAdmin = profile?.is_admin === true
+  const avatarUrl = profile?.avatar_url ?? null
+  const badgeVariant = (role === 'youth' || role === 'parent' || role === 'admin')
+    ? role as 'youth' | 'parent' | 'admin'
+    : 'youth'
+
+  // Helper: check if a meeting targets the current user's role
+  const isTargeted = (audience: string) => audience === 'everyone' || audience === role
+
+  // Active meeting: check targeting
+  const activeMeetingTargeted = activeMeeting ? isTargeted(activeMeeting.audience ?? 'everyone') : false
+
+  // Meeting-scoped group membership and stations (conditional on targeted active meeting)
   let group: { id: string; name: string; locked: boolean } | null = null
   let stations: Array<{ id: string; number: number; title: string; description: string | null }> = []
   let sessions: Array<{ station_id: string; id: string; status: string; end_timestamp: string | null }> = []
   let groupMembers: Array<{ full_name: string; role: string }> = []
 
-  if (activeMeeting) {
+  if (activeMeeting && activeMeetingTargeted) {
     const { data: membership } = await supabase
       .from('group_members')
       .select('group:groups!inner(id, name, locked, meeting_id)')
@@ -85,27 +104,34 @@ export default async function DashboardPage() {
     }
   }
 
-  // Per-meeting attendance data (conditional on upcoming meeting)
-  let myAttendance: boolean | null = null
-  let attendingCount = 0
-  let notAttendingCount = 0
+  // Batch attendance fetch for ALL upcoming meetings (avoid N+1)
+  const upcomingIds = upcomingMeetings.map((m) => m.id)
+  let allAttendanceRows: Array<{ meeting_id: string; user_id: string; attending: boolean }> = []
   let totalMembers = 0
 
-  if (upcomingMeeting) {
-    const { data: attendanceRows } = await adminClient
+  if (upcomingIds.length > 0) {
+    const { data: attendanceData } = await adminClient
       .from('meeting_attendance')
-      .select('user_id, attending')
-      .eq('meeting_id', upcomingMeeting.id)
+      .select('meeting_id, user_id, attending')
+      .in('meeting_id', upcomingIds)
 
-    myAttendance = attendanceRows?.find((a) => a.user_id === user.id)?.attending ?? null
-    attendingCount = attendanceRows?.filter((a) => a.attending === true).length ?? 0
-    notAttendingCount = attendanceRows?.filter((a) => a.attending === false).length ?? 0
+    allAttendanceRows = attendanceData ?? []
 
     const { count } = await adminClient
       .from('profiles')
       .select('*', { count: 'exact', head: true })
       .in('role', ['youth', 'parent', 'admin'])
     totalMembers = count ?? 0
+  }
+
+  // Helper: compute attendance stats for a specific meeting
+  function getAttendanceStats(meetingId: string) {
+    const rows = allAttendanceRows.filter((a) => a.meeting_id === meetingId)
+    return {
+      myAttendance: rows.find((a) => a.user_id === user!.id)?.attending ?? null,
+      attendingCount: rows.filter((a) => a.attending === true).length,
+      notAttendingCount: rows.filter((a) => a.attending === false).length,
+    }
   }
 
   // Contact directory data
@@ -134,14 +160,6 @@ export default async function DashboardPage() {
     profile?.role === 'youth' &&
     !hasParent &&
     !!profile?.parent_invite_code
-
-  const fullName = profile?.full_name || 'Bruker'
-  const role = profile?.role || 'youth'
-  const isAdmin = profile?.is_admin === true
-  const avatarUrl = profile?.avatar_url ?? null
-  const badgeVariant = (role === 'youth' || role === 'parent' || role === 'admin')
-    ? role as 'youth' | 'parent' | 'admin'
-    : 'youth'
 
   return (
     <div className="min-h-dvh p-4">
@@ -186,8 +204,8 @@ export default async function DashboardPage() {
           </Link>
         )}
 
-        {/* Active meeting with locked group: show group card + stations */}
-        {activeMeeting && group?.locked && stations.length > 0 && (
+        {/* Active meeting with locked group: show group card + stations (only if targeted) */}
+        {activeMeeting && activeMeetingTargeted && group?.locked && stations.length > 0 && (
           <>
             <div className="mb-6 p-5 rounded-xl border-2 border-teal-primary/30 bg-teal-primary/5">
               <p className="text-sm text-text-muted mb-1">Din gruppe</p>
@@ -219,36 +237,106 @@ export default async function DashboardPage() {
           </>
         )}
 
-        {/* Upcoming meeting (no active): show meeting card + attendance toggle */}
-        {upcomingMeeting && !activeMeeting && (
+        {/* Active meeting NOT targeted: greyed-out card */}
+        {activeMeeting && !activeMeetingTargeted && (
+          <div className="mb-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm opacity-50">
+            <h3 className="text-base font-semibold text-text-primary">
+              {activeMeeting.title}
+            </h3>
+            <p className="text-sm text-text-muted mt-1">
+              {audienceLabels[activeMeeting.audience ?? ''] ?? ''}
+            </p>
+          </div>
+        )}
+
+        {/* Upcoming meetings: show all, with audience-aware display */}
+        {upcomingMeetings.length > 0 && !activeMeeting && (
           <>
-            <UpcomingMeetingCard
-              meeting={upcomingMeeting}
-              attendingCount={attendingCount}
-              notAttendingCount={notAttendingCount}
-              totalMembers={totalMembers}
-            />
-            <AttendingToggle
-              meetingId={upcomingMeeting.id}
-              meetingTitle={upcomingMeeting.title}
-              meetingDate={upcomingMeeting.date}
-              meetingTime={upcomingMeeting.time ?? '18:00'}
-              meetingVenue={upcomingMeeting.venue ?? 'Ikke angitt'}
-              initialAttending={myAttendance}
-            />
+            {upcomingMeetings.map((meeting) => {
+              const targeted = isTargeted(meeting.audience ?? 'everyone')
+              const stats = getAttendanceStats(meeting.id)
+
+              if (targeted) {
+                return (
+                  <div key={meeting.id}>
+                    <UpcomingMeetingCard
+                      meeting={meeting}
+                      audience={meeting.audience}
+                      attendingCount={stats.attendingCount}
+                      notAttendingCount={stats.notAttendingCount}
+                      totalMembers={totalMembers}
+                    />
+                    <AttendingToggle
+                      meetingId={meeting.id}
+                      meetingTitle={meeting.title}
+                      meetingDate={meeting.date}
+                      meetingTime={meeting.time ?? '18:00'}
+                      meetingVenue={meeting.venue ?? 'Ikke angitt'}
+                      initialAttending={stats.myAttendance}
+                    />
+                  </div>
+                )
+              }
+
+              // Non-targeted: greyed-out card, no RSVP
+              return (
+                <div key={meeting.id} className="mb-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm opacity-50">
+                  <h3 className="text-base font-semibold text-text-primary">
+                    {meeting.title}
+                  </h3>
+                  <p className="text-sm text-text-muted mt-1">
+                    {meeting.date
+                      ? new Date(meeting.date + 'T00:00:00').toLocaleDateString('nb-NO', { weekday: 'long', day: 'numeric', month: 'long' })
+                      : ''
+                    }
+                    {meeting.time ? ` kl. ${meeting.time}` : ''}
+                  </p>
+                  {meeting.venue && (
+                    <p className="text-sm text-text-muted">{meeting.venue}</p>
+                  )}
+                  <p className="text-xs font-medium mt-2 text-text-muted italic">
+                    {audienceLabels[meeting.audience ?? ''] ?? ''}
+                  </p>
+                </div>
+              )
+            })}
           </>
         )}
 
-        {/* Both upcoming and active meeting: show attendance toggle for upcoming */}
-        {upcomingMeeting && activeMeeting && (
-          <AttendingToggle
-            meetingId={upcomingMeeting.id}
-            meetingTitle={upcomingMeeting.title}
-            meetingDate={upcomingMeeting.date}
-            meetingTime={upcomingMeeting.time ?? '18:00'}
-            meetingVenue={upcomingMeeting.venue ?? 'Ikke angitt'}
-            initialAttending={myAttendance}
-          />
+        {/* Both upcoming and active meeting: show attendance toggles for targeted upcoming meetings */}
+        {upcomingMeetings.length > 0 && activeMeeting && (
+          <>
+            {upcomingMeetings.map((meeting) => {
+              const targeted = isTargeted(meeting.audience ?? 'everyone')
+              const stats = getAttendanceStats(meeting.id)
+
+              if (targeted) {
+                return (
+                  <AttendingToggle
+                    key={meeting.id}
+                    meetingId={meeting.id}
+                    meetingTitle={meeting.title}
+                    meetingDate={meeting.date}
+                    meetingTime={meeting.time ?? '18:00'}
+                    meetingVenue={meeting.venue ?? 'Ikke angitt'}
+                    initialAttending={stats.myAttendance}
+                  />
+                )
+              }
+
+              // Non-targeted: small greyed-out info
+              return (
+                <div key={meeting.id} className="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm opacity-50">
+                  <h3 className="text-sm font-semibold text-text-primary">
+                    {meeting.title}
+                  </h3>
+                  <p className="text-xs text-text-muted mt-0.5 italic">
+                    {audienceLabels[meeting.audience ?? ''] ?? ''}
+                  </p>
+                </div>
+              )
+            })}
+          </>
         )}
 
         {/* Parent invite banner */}
@@ -256,8 +344,8 @@ export default async function DashboardPage() {
           <ParentInviteBanner inviteCode={profile!.parent_invite_code!} />
         )}
 
-        {/* Group preview when assigned but not locked (active meeting) */}
-        {activeMeeting && group && !group.locked && (
+        {/* Group preview when assigned but not locked (targeted active meeting) */}
+        {activeMeeting && activeMeetingTargeted && group && !group.locked && (
           <div className="mb-4 p-4 rounded-xl border border-teal-primary/20 bg-teal-primary/5">
             <p className="text-sm text-text-muted mb-1">Din gruppe</p>
             <p className="text-lg font-semibold text-text-primary">{group.name}</p>
@@ -280,10 +368,10 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {/* Not assigned to group yet (active meeting) */}
-        {activeMeeting && !group && (
+        {/* Not assigned to group yet (targeted active meeting) */}
+        {activeMeeting && activeMeetingTargeted && !group && (
           <p className="text-text-muted mb-4">
-            Du er ikke tildelt gruppe ennå. Tildelingen skjer før møtet.
+            Du er ikke tildelt gruppe enna. Tildelingen skjer for motet.
           </p>
         )}
 
@@ -291,7 +379,7 @@ export default async function DashboardPage() {
         <ContactDirectory youth={youthWithParents} everyone={everyone} />
 
         {/* Previous meetings */}
-        <PreviousMeetingsList meetings={previousMeetings} />
+        <PreviousMeetingsList meetings={previousMeetings} userRole={role} />
 
         <form action={logout} className="mt-6">
           <Button variant="secondary" type="submit">
