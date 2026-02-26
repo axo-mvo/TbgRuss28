@@ -21,7 +21,7 @@ export async function GET(request: Request) {
           .single()
 
         if (profile) {
-          return NextResponse.redirect(`${origin}${profile.is_admin ? '/admin' : '/dashboard'}`)
+          return NextResponse.redirect(`${origin}/dashboard`)
         }
 
         // No profile yet — new OAuth user needs to complete registration

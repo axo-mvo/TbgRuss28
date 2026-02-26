@@ -262,7 +262,7 @@ export async function login(formData: FormData): Promise<{ error?: string }> {
         .eq('id', user.id)
         .single()
 
-      redirectPath = profile?.is_admin ? '/admin' : '/dashboard'
+      redirectPath = '/dashboard'
     } else {
       redirectPath = '/dashboard'
     }
