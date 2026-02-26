@@ -168,12 +168,12 @@ Plans:
   3. Flat "everyone" view shows all members alphabetically with tap-to-call and tap-to-email action links
   4. Dashboard adapts to meeting state: shows upcoming meeting card when one exists, shows active meeting stations when meeting is active, shows only directory and previous meetings when no upcoming meeting exists
   5. Users can mark attendance (kommer/kommer ikke) on the upcoming meeting, and the attendance count is visible on the meeting card
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 08-01: TBD
-- [ ] 08-02: TBD
-- [ ] 08-03: TBD
+- [ ] 08-01-PLAN.md -- Per-meeting attendance schema (meeting_attendance table, migration, server action, AttendingToggle update)
+- [ ] 08-02-PLAN.md -- Contact directory components (ContactDirectory, YouthDirectoryView, EveryoneDirectoryView, ContactActions)
+- [ ] 08-03-PLAN.md -- Meeting-state-aware dashboard restructuring (UpcomingMeetingCard, PreviousMeetingsList, dashboard page rewrite)
 
 ### Phase 9: Meeting History
 **Goal**: Users can browse previous meetings and read past discussions, and admin has a consolidated per-meeting detail view

@@ -25,10 +25,10 @@ Requirements for milestone v1.1 — Multi-Meeting Platform. Each maps to roadmap
 
 ### Contact Directory
 
-- [ ] **DIR-01**: Dashboard shows a searchable contact directory as the main view
-- [ ] **DIR-02**: Youth-centered view: expand a youth to see linked parents with contact info
-- [ ] **DIR-03**: Flat "everyone" view: all members searchable alphabetically by name
-- [ ] **DIR-04**: Contact info shows name, phone, email with tap-to-call and tap-to-email links
+- [x] **DIR-01**: Dashboard shows a searchable contact directory as the main view
+- [x] **DIR-02**: Youth-centered view: expand a youth to see linked parents with contact info
+- [x] **DIR-03**: Flat "everyone" view: all members searchable alphabetically by name
+- [x] **DIR-04**: Contact info shows name, phone, email with tap-to-call and tap-to-email links
 
 ### Dashboard & Navigation
 
@@ -91,10 +91,10 @@ Deferred beyond v1.1. Tracked but not in current roadmap.
 | SCOPE-03 | Phase 6 | Complete |
 | SCOPE-04 | Phase 7 | Complete |
 | SCOPE-05 | Phase 7 | Complete |
-| DIR-01 | Phase 8 | Pending |
-| DIR-02 | Phase 8 | Pending |
-| DIR-03 | Phase 8 | Pending |
-| DIR-04 | Phase 8 | Pending |
+| DIR-01 | Phase 8 | Complete |
+| DIR-02 | Phase 8 | Complete |
+| DIR-03 | Phase 8 | Complete |
+| DIR-04 | Phase 8 | Complete |
 | DASH-01 | Phase 8 | Pending |
 | DASH-02 | Phase 8 | Pending |
 | DASH-03 | Phase 9 | Pending |
