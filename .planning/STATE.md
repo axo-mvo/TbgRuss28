@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 Phase: 9 of 9 (Meeting History)
 Plan: 1 of 1 in current phase (COMPLETE)
 Status: Phase 09 complete, participant-facing meeting history with station/group picker and inline read-only messages
-Last activity: 2026-02-26 - Completed quick task 23: Redesign youth expansion card for better visual hierarchy
+Last activity: 2026-02-26 - Completed quick task 24: Fix meeting attendance showing previous meeting data
 
 Progress: [####################] 100% (phase 09: 1/1 plans complete, ALL PHASES COMPLETE)
 
@@ -88,7 +88,7 @@ Key decisions affecting v1.1:
 - [Phase 07.1]: [07.1-01]: Used .then()/.catch() instead of async/await for onDragEnd (void callback type)
 - [Phase 07.1]: [07.1-01]: No redirects for deleted routes -- no external links exist
 - [Phase 08]: [08-01]: Admin client for attendance upsert to avoid RLS complications with ON CONFLICT
-- [Phase 08]: [08-01]: profiles.attending preserved (deprecated) for backward compat
+- [Phase 08]: [08-01]: profiles.attending preserved (deprecated) for backward compat -- fully removed from reads in quick-24
 - [Phase 08]: [08-01]: Dashboard conditionally renders AttendingToggle only when upcoming/active meeting exists
 - [Phase 08]: [08-02]: ContactActions is server-compatible (no 'use client') since it only renders links
 - [Phase 08]: [08-02]: Youth filtering includes parent name matches so searching a parent shows their youth
@@ -114,6 +114,7 @@ None yet.
 | 21 | Allow editing meeting details for all statuses | 2026-02-26 | 87ff80e | [21-allow-editing-meeting-details-for-all-st](./quick/21-allow-editing-meeting-details-for-all-st/) |
 | 22 | Improve desktop layout for meeting pages | 2026-02-26 | 340ee79 | [22-improve-desktop-layout-for-meeting-page-](./quick/22-improve-desktop-layout-for-meeting-page-/) |
 | 23 | Redesign youth expansion card for better visual hierarchy | 2026-02-26 | b0a689b | [23-redesign-youth-expansion-card-better-vis](./quick/23-redesign-youth-expansion-card-better-vis/) |
+| 24 | Fix meeting attendance showing previous meeting data | 2026-02-26 | 998543a | [24-fix-meeting-attendance-showing-previous-](./quick/24-fix-meeting-attendance-showing-previous-/) |
 
 ### Blockers/Concerns
 
@@ -124,5 +125,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed quick-23 (redesign youth expansion card for better visual hierarchy)
+Stopped at: Completed quick-24 (fix meeting attendance showing previous meeting data)
 Resume file: None
