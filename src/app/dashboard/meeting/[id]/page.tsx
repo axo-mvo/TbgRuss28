@@ -5,6 +5,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import Badge from '@/components/ui/Badge'
 import MeetingStationPicker from '@/components/dashboard/MeetingStationPicker'
 import MessageList from '@/components/station/MessageList'
+import WordCloud from '@/components/admin/WordCloud'
+import type { WordCloudMessage } from '@/components/admin/WordCloud'
 import type { ChatMessage } from '@/lib/hooks/useRealtimeChat'
 
 function formatDate(isoDate: string | null): string {
@@ -52,8 +54,8 @@ export default async function MeetingHistoryPage({
     notFound()
   }
 
-  // Fetch profile, stations, and groups in parallel
-  const [profileResult, stationsResult, groupsResult] = await Promise.all([
+  // Fetch profile, stations, groups, and messages for word cloud in parallel
+  const [profileResult, stationsResult, groupsResult, wordcloudMessagesResult] = await Promise.all([
     supabase.from('profiles').select('full_name, role').eq('id', user.id).single(),
     supabase
       .from('stations')
@@ -65,11 +67,69 @@ export default async function MeetingHistoryPage({
       .select('id, name')
       .eq('meeting_id', id)
       .order('created_at'),
+    // Messages for word cloud (joined through station_sessions)
+    admin
+      .from('messages')
+      .select(`
+        id, content,
+        station_sessions:session_id (
+          station_id,
+          stations:station_id ( id, number, title, meeting_id ),
+          groups:group_id ( id, name )
+        )
+      `)
+      .order('created_at', { ascending: true }),
   ])
 
   const profile = profileResult.data
   const stations = stationsResult.data ?? []
   const groups = groupsResult.data ?? []
+
+  // ---------- Transform messages for WordCloud (scoped to this meeting) ----------
+  const rawWcMessages = wordcloudMessagesResult.data ?? []
+  const meetingMessages: WordCloudMessage[] = []
+
+  for (const msg of rawWcMessages) {
+    const sessionData = Array.isArray(msg.station_sessions)
+      ? msg.station_sessions[0]
+      : msg.station_sessions
+
+    if (!sessionData) continue
+
+    const stationData = Array.isArray((sessionData as Record<string, unknown>).stations)
+      ? ((sessionData as Record<string, unknown>).stations as Record<string, unknown>[])[0]
+      : (sessionData as Record<string, unknown>).stations
+
+    const groupData = Array.isArray((sessionData as Record<string, unknown>).groups)
+      ? ((sessionData as Record<string, unknown>).groups as Record<string, unknown>[])[0]
+      : (sessionData as Record<string, unknown>).groups
+
+    const station = stationData as { id?: string; number?: number; title?: string; meeting_id?: string } | null
+    const group = groupData as { id?: string; name?: string } | null
+
+    // Filter: only include messages from this meeting's stations
+    if (station?.meeting_id !== id) continue
+
+    meetingMessages.push({
+      content: msg.content,
+      groupId: group?.id ?? '',
+      groupName: group?.name ?? 'Ukjent gruppe',
+      stationId: station?.id ?? '',
+      stationNumber: station?.number ?? 0,
+      stationTitle: station?.title ?? 'Ukjent stasjon',
+    })
+  }
+
+  const wordcloudGroups = groups.map((g) => ({
+    id: g.id as string,
+    name: g.name as string,
+  }))
+
+  const wordcloudStations = stations.map((s) => ({
+    id: s.id as string,
+    number: s.number as number,
+    title: s.title as string,
+  }))
 
   // Check if current user was in the selected group
   let userWasInGroup = false
@@ -272,6 +332,18 @@ export default async function MeetingHistoryPage({
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Word cloud section -- only show when meeting has messages */}
+        {meetingMessages.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold text-text-primary mb-3">Ordsky</h2>
+            <WordCloud
+              messages={meetingMessages}
+              groups={wordcloudGroups}
+              stations={wordcloudStations}
+            />
           </div>
         )}
       </div>
