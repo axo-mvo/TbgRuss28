@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 Phase: 9 of 9 (Meeting History)
 Plan: 1 of 1 in current phase (COMPLETE)
 Status: Phase 09 complete, participant-facing meeting history with station/group picker and inline read-only messages
-Last activity: 2026-02-26 - Completed quick task 20: Editable meeting details, prefilled title, participant word cloud
+Last activity: 2026-02-26 - Completed quick task 21: Allow editing meeting details for all statuses
 
 Progress: [####################] 100% (phase 09: 1/1 plans complete, ALL PHASES COMPLETE)
 
@@ -111,6 +111,7 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 19 | Fix Nordic characters, improve group builder spacing, admin user table, anonymous meeting history, compact contact directory | 2026-02-26 | ee3fb54 | [19-fix-nordic-characters-improve-group-buil](./quick/19-fix-nordic-characters-improve-group-buil/) |
 | 20 | Editable meeting details, prefilled title on create, participant word cloud | 2026-02-26 | ee6b9ca | [20-editable-meeting-details-in-admin-prefil](./quick/20-editable-meeting-details-in-admin-prefil/) |
+| 21 | Allow editing meeting details for all statuses | 2026-02-26 | 87ff80e | [21-allow-editing-meeting-details-for-all-st](./quick/21-allow-editing-meeting-details-for-all-st/) |
 
 ### Blockers/Concerns
 
@@ -121,5 +122,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed quick-20 (editable meeting details, prefilled title, participant word cloud)
+Stopped at: Completed quick-21 (allow editing meeting details for all statuses)
 Resume file: None
