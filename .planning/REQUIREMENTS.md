@@ -32,8 +32,8 @@ Requirements for milestone v1.1 — Multi-Meeting Platform. Each maps to roadmap
 
 ### Dashboard & Navigation
 
-- [ ] **DASH-01**: Dashboard reflects current state: upcoming meeting card, active meeting stations, or no-meeting directory view
-- [ ] **DASH-02**: Previous meetings are browsable from the dashboard with date, venue, and summary stats
+- [x] **DASH-01**: Dashboard reflects current state: upcoming meeting card, active meeting stations, or no-meeting directory view
+- [x] **DASH-02**: Previous meetings are browsable from the dashboard with date, venue, and summary stats
 - [ ] **DASH-03**: Past meeting discussions are viewable in read-only mode (reuses existing ChatRoom readOnly)
 - [ ] **DASH-04**: Admin meeting detail view consolidates groups, export, word cloud, and station config per meeting
 
@@ -95,8 +95,8 @@ Deferred beyond v1.1. Tracked but not in current roadmap.
 | DIR-02 | Phase 8 | Complete |
 | DIR-03 | Phase 8 | Complete |
 | DIR-04 | Phase 8 | Complete |
-| DASH-01 | Phase 8 | Pending |
-| DASH-02 | Phase 8 | Pending |
+| DASH-01 | Phase 8 | Complete |
+| DASH-02 | Phase 8 | Complete |
 | DASH-03 | Phase 9 | Pending |
 | DASH-04 | Phase 9 | Pending |
 
