@@ -103,7 +103,8 @@ Plans:
 **Milestone Goal:** Evolve from a single-meeting app to a meeting-series platform with admin-configurable meetings, a contact directory, and browsable meeting history.
 
 - [x] **Phase 6: Schema Migration** - Migrate database to meeting-scoped structure, preserving v1.0 data as the first previous meeting (completed 2026-02-26)
-- [ ] **Phase 7: Admin Meeting Management** - Admin can create meetings with custom stations, manage per-meeting groups, and control meeting lifecycle
+- [x] **Phase 7: Admin Meeting Management** - Admin can create meetings with custom stations, manage per-meeting groups, and control meeting lifecycle (completed 2026-02-26)
+- [ ] **Phase 7.1: Fix Phase 7 Integration Bugs** - INSERTED: Fix Supabase query builder mutation bugs in meeting-scoped group operations, resolve tech debt
 - [ ] **Phase 8: Contact Directory and Dashboard** - Searchable contact directory as permanent dashboard, meeting-state-aware UI, per-meeting attendance
 - [ ] **Phase 9: Meeting History** - Browse previous meetings with read-only discussions, per-meeting word cloud, consolidated admin detail view
 
@@ -138,9 +139,24 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 07-01-PLAN.md -- Meeting CRUD server actions, meetings overview/creation/detail routes, admin hub restructure
-- [ ] 07-02-PLAN.md -- Meeting detail tabs, station CRUD with drag-and-drop reorder, inline station editor
-- [ ] 07-03-PLAN.md -- Meeting-scoped groups, lifecycle controls, meeting-scoped export and word cloud
+- [x] 07-01-PLAN.md -- Meeting CRUD server actions, meetings overview/creation/detail routes, admin hub restructure
+- [x] 07-02-PLAN.md -- Meeting detail tabs, station CRUD with drag-and-drop reorder, inline station editor
+- [x] 07-03-PLAN.md -- Meeting-scoped groups, lifecycle controls, meeting-scoped export and word cloud
+
+### Phase 7.1: Fix Phase 7 Integration Bugs (INSERTED)
+**Goal**: Fix Supabase query builder mutation bugs that cause meeting-scoped group operations to leak across meetings, and resolve tech debt from Phase 7
+**Depends on**: Phase 7
+**Requirements**: SCOPE-01
+**Gap Closure**: Closes gaps from v1.1 milestone audit
+**Success Criteria** (what must be TRUE):
+  1. `createGroup` name-availability check is scoped to the current meeting only — group names from other meetings do not block reuse
+  2. `toggleGroupsLock` only affects groups belonging to the specified meeting — other meetings' groups are untouched
+  3. `reorderStations` is properly awaited in the drag-end handler so server errors are caught and surfaced
+  4. Orphaned `/admin/groups` and `/admin/wordcloud` routes are removed or redirected
+**Plans**: TBD
+
+Plans:
+- [ ] 07.1-01-PLAN.md -- Fix Supabase query builder bugs and resolve Phase 7 tech debt
 
 ### Phase 8: Contact Directory and Dashboard
 **Goal**: Users see a permanent searchable contact directory on the dashboard with meeting-state-aware content and per-meeting attendance
@@ -186,10 +202,11 @@ Phases execute in numeric order: 6 -> 7 -> 8 -> 9
 | 4. Station Flow and Resilience | v1.0 | 2/2 | Complete | 2026-02-19 |
 | 5. Export | v1.0 | 1/1 | Complete | 2026-02-19 |
 | 6. Schema Migration | v1.1 | 2/2 | Complete | 2026-02-26 |
-| 7. Admin Meeting Management | v1.1 | 0/? | Not started | - |
+| 7. Admin Meeting Management | v1.1 | 3/3 | Complete | 2026-02-26 |
+| 7.1 Fix Phase 7 Integration Bugs | v1.1 | 0/? | Not started | - |
 | 8. Contact Directory and Dashboard | v1.1 | 0/? | Not started | - |
 | 9. Meeting History | v1.1 | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-02-19*
-*Last updated: 2026-02-26 -- phase 6 complete*
+*Last updated: 2026-02-26 -- phase 7.1 gap closure added*
