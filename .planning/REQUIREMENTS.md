@@ -18,7 +18,7 @@ Requirements for milestone v1.1 — Multi-Meeting Platform. Each maps to roadmap
 ### Per-Meeting Scoping
 
 - [x] **SCOPE-01**: Groups are created fresh per meeting via the existing group builder
-- [ ] **SCOPE-02**: Attendance (kommer/kommer ikke) is tracked per meeting, not globally
+- [x] **SCOPE-02**: Attendance (kommer/kommer ikke) is tracked per meeting, not globally
 - [x] **SCOPE-03**: Station sessions and messages are scoped to their meeting via FK chain
 - [x] **SCOPE-04**: Export downloads discussions from a specific meeting with meeting title/date in header
 - [x] **SCOPE-05**: Word cloud shows word frequencies from a specific meeting's discussions
@@ -87,7 +87,7 @@ Deferred beyond v1.1. Tracked but not in current roadmap.
 | MEET-04 | Phase 7 | Complete |
 | MEET-05 | Phase 6 | Complete |
 | SCOPE-01 | Phase 7.1 | Complete |
-| SCOPE-02 | Phase 8 | Pending |
+| SCOPE-02 | Phase 8 | Complete |
 | SCOPE-03 | Phase 6 | Complete |
 | SCOPE-04 | Phase 7 | Complete |
 | SCOPE-05 | Phase 7 | Complete |

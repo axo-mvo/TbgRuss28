@@ -53,6 +53,7 @@ Progress: [#############.......] 66% (phase 08: 2/3 plans complete)
 | Phase 07 P02 | 3min | 2 tasks | 5 files |
 | Phase 07 P03 | 5min | 2 tasks | 9 files |
 | Phase 07.1 P01 | 1min | 2 tasks | 4 files |
+| Phase 08 P01 | 2min | 2 tasks | 4 files |
 | Phase 08 P02 | 1min | 2 tasks | 4 files |
 
 ## Accumulated Context
@@ -84,6 +85,9 @@ Key decisions affecting v1.1:
 - [Phase 07]: [07-03]: Meeting-scoped export filters messages by station.meeting_id defensively
 - [Phase 07.1]: [07.1-01]: Used .then()/.catch() instead of async/await for onDragEnd (void callback type)
 - [Phase 07.1]: [07.1-01]: No redirects for deleted routes -- no external links exist
+- [Phase 08]: [08-01]: Admin client for attendance upsert to avoid RLS complications with ON CONFLICT
+- [Phase 08]: [08-01]: profiles.attending preserved (deprecated) for backward compat
+- [Phase 08]: [08-01]: Dashboard conditionally renders AttendingToggle only when upcoming/active meeting exists
 - [Phase 08]: [08-02]: ContactActions is server-compatible (no 'use client') since it only renders links
 - [Phase 08]: [08-02]: Youth filtering includes parent name matches so searching a parent shows their youth
 - [Phase 08]: [08-02]: useMemo for filtered lists to avoid recalculation on re-renders
