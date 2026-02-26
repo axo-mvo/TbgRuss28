@@ -39,7 +39,7 @@ export default function GroupBucket({
   return (
     <div
       ref={ref}
-      className={`p-4 rounded-xl border shadow-sm min-h-[120px] ${
+      className={`p-4 lg:p-5 rounded-xl border shadow-sm min-h-[120px] ${
         locked ? 'border-teal-primary/30 bg-teal-primary/5' : 'border-gray-200 bg-white'
       }`}
     >
@@ -72,7 +72,7 @@ export default function GroupBucket({
           {locked ? 'Ingen medlemmer' : 'Dra brukere hit for å tildele dem'}
         </p>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 lg:gap-3">
           {userIds.map((userId, index) => {
             const user = users.get(userId)
             if (!user) return null

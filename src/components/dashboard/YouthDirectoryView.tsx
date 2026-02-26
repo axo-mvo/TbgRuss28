@@ -36,7 +36,7 @@ export default function YouthDirectoryView({ youth }: YouthDirectoryViewProps) {
           <summary className="flex items-center justify-between min-h-[44px] p-3 rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50 transition-colors list-none [&::-webkit-details-marker]:hidden">
             <div className="flex-1 min-w-0">
               <span className="font-medium text-text-primary">{y.full_name}</span>
-              <ContactActions phone={y.phone} email={y.email} />
+              <ContactActions phone={y.phone} email={y.email} variant="inline" />
             </div>
             <span className="flex items-center gap-2 shrink-0 ml-2">
               <Badge variant="parent">
@@ -54,18 +54,26 @@ export default function YouthDirectoryView({ youth }: YouthDirectoryViewProps) {
             </span>
           </summary>
           <div className="pl-4 pt-2 pb-1 space-y-2">
-            {y.parents.length === 0 ? (
-              <p className="text-sm italic text-text-muted">
-                Ingen foreldre registrert
-              </p>
-            ) : (
-              y.parents.map((parent) => (
-                <div key={parent.id}>
-                  <span className="text-sm text-text-muted font-medium">{parent.full_name}</span>
-                  <ContactActions phone={parent.phone} email={parent.email} />
+            {/* Youth email in expanded section */}
+            <p className="text-xs text-text-muted">{y.email}</p>
+
+            {/* Parents with visual nesting line */}
+            <div className="ml-1 pl-3 border-l-2 border-gray-100">
+              {y.parents.length === 0 ? (
+                <p className="text-sm italic text-text-muted">
+                  Ingen foreldre registrert
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {y.parents.map((parent) => (
+                    <div key={parent.id}>
+                      <span className="text-sm text-text-muted font-medium">{parent.full_name}</span>
+                      <ContactActions phone={parent.phone} email={parent.email} />
+                    </div>
+                  ))}
                 </div>
-              ))
-            )}
+              )}
+            </div>
           </div>
         </details>
       ))}

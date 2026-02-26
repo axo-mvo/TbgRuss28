@@ -396,8 +396,8 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
                       }`}
                       onClick={isParent ? () => openParentLink(user) : undefined}
                     >
-                      <td className="py-3 pr-4">
-                        <div className="flex items-center gap-2 flex-wrap">
+                      <td className="py-4 pr-4 align-top">
+                        <div className="flex items-start gap-2 flex-wrap">
                           <span className="font-medium text-text-primary">
                             {user.full_name}
                           </span>
@@ -422,10 +422,10 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
                       <td className="py-3 pr-4 text-sm text-text-muted">
                         {user.phone || '\u2014'}
                       </td>
-                      <td className="py-3 pr-4">
+                      <td className="py-4 pr-4 align-top">
                         <AttendanceBadge attending={user.attending} />
                       </td>
-                      <td className="py-3 pr-4">
+                      <td className="py-4 pr-4 align-top">
                         <Badge variant={user.role}>
                           {roleLabels[user.role]}
                         </Badge>
@@ -433,7 +433,7 @@ export default function UserTable({ users, allYouth }: UserTableProps) {
                       <td className="py-3 pr-4 text-sm text-text-muted">
                         {formatDate(user.created_at)}
                       </td>
-                      <td className="py-3 text-right">
+                      <td className="py-4 text-right align-top">
                         <div className="flex gap-2 justify-end">
                           <button
                             onClick={(e) => openRoleEdit(e, user)}
