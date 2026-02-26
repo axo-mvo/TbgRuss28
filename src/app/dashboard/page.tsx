@@ -6,9 +6,11 @@ import { logout } from '@/lib/actions/auth'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import StationSelector from '@/components/station/StationSelector'
-import RegisteredUsersOverview from '@/components/dashboard/RegisteredUsersOverview'
 import ParentInviteBanner from '@/components/dashboard/ParentInviteBanner'
 import AttendingToggle from '@/components/dashboard/AttendingToggle'
+import ContactDirectory from '@/components/dashboard/ContactDirectory'
+import UpcomingMeetingCard from '@/components/dashboard/UpcomingMeetingCard'
+import PreviousMeetingsList from '@/components/dashboard/PreviousMeetingsList'
 
 const roleLabels: Record<string, string> = {
   youth: 'Ungdom',
@@ -26,107 +28,107 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, role, parent_invite_code, attending')
-    .eq('id', user.id)
-    .single()
-
-  // Fetch the upcoming or active meeting for attendance toggle
-  const { data: currentMeeting } = await supabase
-    .from('meetings')
-    .select('id, title, date, time, venue, status')
-    .in('status', ['upcoming', 'active'])
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  // Fetch per-meeting attendance for current user (if a meeting exists)
-  let meetingAttending: boolean | null = null
-  if (currentMeeting) {
-    const { data: attendanceRow } = await supabase
-      .from('meeting_attendance')
-      .select('attending')
-      .eq('meeting_id', currentMeeting.id)
-      .eq('user_id', user.id)
-      .maybeSingle()
-    meetingAttending = attendanceRow?.attending ?? null
-  }
-
-  // Query group membership with group details
-  const { data: membership } = await supabase
-    .from('group_members')
-    .select(`
-      group:groups!inner(id, name, locked)
-    `)
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  // Fetch all stations
-  const { data: stations } = await supabase
-    .from('stations')
-    .select('id, number, title, description')
-    .order('number')
-
-  // Fetch station sessions for user's group (if they have a group)
-  const group = membership?.group as unknown as { id: string; name: string; locked: boolean } | null
-  let sessions: Array<{ station_id: string; id: string; status: string; end_timestamp: string | null }> = []
-  let groupMembers: Array<{ full_name: string; role: string }> = []
-  if (group?.id) {
-    const { data } = await supabase
-      .from('station_sessions')
-      .select('station_id, id, status, end_timestamp')
-      .eq('group_id', group.id)
-    sessions = data || []
-
-    const { data: members } = await supabase
-      .from('group_members')
-      .select('profile:profiles!inner(full_name, role)')
-      .eq('group_id', group.id)
-    groupMembers = (members ?? []).map(
-      (m) => (m.profile as unknown as { full_name: string; role: string })
-    )
-  }
-
-  // Fetch all youth with their linked parents (admin client bypasses RLS)
   const adminClient = createAdminClient()
 
-  const { data: allYouth } = await adminClient
-    .from('profiles')
-    .select('id, full_name, attending')
-    .eq('role', 'youth')
-    .order('full_name')
+  // Parallel independent fetches (no waterfall)
+  const [
+    profileResult,
+    upcomingResult,
+    activeResult,
+    previousResult,
+    allYouthResult,
+    allLinksResult,
+    allMembersResult,
+  ] = await Promise.all([
+    supabase.from('profiles').select('full_name, role, parent_invite_code').eq('id', user.id).single(),
+    supabase.from('meetings').select('id, title, date, time, venue').eq('status', 'upcoming').maybeSingle(),
+    supabase.from('meetings').select('id, title').eq('status', 'active').maybeSingle(),
+    supabase.from('meetings').select('id, title, date, venue').eq('status', 'completed').order('date', { ascending: false }),
+    adminClient.from('profiles').select('id, full_name, phone, email').eq('role', 'youth').order('full_name'),
+    adminClient.from('parent_youth_links').select('youth_id, parent:profiles!parent_youth_links_parent_id_fkey(id, full_name, phone, email)'),
+    adminClient.from('profiles').select('id, full_name, role, phone, email').in('role', ['youth', 'parent']).order('full_name'),
+  ])
 
-  const { data: allLinks } = await adminClient
-    .from('parent_youth_links')
-    .select(`
-      youth_id,
-      parent:profiles!parent_youth_links_parent_id_fkey(id, full_name, attending)
-    `)
+  const profile = profileResult.data
+  const upcomingMeeting = upcomingResult.data
+  const activeMeeting = activeResult.data
+  const previousMeetings = previousResult.data ?? []
 
-  // Fetch all profiles for summary counts
-  const { data: allProfiles } = await adminClient
-    .from('profiles')
-    .select('id, role, attending')
-    .in('role', ['youth', 'parent', 'admin'])
+  // Meeting-scoped group membership and stations (conditional on active meeting)
+  let group: { id: string; name: string; locked: boolean } | null = null
+  let stations: Array<{ id: string; number: number; title: string; description: string | null }> = []
+  let sessions: Array<{ station_id: string; id: string; status: string; end_timestamp: string | null }> = []
+  let groupMembers: Array<{ full_name: string; role: string }> = []
 
-  const youthCount = (allProfiles ?? []).filter((p) => p.role === 'youth').length
-  const parentCount = (allProfiles ?? []).filter((p) => p.role === 'parent' || p.role === 'admin').length
-  const attendingCount = (allProfiles ?? []).filter((p) => p.attending === true).length
-  const notRespondedCount = (allProfiles ?? []).filter((p) => p.attending === null).length
+  if (activeMeeting) {
+    const { data: membership } = await supabase
+      .from('group_members')
+      .select('group:groups!inner(id, name, locked, meeting_id)')
+      .eq('user_id', user.id)
+      .eq('groups.meeting_id', activeMeeting.id)
+      .maybeSingle()
 
-  const youthWithParents = (allYouth ?? []).map((y) => ({
+    group = membership?.group as unknown as { id: string; name: string; locked: boolean } | null
+
+    if (group?.id) {
+      const [stationsResult, sessionsResult, membersResult] = await Promise.all([
+        supabase.from('stations').select('id, number, title, description').eq('meeting_id', activeMeeting.id).order('number'),
+        supabase.from('station_sessions').select('station_id, id, status, end_timestamp').eq('group_id', group.id),
+        supabase.from('group_members').select('profile:profiles!inner(full_name, role)').eq('group_id', group.id),
+      ])
+      stations = stationsResult.data ?? []
+      sessions = sessionsResult.data ?? []
+      groupMembers = (membersResult.data ?? []).map(
+        (m) => m.profile as unknown as { full_name: string; role: string }
+      )
+    }
+  }
+
+  // Per-meeting attendance data (conditional on upcoming meeting)
+  let myAttendance: boolean | null = null
+  let attendingCount = 0
+  let notAttendingCount = 0
+  let totalMembers = 0
+
+  if (upcomingMeeting) {
+    const { data: attendanceRows } = await adminClient
+      .from('meeting_attendance')
+      .select('user_id, attending')
+      .eq('meeting_id', upcomingMeeting.id)
+
+    myAttendance = attendanceRows?.find((a) => a.user_id === user.id)?.attending ?? null
+    attendingCount = attendanceRows?.filter((a) => a.attending === true).length ?? 0
+    notAttendingCount = attendanceRows?.filter((a) => a.attending === false).length ?? 0
+
+    const { count } = await adminClient
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .in('role', ['youth', 'parent'])
+    totalMembers = count ?? 0
+  }
+
+  // Contact directory data
+  const youthWithParents = (allYouthResult.data ?? []).map((y) => ({
     id: y.id,
     full_name: y.full_name,
-    attending: y.attending as boolean | null,
-    parents: (allLinks ?? [])
+    phone: y.phone as string | null,
+    email: y.email as string,
+    parents: (allLinksResult.data ?? [])
       .filter((l) => l.youth_id === y.id)
-      .map((l) => l.parent as unknown as { id: string; full_name: string; attending: boolean | null })
+      .map((l) => l.parent as unknown as { id: string; full_name: string; phone: string | null; email: string })
       .filter(Boolean),
   }))
 
+  const everyone = (allMembersResult.data ?? []).map((m) => ({
+    id: m.id,
+    full_name: m.full_name,
+    role: m.role as 'youth' | 'parent' | 'admin',
+    phone: m.phone as string | null,
+    email: m.email as string,
+  }))
+
   // Check if current user is a youth with no linked parent
-  const hasParent = (allLinks ?? []).some((l) => l.youth_id === user.id)
+  const hasParent = (allLinksResult.data ?? []).some((l) => l.youth_id === user.id)
   const showParentInvite =
     profile?.role === 'youth' &&
     !hasParent &&
@@ -138,11 +140,10 @@ export default async function DashboardPage() {
     ? role as 'youth' | 'parent' | 'admin'
     : 'youth'
 
-  const isGroupLocked = group?.locked === true
-
   return (
     <div className="min-h-dvh p-4">
       <div className="max-w-lg mx-auto pt-8">
+        {/* Welcome header */}
         <div className="flex items-center gap-3 mb-6">
           <h1 className="text-2xl font-bold text-text-primary">
             Velkommen, {fullName}!
@@ -154,17 +155,7 @@ export default async function DashboardPage() {
           Du er logget inn som {roleLabels[role]?.toLowerCase() || role}.
         </p>
 
-        {currentMeeting && (
-          <AttendingToggle
-            meetingId={currentMeeting.id}
-            meetingTitle={currentMeeting.title}
-            meetingDate={currentMeeting.date}
-            meetingTime={currentMeeting.time ?? '18:00'}
-            meetingVenue={currentMeeting.venue ?? 'Ikke angitt'}
-            initialAttending={meetingAttending}
-          />
-        )}
-
+        {/* Admin panel link */}
         {role === 'admin' && (
           <Link
             href="/admin"
@@ -186,13 +177,83 @@ export default async function DashboardPage() {
           </Link>
         )}
 
-        {/* Group assignment card -- shown when groups are locked */}
-        {isGroupLocked && group && (
-          <div className="mb-6 p-5 rounded-xl border-2 border-teal-primary/30 bg-teal-primary/5">
+        {/* Active meeting with locked group: show group card + stations */}
+        {activeMeeting && group?.locked && stations.length > 0 && (
+          <>
+            <div className="mb-6 p-5 rounded-xl border-2 border-teal-primary/30 bg-teal-primary/5">
+              <p className="text-sm text-text-muted mb-1">Din gruppe</p>
+              <p className="text-xl font-bold text-text-primary">{group.name}</p>
+              {groupMembers.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {groupMembers.map((m) => (
+                    <span
+                      key={m.full_name}
+                      className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                        m.role === 'youth'
+                          ? 'bg-teal-primary/10 text-teal-primary'
+                          : 'bg-coral/10 text-coral'
+                      }`}
+                    >
+                      {m.full_name.split(' ')[0]}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="mb-8">
+              <StationSelector
+                stations={stations}
+                sessions={sessions}
+                groupId={group.id}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Upcoming meeting (no active): show meeting card + attendance toggle */}
+        {upcomingMeeting && !activeMeeting && (
+          <>
+            <UpcomingMeetingCard
+              meeting={upcomingMeeting}
+              attendingCount={attendingCount}
+              notAttendingCount={notAttendingCount}
+              totalMembers={totalMembers}
+            />
+            <AttendingToggle
+              meetingId={upcomingMeeting.id}
+              meetingTitle={upcomingMeeting.title}
+              meetingDate={upcomingMeeting.date}
+              meetingTime={upcomingMeeting.time ?? '18:00'}
+              meetingVenue={upcomingMeeting.venue ?? 'Ikke angitt'}
+              initialAttending={myAttendance}
+            />
+          </>
+        )}
+
+        {/* Both upcoming and active meeting: show attendance toggle for upcoming */}
+        {upcomingMeeting && activeMeeting && (
+          <AttendingToggle
+            meetingId={upcomingMeeting.id}
+            meetingTitle={upcomingMeeting.title}
+            meetingDate={upcomingMeeting.date}
+            meetingTime={upcomingMeeting.time ?? '18:00'}
+            meetingVenue={upcomingMeeting.venue ?? 'Ikke angitt'}
+            initialAttending={myAttendance}
+          />
+        )}
+
+        {/* Parent invite banner */}
+        {showParentInvite && (
+          <ParentInviteBanner inviteCode={profile!.parent_invite_code!} />
+        )}
+
+        {/* Group preview when assigned but not locked (active meeting) */}
+        {activeMeeting && group && !group.locked && (
+          <div className="mb-4 p-4 rounded-xl border border-teal-primary/20 bg-teal-primary/5">
             <p className="text-sm text-text-muted mb-1">Din gruppe</p>
-            <p className="text-xl font-bold text-text-primary">{group.name}</p>
+            <p className="text-lg font-semibold text-text-primary">{group.name}</p>
             {groupMembers.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-3">
+              <div className="flex flex-wrap gap-1.5 mt-2">
                 {groupMembers.map((m) => (
                   <span
                     key={m.full_name}
@@ -210,53 +271,20 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {isGroupLocked && group && stations ? (
-          <div className="mb-8">
-            <StationSelector
-              stations={stations}
-              sessions={sessions}
-              groupId={group.id}
-            />
-          </div>
-        ) : (
-          <div className="mb-8">
-            {showParentInvite && (
-              <ParentInviteBanner inviteCode={profile!.parent_invite_code!} />
-            )}
-            {!membership ? (
-              <p className="text-text-muted mb-4">
-                Du er ikke tildelt gruppe ennå. Tildelingen skjer før møtet.
-              </p>
-            ) : group && !isGroupLocked ? (
-              <div className="mb-4 p-4 rounded-xl border border-teal-primary/20 bg-teal-primary/5">
-                <p className="text-sm text-text-muted mb-1">Din gruppe</p>
-                <p className="text-lg font-semibold text-text-primary">{group.name}</p>
-                {groupMembers.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {groupMembers.map((m) => (
-                      <span
-                        key={m.full_name}
-                        className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                          m.role === 'youth'
-                            ? 'bg-teal-primary/10 text-teal-primary'
-                            : 'bg-coral/10 text-coral'
-                        }`}
-                      >
-                        {m.full_name.split(' ')[0]}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : null}
-            <RegisteredUsersOverview
-              youth={youthWithParents}
-              summary={{ youthCount, parentCount, attendingCount, notRespondedCount }}
-            />
-          </div>
+        {/* Not assigned to group yet (active meeting) */}
+        {activeMeeting && !group && (
+          <p className="text-text-muted mb-4">
+            Du er ikke tildelt gruppe enna. Tildelingen skjer for motet.
+          </p>
         )}
 
-        <form action={logout}>
+        {/* Contact Directory -- ALWAYS shown */}
+        <ContactDirectory youth={youthWithParents} everyone={everyone} />
+
+        {/* Previous meetings */}
+        <PreviousMeetingsList meetings={previousMeetings} />
+
+        <form action={logout} className="mt-6">
           <Button variant="secondary" type="submit">
             Logg ut
           </Button>
