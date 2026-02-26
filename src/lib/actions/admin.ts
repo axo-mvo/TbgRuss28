@@ -151,7 +151,7 @@ export async function createGroup(meetingId?: string): Promise<{
 
   if (error) return { error: 'Kunne ikke opprette gruppe' }
 
-  revalidatePath(meetingId ? `/admin/meetings/${meetingId}` : '/admin/groups')
+  revalidatePath(meetingId ? `/admin/meetings/${meetingId}` : '/admin/meetings')
   return { group: { id: data.id, name: data.name } }
 }
 
@@ -173,7 +173,7 @@ export async function deleteGroup(
 
   if (error) return { error: 'Kunne ikke slette gruppen' }
 
-  revalidatePath(meetingId ? `/admin/meetings/${meetingId}` : '/admin/groups')
+  revalidatePath(meetingId ? `/admin/meetings/${meetingId}` : '/admin/meetings')
   return {}
 }
 
@@ -232,7 +232,7 @@ export async function saveGroupMembers(
     }
   }
 
-  revalidatePath(meetingId ? `/admin/meetings/${meetingId}` : '/admin/groups')
+  revalidatePath(meetingId ? `/admin/meetings/${meetingId}` : '/admin/meetings')
   return {}
 }
 
@@ -259,7 +259,7 @@ export async function toggleGroupsLock(
 
   if (error) return { error: locked ? 'Kunne ikke låse gruppene' : 'Kunne ikke låse opp gruppene' }
 
-  revalidatePath(meetingId ? `/admin/meetings/${meetingId}` : '/admin/groups')
+  revalidatePath(meetingId ? `/admin/meetings/${meetingId}` : '/admin/meetings')
   revalidatePath('/dashboard')
   return {}
 }

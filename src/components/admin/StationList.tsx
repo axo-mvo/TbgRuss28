@@ -332,6 +332,14 @@ export default function StationList({
             // Persist new order to server
             const orderedIds = stations.map((s) => s.id)
             reorderStations(meeting.id, orderedIds)
+              .then((result) => {
+                if (result.error) {
+                  setError(result.error)
+                }
+              })
+              .catch(() => {
+                setError('Kunne ikke endre rekkefølgen')
+              })
           }}
         >
           <div className="flex flex-col gap-3 mb-4">
