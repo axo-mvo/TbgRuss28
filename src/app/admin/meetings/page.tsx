@@ -17,7 +17,7 @@ export default async function MeetingsPage() {
 
   return (
     <div className="min-h-dvh p-4">
-      <div className="max-w-lg mx-auto pt-8">
+      <div className="max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto pt-8">
         <Link
           href="/admin"
           className="inline-flex items-center gap-1 text-sm text-text-muted hover:text-teal-primary transition-colors mb-4"

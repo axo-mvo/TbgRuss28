@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button'
 export default function AdminPage() {
   return (
     <div className="min-h-dvh p-4">
-      <div className="max-w-lg mx-auto pt-8">
+      <div className="max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto pt-8">
         <div className="flex items-center gap-3 mb-8">
           <h1 className="text-2xl font-bold text-text-primary">Adminpanel</h1>
           <Badge variant="admin">Admin</Badge>

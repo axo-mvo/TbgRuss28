@@ -197,7 +197,7 @@ export default async function MeetingHistoryPage({
 
   return (
     <div className="min-h-dvh p-4">
-      <div className="max-w-lg mx-auto pt-8">
+      <div className="max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto pt-8">
         {/* Back button */}
         <Link
           href="/dashboard"
