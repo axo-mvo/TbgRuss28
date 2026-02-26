@@ -86,7 +86,7 @@ export async function createMeeting(
 }
 
 // ---------- updateMeeting ----------
-// Updates meeting details (title, date, time, venue) for upcoming meetings only.
+// Updates meeting details (title, date, time, venue) for any meeting status.
 // useActionState-compatible signature with bound meetingId.
 
 export async function updateMeeting(
@@ -108,19 +108,15 @@ export async function updateMeeting(
 
   const admin = createAdminClient()
 
-  // Check meeting exists and is upcoming
+  // Check meeting exists
   const { data: meeting, error: fetchError } = await admin
     .from('meetings')
-    .select('status')
+    .select('id')
     .eq('id', meetingId)
     .single()
 
   if (fetchError || !meeting) {
     return { error: 'Møtet ble ikke funnet' }
-  }
-
-  if (meeting.status !== 'upcoming') {
-    return { error: 'Kan bare redigere kommende møter' }
   }
 
   const { error } = await admin

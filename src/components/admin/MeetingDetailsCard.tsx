@@ -50,7 +50,7 @@ export default function MeetingDetailsCard({ meeting }: MeetingDetailsCardProps)
       ? (meeting.status as 'upcoming' | 'active' | 'completed')
       : 'upcoming'
 
-  const canEdit = meeting.status === 'upcoming'
+  const canEdit = true
 
   // Switch back to view mode on success
   useEffect(() => {
