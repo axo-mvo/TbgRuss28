@@ -23,6 +23,18 @@ async function verifyAdmin(): Promise<{ userId: string } | { error: string }> {
   return { userId: user.id }
 }
 
+// ---------- getNextMeetingTitle ----------
+// Returns the next auto-generated meeting title based on total count.
+
+export async function getNextMeetingTitle(): Promise<string> {
+  const admin = createAdminClient()
+  const { count } = await admin
+    .from('meetings')
+    .select('*', { count: 'exact', head: true })
+
+  return `Fellesmøte #${(count ?? 0) + 1}`
+}
+
 // ---------- createMeeting ----------
 // Creates a new meeting with date, time, and venue.
 // Enforces single-upcoming-meeting constraint at application level.
@@ -38,9 +50,10 @@ export async function createMeeting(
   const date = formData.get('date') as string | null
   const time = formData.get('time') as string | null
   const venue = formData.get('venue') as string | null
+  const titleInput = (formData.get('title') as string | null)?.trim()
 
   if (!date || !time || !venue) {
-    return { error: 'Alle felt er pakrevd' }
+    return { error: 'Alle felt er påkrevd' }
   }
 
   const admin = createAdminClient()
@@ -53,15 +66,11 @@ export async function createMeeting(
     .maybeSingle()
 
   if (existing) {
-    return { error: 'Det finnes allerede et kommende mote' }
+    return { error: 'Det finnes allerede et kommende møte' }
   }
 
-  // Auto-generate title based on total meeting count
-  const { count } = await admin
-    .from('meetings')
-    .select('*', { count: 'exact', head: true })
-
-  const title = `Fellesm\u00f8te #${(count ?? 0) + 1}`
+  // Use provided title or fall back to auto-generated
+  const title = titleInput || (await getNextMeetingTitle())
 
   // Insert the meeting
   const { data, error } = await admin
@@ -70,10 +79,67 @@ export async function createMeeting(
     .select('id')
     .single()
 
-  if (error) return { error: 'Kunne ikke opprette motet' }
+  if (error) return { error: 'Kunne ikke opprette møtet' }
 
   revalidatePath('/admin/meetings')
   return { id: data.id }
+}
+
+// ---------- updateMeeting ----------
+// Updates meeting details (title, date, time, venue) for upcoming meetings only.
+// useActionState-compatible signature with bound meetingId.
+
+export async function updateMeeting(
+  meetingId: string,
+  prevState: { error?: string; success?: boolean } | null,
+  formData: FormData
+): Promise<{ error?: string; success?: boolean }> {
+  const auth = await verifyAdmin()
+  if ('error' in auth) return { error: auth.error }
+
+  const title = (formData.get('title') as string | null)?.trim()
+  const date = formData.get('date') as string | null
+  const time = formData.get('time') as string | null
+  const venue = (formData.get('venue') as string | null)?.trim()
+
+  if (!title || !date || !time || !venue) {
+    return { error: 'Alle felt er påkrevd' }
+  }
+
+  const admin = createAdminClient()
+
+  // Check meeting exists and is upcoming
+  const { data: meeting, error: fetchError } = await admin
+    .from('meetings')
+    .select('status')
+    .eq('id', meetingId)
+    .single()
+
+  if (fetchError || !meeting) {
+    return { error: 'Møtet ble ikke funnet' }
+  }
+
+  if (meeting.status !== 'upcoming') {
+    return { error: 'Kan bare redigere kommende møter' }
+  }
+
+  const { error } = await admin
+    .from('meetings')
+    .update({
+      title,
+      date,
+      time,
+      venue,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', meetingId)
+
+  if (error) return { error: 'Kunne ikke oppdatere møtet' }
+
+  revalidatePath('/admin/meetings')
+  revalidatePath(`/admin/meetings/${meetingId}`)
+  revalidatePath('/dashboard')
+  return { success: true }
 }
 
 // ---------- deleteMeeting ----------
