@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 Phase: 9 of 9 (Meeting History)
 Plan: 1 of 1 in current phase (COMPLETE)
 Status: Phase 09 complete, participant-facing meeting history with station/group picker and inline read-only messages
-Last activity: 2026-02-26 - Completed quick task 22: Improve desktop layout for meeting pages
+Last activity: 2026-02-26 - Completed quick task 23: Redesign youth expansion card for better visual hierarchy
 
 Progress: [####################] 100% (phase 09: 1/1 plans complete, ALL PHASES COMPLETE)
 
@@ -113,6 +113,7 @@ None yet.
 | 20 | Editable meeting details, prefilled title on create, participant word cloud | 2026-02-26 | ee6b9ca | [20-editable-meeting-details-in-admin-prefil](./quick/20-editable-meeting-details-in-admin-prefil/) |
 | 21 | Allow editing meeting details for all statuses | 2026-02-26 | 87ff80e | [21-allow-editing-meeting-details-for-all-st](./quick/21-allow-editing-meeting-details-for-all-st/) |
 | 22 | Improve desktop layout for meeting pages | 2026-02-26 | 340ee79 | [22-improve-desktop-layout-for-meeting-page-](./quick/22-improve-desktop-layout-for-meeting-page-/) |
+| 23 | Redesign youth expansion card for better visual hierarchy | 2026-02-26 | b0a689b | [23-redesign-youth-expansion-card-better-vis](./quick/23-redesign-youth-expansion-card-better-vis/) |
 
 ### Blockers/Concerns
 
@@ -123,5 +124,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed quick-22 (improve desktop layout for meeting pages)
+Stopped at: Completed quick-23 (redesign youth expansion card for better visual hierarchy)
 Resume file: None
