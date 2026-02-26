@@ -23,6 +23,20 @@ export async function updateMeetingAttendance(
 
     const admin = createAdminClient()
 
+    // Fetch meeting audience and user role for targeting validation
+    const [meetingResult, profileResult] = await Promise.all([
+      admin.from('meetings').select('audience').eq('id', meetingId).single(),
+      admin.from('profiles').select('role').eq('id', user.id).single(),
+    ])
+
+    if (meetingResult.data && profileResult.data) {
+      const meetingAudience = meetingResult.data.audience as string
+      const userRole = profileResult.data.role as string
+      if (meetingAudience !== 'everyone' && meetingAudience !== userRole) {
+        return { error: 'Du kan ikke melde deg på dette møtet' }
+      }
+    }
+
     const { error } = await admin
       .from('meeting_attendance')
       .upsert(

@@ -7,20 +7,20 @@ import { revalidatePath } from 'next/cache'
 // ---------- Admin verification helper ----------
 // Duplicated from admin.ts to keep meeting actions self-contained.
 
-async function verifyAdmin(): Promise<{ userId: string } | { error: string }> {
+async function verifyAdmin(): Promise<{ userId: string; role: string } | { error: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Ikke autentisert' }
 
   const { data: callerProfile } = await supabase
     .from('profiles')
-    .select('is_admin')
+    .select('is_admin, role')
     .eq('id', user.id)
     .single()
 
   if (!callerProfile?.is_admin) return { error: 'Ikke autorisert' }
 
-  return { userId: user.id }
+  return { userId: user.id, role: callerProfile.role }
 }
 
 // ---------- getNextMeetingTitle ----------
@@ -51,23 +51,26 @@ export async function createMeeting(
   const time = formData.get('time') as string | null
   const venue = formData.get('venue') as string | null
   const titleInput = (formData.get('title') as string | null)?.trim()
+  const audience = (formData.get('audience') as string) || 'everyone'
 
   if (!date || !time || !venue) {
     return { error: 'Alle felt er påkrevd' }
   }
 
-  const admin = createAdminClient()
-
-  // Check for existing upcoming meeting
-  const { data: existing } = await admin
-    .from('meetings')
-    .select('id')
-    .eq('status', 'upcoming')
-    .maybeSingle()
-
-  if (existing) {
-    return { error: 'Det finnes allerede et kommende møte' }
+  // Validate audience value
+  if (!['everyone', 'youth', 'parent'].includes(audience)) {
+    return { error: 'Ugyldig målgruppe' }
   }
+
+  // Validate audience against admin's role
+  if (audience === 'parent' && auth.role === 'youth') {
+    return { error: 'Du kan ikke opprette møter kun for foreldre' }
+  }
+  if (audience === 'youth' && auth.role === 'parent') {
+    return { error: 'Du kan ikke opprette møter kun for ungdom' }
+  }
+
+  const admin = createAdminClient()
 
   // Use provided title or fall back to auto-generated
   const title = titleInput || (await getNextMeetingTitle())
@@ -75,7 +78,7 @@ export async function createMeeting(
   // Insert the meeting
   const { data, error } = await admin
     .from('meetings')
-    .insert({ title, date, time, venue, status: 'upcoming' })
+    .insert({ title, date, time, venue, status: 'upcoming', audience })
     .select('id')
     .single()
 
@@ -101,9 +104,21 @@ export async function updateMeeting(
   const date = formData.get('date') as string | null
   const time = formData.get('time') as string | null
   const venue = (formData.get('venue') as string | null)?.trim()
+  const audience = formData.get('audience') as string | null
 
   if (!title || !date || !time || !venue) {
     return { error: 'Alle felt er påkrevd' }
+  }
+
+  // Validate audience if provided
+  if (audience && !['everyone', 'youth', 'parent'].includes(audience)) {
+    return { error: 'Ugyldig målgruppe' }
+  }
+  if (audience === 'parent' && auth.role === 'youth') {
+    return { error: 'Du kan ikke sette møtet kun for foreldre' }
+  }
+  if (audience === 'youth' && auth.role === 'parent') {
+    return { error: 'Du kan ikke sette møtet kun for ungdom' }
   }
 
   const admin = createAdminClient()
@@ -119,15 +134,20 @@ export async function updateMeeting(
     return { error: 'Møtet ble ikke funnet' }
   }
 
+  const updateData: Record<string, unknown> = {
+    title,
+    date,
+    time,
+    venue,
+    updated_at: new Date().toISOString(),
+  }
+  if (audience) {
+    updateData.audience = audience
+  }
+
   const { error } = await admin
     .from('meetings')
-    .update({
-      title,
-      date,
-      time,
-      venue,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updateData)
     .eq('id', meetingId)
 
   if (error) return { error: 'Kunne ikke oppdatere møtet' }
