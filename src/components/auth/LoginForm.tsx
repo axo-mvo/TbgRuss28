@@ -232,22 +232,22 @@ export default function LoginForm() {
             >
               {loading ? 'Logger inn...' : 'Logg inn'}
             </Button>
+
+            <p className="text-center text-sm text-text-muted">
+              Har du ikke konto?{' '}
+              <Link
+                href="/register"
+                className="text-teal-primary font-medium hover:underline"
+              >
+                Registrer deg
+              </Link>
+            </p>
           </>
         )}
 
         {!showEmail && error && (
           <p className="text-danger text-sm">{error}</p>
         )}
-
-        <p className="text-center text-sm text-text-muted">
-          Har du ikke konto?{' '}
-          <Link
-            href="/register"
-            className="text-teal-primary font-medium hover:underline"
-          >
-            Registrer deg
-          </Link>
-        </p>
       </div>
     </Card>
   )
