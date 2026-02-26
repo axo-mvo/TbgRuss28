@@ -318,6 +318,32 @@ export async function sendTempAccessCode(
   return { code, phone: profile.phone }
 }
 
+// ---------- updateUserInfo ----------
+// Updates a user's name, email, and phone. Admin-only.
+
+export async function updateUserInfo(
+  userId: string,
+  data: { full_name: string; email: string; phone: string }
+): Promise<{ error?: string }> {
+  const auth = await verifyAdmin()
+  if ('error' in auth) return { error: auth.error }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('profiles')
+    .update({
+      full_name: data.full_name,
+      email: data.email,
+      phone: data.phone,
+    })
+    .eq('id', userId)
+
+  if (error) return { error: 'Kunne ikke oppdatere brukerinfo' }
+
+  revalidatePath('/admin/users')
+  return {}
+}
+
 // ---------- toggleAdminAccess ----------
 // Grants or revokes admin access for a user. Prevents self-modification.
 
