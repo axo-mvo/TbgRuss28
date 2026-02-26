@@ -107,21 +107,35 @@ export default async function DashboardPage() {
   // Batch attendance fetch for ALL upcoming meetings (avoid N+1)
   const upcomingIds = upcomingMeetings.map((m) => m.id)
   let allAttendanceRows: Array<{ meeting_id: string; user_id: string; attending: boolean }> = []
-  let totalMembers = 0
+  let memberCountByAudience: Record<string, number> = {}
 
   if (upcomingIds.length > 0) {
-    const { data: attendanceData } = await adminClient
-      .from('meeting_attendance')
-      .select('meeting_id, user_id, attending')
-      .in('meeting_id', upcomingIds)
+    // Fetch attendance + per-role member counts in parallel
+    const [attendanceRes, allCount, youthCount, parentCount] = await Promise.all([
+      adminClient
+        .from('meeting_attendance')
+        .select('meeting_id, user_id, attending')
+        .in('meeting_id', upcomingIds),
+      adminClient
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .in('role', ['youth', 'parent', 'admin']),
+      adminClient
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .in('role', ['youth', 'admin']),
+      adminClient
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .in('role', ['parent', 'admin']),
+    ])
 
-    allAttendanceRows = attendanceData ?? []
-
-    const { count } = await adminClient
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .in('role', ['youth', 'parent', 'admin'])
-    totalMembers = count ?? 0
+    allAttendanceRows = attendanceRes.data ?? []
+    memberCountByAudience = {
+      everyone: allCount.count ?? 0,
+      youth: youthCount.count ?? 0,
+      parent: parentCount.count ?? 0,
+    }
   }
 
   // Helper: compute attendance stats for a specific meeting
@@ -264,7 +278,7 @@ export default async function DashboardPage() {
                       audience={meeting.audience}
                       attendingCount={stats.attendingCount}
                       notAttendingCount={stats.notAttendingCount}
-                      totalMembers={totalMembers}
+                      totalMembers={memberCountByAudience[meeting.audience ?? 'everyone'] ?? 0}
                     />
                     <AttendingToggle
                       meetingId={meeting.id}
