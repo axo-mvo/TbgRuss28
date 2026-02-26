@@ -53,7 +53,9 @@ export async function middleware(request: NextRequest) {
   }
 
   // Prevent authenticated users from seeing auth pages
-  if (isAuthenticated && (request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/register"))) {
+  // Exception: /register?oauth=1 is for OAuth users completing their profile
+  const isOAuthRegister = request.nextUrl.pathname.startsWith("/register") && request.nextUrl.searchParams.get("oauth") === "1";
+  if (isAuthenticated && !isOAuthRegister && (request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/register"))) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

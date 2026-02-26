@@ -392,6 +392,123 @@ export async function loginWithCode(code: string): Promise<{ error?: string }> {
   return {}
 }
 
+// ---------- completeOAuthProfile ----------
+// Creates a profile row for an OAuth user who signed in but has no profile yet.
+// Requires invite code validation (same as normal registration).
+
+export async function completeOAuthProfile(formData: FormData): Promise<{ error?: string }> {
+  const fullName = formData.get('fullName') as string
+  const phone = formData.get('phone') as string
+  const inviteCode = formData.get('inviteCode') as string
+  let role = formData.get('role') as string
+  const youthIdsRaw = formData.get('youthIds') as string | null
+  const youthIds: string[] = youthIdsRaw ? JSON.parse(youthIdsRaw) : []
+
+  if (!fullName || !phone || !inviteCode || !role) {
+    return { error: 'Alle felt må fylles ut' }
+  }
+
+  if (!/^\d{8}$/.test(phone)) {
+    return { error: 'Telefonnummer må være 8 siffer' }
+  }
+
+  let redirectPath: string | null = null
+
+  try {
+    const admin = createAdminClient()
+    const supabase = await createClient()
+
+    // Must be authenticated (OAuth session exists)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return { error: 'Ikke autentisert. Prøv å logge inn på nytt.' }
+    }
+
+    // Check they don't already have a profile
+    const { data: existingProfile } = await admin
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .single()
+
+    if (existingProfile) {
+      redirectPath = '/dashboard'
+    } else {
+      // Handle TBG#### virtual codes
+      const trimmedCode = inviteCode.trim().toUpperCase()
+      let tbgYouthId: string | null = null
+      let actualInviteCode = inviteCode
+
+      if (trimmedCode.startsWith('TBG')) {
+        const { data: youth } = await admin
+          .from('profiles')
+          .select('id')
+          .eq('parent_invite_code', trimmedCode)
+          .single()
+
+        if (!youth) {
+          return { error: 'Ugyldig foreldrekode. Sjekk koden og prøv igjen.' }
+        }
+
+        tbgYouthId = youth.id
+        role = 'parent'
+        actualInviteCode = 'FORELDER2028'
+      }
+
+      // Atomic validate + increment invite code
+      const { data: codeResult, error: codeError } = await admin.rpc(
+        'validate_invite_code',
+        { p_code: actualInviteCode }
+      )
+
+      if (codeError || !codeResult?.valid) {
+        return { error: codeResult?.error || 'Invitasjonskoden er ugyldig eller brukt opp' }
+      }
+
+      role = codeResult.role
+
+      // Create profile row
+      const { error: profileError } = await admin.from('profiles').insert({
+        id: user.id,
+        full_name: fullName.trim(),
+        email: user.email ?? '',
+        role,
+        phone,
+      })
+
+      if (profileError) {
+        return { error: 'Kunne ikke opprette profil' }
+      }
+
+      // Parent-youth links
+      const allYouthIds = [...youthIds]
+      if (tbgYouthId && !allYouthIds.includes(tbgYouthId)) {
+        allYouthIds.push(tbgYouthId)
+      }
+
+      if (role === 'parent' && allYouthIds.length > 0) {
+        const links = allYouthIds.map((youthId) => ({
+          parent_id: user.id,
+          youth_id: youthId,
+        }))
+
+        await admin.from('parent_youth_links').insert(links)
+      }
+
+      redirectPath = '/dashboard'
+    }
+  } catch {
+    return { error: 'Noe gikk galt. Prøv igjen.' }
+  }
+
+  if (redirectPath) {
+    revalidatePath('/', 'layout')
+    redirect(redirectPath)
+  }
+
+  return {}
+}
+
 // ---------- logout ----------
 // Signs out and redirects to login page.
 
