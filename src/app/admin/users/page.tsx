@@ -1,17 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import UserTable from '@/components/admin/UserTable'
 
 export default async function UsersPage() {
   const supabase = await createClient()
-  const admin = createAdminClient()
 
   // Fetch all profiles with parent-child links using FK disambiguation
   const { data: users } = await supabase
     .from('profiles')
     .select(`
-      id, full_name, email, phone, role, is_admin, created_at,
+      id, full_name, email, phone, role, is_admin, avatar_url, created_at,
       parent_youth_links!parent_youth_links_parent_id_fkey(
         id,
         youth:profiles!parent_youth_links_youth_id_fkey(id, full_name)
@@ -25,33 +23,6 @@ export default async function UsersPage() {
     .select('id, full_name')
     .eq('role', 'youth')
     .order('full_name')
-
-  // Fetch current upcoming/active meeting for attendance scoping
-  const { data: currentMeeting } = await admin
-    .from('meetings')
-    .select('id')
-    .in('status', ['upcoming', 'active'])
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  // Build meeting-scoped attendance map
-  const attendanceMap = new Map<string, boolean>()
-  if (currentMeeting) {
-    const { data: attendanceRows } = await admin
-      .from('meeting_attendance')
-      .select('user_id, attending')
-      .eq('meeting_id', currentMeeting.id)
-    for (const row of attendanceRows ?? []) {
-      attendanceMap.set(row.user_id, row.attending)
-    }
-  }
-
-  // Merge per-meeting attendance into user data
-  const usersWithAttendance = (users ?? []).map(u => ({
-    ...u,
-    attending: attendanceMap.get(u.id) ?? null,
-  }))
 
   return (
     <div className="min-h-dvh p-4">
@@ -68,7 +39,7 @@ export default async function UsersPage() {
 
         <h1 className="text-2xl font-bold text-text-primary mb-6">Brukere</h1>
 
-        <UserTable users={usersWithAttendance} allYouth={allYouth ?? []} />
+        <UserTable users={users ?? []} allYouth={allYouth ?? []} />
       </div>
     </div>
   )
