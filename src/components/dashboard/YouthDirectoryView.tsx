@@ -32,33 +32,41 @@ export default function YouthDirectoryView({ youth }: YouthDirectoryViewProps) {
   return (
     <div className="space-y-2">
       {youth.map((y) => (
-        <details key={y.id} className="group">
-          <summary className="flex items-center justify-between min-h-[44px] p-3 rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50 transition-colors list-none [&::-webkit-details-marker]:hidden">
-            <div className="flex-1 min-w-0">
-              <span className="font-medium text-text-primary">{y.full_name}</span>
-              <ContactActions phone={y.phone} email={y.email} variant="inline" />
-            </div>
-            <span className="flex items-center gap-2 shrink-0 ml-2">
-              <Badge variant="parent">
-                {y.parents.length} {y.parents.length === 1 ? 'forelder' : 'foreldre'}
-              </Badge>
-              <svg
-                className="w-4 h-4 text-text-muted transition-transform duration-200 group-open:rotate-90"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </span>
-          </summary>
-          <div className="pl-4 pt-2 pb-1 space-y-2">
-            {/* Youth email in expanded section */}
-            <p className="text-xs text-text-muted">{y.email}</p>
-
-            {/* Parents with visual nesting line */}
-            <div className="ml-1 pl-3 border-l-2 border-gray-100">
+        <div key={y.id} className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+          <details className="group">
+            <summary className="flex items-start justify-between min-h-[44px] p-3 cursor-pointer hover:bg-gray-50 transition-colors list-none [&::-webkit-details-marker]:hidden">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-text-primary text-base">{y.full_name}</span>
+                  <ContactActions phone={y.phone} email={y.email} variant="compact" />
+                </div>
+                {y.email && (
+                  <a
+                    href={`mailto:${y.email}`}
+                    className="text-sm text-text-muted hover:text-teal-primary transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {y.email}
+                  </a>
+                )}
+              </div>
+              <span className="flex items-center gap-2 shrink-0 ml-2 pt-0.5">
+                <Badge variant="parent">
+                  {y.parents.length} {y.parents.length === 1 ? 'forelder' : 'foreldre'}
+                </Badge>
+                <svg
+                  className="w-4 h-4 text-text-muted transition-transform duration-200 group-open:rotate-90"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
+            </summary>
+            <div className="border-t border-gray-100 px-3 pb-3 pt-2">
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Foreldre</p>
               {y.parents.length === 0 ? (
                 <p className="text-sm italic text-text-muted">
                   Ingen foreldre registrert
@@ -66,16 +74,27 @@ export default function YouthDirectoryView({ youth }: YouthDirectoryViewProps) {
               ) : (
                 <div className="space-y-2">
                   {y.parents.map((parent) => (
-                    <div key={parent.id}>
-                      <span className="text-sm text-text-muted font-medium">{parent.full_name}</span>
-                      <ContactActions phone={parent.phone} email={parent.email} />
+                    <div key={parent.id} className="bg-gray-50 rounded-md p-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-text-primary font-medium">{parent.full_name}</span>
+                        <ContactActions phone={parent.phone} email={parent.email} variant="compact" />
+                      </div>
+                      {parent.email && (
+                        <a
+                          href={`mailto:${parent.email}`}
+                          className="text-sm text-text-muted hover:text-teal-primary transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {parent.email}
+                        </a>
+                      )}
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          </div>
-        </details>
+          </details>
+        </div>
       ))}
     </div>
   )
