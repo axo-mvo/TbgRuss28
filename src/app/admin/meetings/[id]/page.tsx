@@ -22,6 +22,7 @@ export default async function MeetingDetailPage({
     usersResult,
     parentLinksResult,
     messagesResult,
+    attendanceResult,
   ] = await Promise.all([
     // Meeting
     admin.from('meetings').select('*').eq('id', id).single(),
@@ -36,7 +37,7 @@ export default async function MeetingDetailPage({
     // Users (for Grupper tab)
     admin
       .from('profiles')
-      .select('id, full_name, role, attending')
+      .select('id, full_name, role')
       .in('role', ['youth', 'parent', 'admin'])
       .order('full_name'),
     // Parent-child links (for Grupper tab)
@@ -53,6 +54,8 @@ export default async function MeetingDetailPage({
         )
       `)
       .order('created_at', { ascending: true }),
+    // Meeting-scoped attendance (replaces deprecated profiles.attending)
+    admin.from('meeting_attendance').select('user_id, attending').eq('meeting_id', id),
   ])
 
   if (meetingResult.error || !meetingResult.data) {
@@ -62,8 +65,21 @@ export default async function MeetingDetailPage({
   const meeting = meetingResult.data
   const stations = stationsResult.data ?? []
   const allGroups = groupsDataResult.data ?? []
-  const allUsers = usersResult.data ?? []
+  const allUsersRaw = usersResult.data ?? []
   const parentChildLinks = parentLinksResult.data ?? []
+
+  // Build meeting-scoped attendance map from meeting_attendance table
+  const attendanceRows = attendanceResult.data ?? []
+  const attendanceMap = new Map<string, boolean>()
+  for (const row of attendanceRows) {
+    attendanceMap.set(row.user_id, row.attending)
+  }
+
+  // Merge per-meeting attendance into user data
+  const allUsers = allUsersRaw.map(u => ({
+    ...u,
+    attending: attendanceMap.get(u.id) ?? null,
+  }))
 
   // ---------- Transform groups data (same pattern as /admin/groups/page.tsx) ----------
   const assignedUserIds = new Set<string>()
